@@ -6,20 +6,20 @@ import (
 	"github.com/fullsailor/pkcs7"
 )
 
-func generateCMS(attributes []pkcs7.Attribute) (*pkcs7.SignedData, []byte, error) {
+func generateCMS(keyFile, keyPassword, certFile string, attributes []pkcs7.Attribute) (*pkcs7.SignedData, []byte, error) {
 	signedData, err := pkcs7.NewSignedData(nil)
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to create signed data: %w", err)
 	}
 
 	// TODO: inject
-	privateKey, err := loadPrivateKeyFromFile("ss-cert/key.pem", "")
+	privateKey, err := loadPrivateKeyFromFile(keyFile, keyPassword)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	// TODO: inject
-	cert, err := loadCertFromFile("ss-cert/key.crt")
+	cert, err := loadCertFromFile(certFile)
 	if err != nil {
 		return nil, nil, err
 	}

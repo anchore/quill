@@ -3,7 +3,9 @@ package cmd
 import (
 	"debug/macho"
 	"fmt"
+	"github.com/wagoodman/quill/pkg/sign"
 	"os"
+	"path"
 
 	"github.com/spf13/viper"
 
@@ -83,10 +85,16 @@ func validatePathIsDarwinBinary(path string) error {
 	return err
 }
 
-func signExecWorker(path string) <-chan error {
+func signExecWorker(p string) <-chan error {
 	errs := make(chan error)
 	go func() {
 		defer close(errs)
+
+		id := path.Base(p)
+
+		if err := sign.Sign(id, p, appConfig.Sign.PrivateKey, appConfig.Sign.Password, appConfig.Sign.Certificate); err != nil {
+			errs <- err
+		}
 
 		bus.Publish(partybus.Event{
 			Type: event.Exit,

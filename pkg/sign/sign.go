@@ -11,7 +11,7 @@ import (
 )
 
 // TODO: use FS abstraction for testing?
-func Sign(id, path string) error {
+func Sign(id, path, keyFile, keyPassword, certFile string) error {
 	m, err := macho.NewFile(path)
 	if err != nil {
 		return err
@@ -30,7 +30,7 @@ func Sign(id, path string) error {
 	}
 
 	// first pass: add the signed data with the dummy loader
-	numSbBytes, err := addSigningData(id, m)
+	numSbBytes, err := addSigningData(id, m, keyFile, keyPassword, certFile)
 	if err != nil {
 		return fmt.Errorf("failed to add signing data on pass=1: %w", err)
 	}
@@ -55,7 +55,7 @@ func Sign(id, path string) error {
 	}
 
 	// second pass: now that all of the sizing is right, let's do it again with the final contents (replacing the hashes and signature)
-	_, err = addSigningData(id, m)
+	_, err = addSigningData(id, m, keyFile, keyPassword, certFile)
 	if err != nil {
 		return fmt.Errorf("failed to add signing data on pass=2: %w", err)
 	}
@@ -63,7 +63,7 @@ func Sign(id, path string) error {
 	return nil
 }
 
-func addSigningData(id string, m *macho.File) (uint64, error) {
+func addSigningData(id string, m *macho.File, keyFile, keyPassword, certFile string) (uint64, error) {
 	// generate the content digests each page in the binary (except the signature data)
 	//  input:  entire binary
 	//  output: array of hashes (for each page)
@@ -118,7 +118,7 @@ func addSigningData(id string, m *macho.File) (uint64, error) {
 	}
 
 	// TODO: add certificate chain
-	cmsObj, cmsBytes, err := generateCMS(attrs)
+	cmsObj, cmsBytes, err := generateCMS(keyFile, keyPassword, certFile, attrs)
 	if err != nil {
 		return 0, err
 	}
