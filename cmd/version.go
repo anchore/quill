@@ -12,15 +12,16 @@ import (
 
 var outputFormat string
 
-var versionCmd = &cobra.Command{
-	Use:   "version",
-	Short: "show the version",
-	Run:   printVersion,
-}
+func newVersionCmd() *cobra.Command {
+	c := &cobra.Command{
+		Use:   "version",
+		Short: "show the version",
+		Run:   printVersion,
+	}
 
-func init() {
-	versionCmd.Flags().StringVarP(&outputFormat, "output", "o", "text", "format to show version information (available=[text, json])")
-	rootCmd.AddCommand(versionCmd)
+	c.Flags().StringVarP(&outputFormat, "output", "o", "text", "format to show version information (available=[text, json])")
+
+	return c
 }
 
 func printVersion(_ *cobra.Command, _ []string) {

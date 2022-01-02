@@ -1,9 +1,16 @@
 package main
 
 import (
+	"fmt"
+	"os"
+
+	"github.com/gookit/color"
 	"github.com/wagoodman/quill/cmd"
 )
 
 func main() {
-	cmd.Execute()
+	if err := cmd.NewCli().Execute(); err != nil {
+		fmt.Fprintln(os.Stderr, color.Red.Sprint(err.Error()))
+		os.Exit(1)
+	}
 }

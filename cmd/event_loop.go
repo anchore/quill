@@ -16,7 +16,9 @@ import (
 // an eventual graceful exit.
 // nolint:funlen
 func eventLoop(workerErrs <-chan error, signals <-chan os.Signal, subscription *partybus.Subscription, cleanupFn func(), uxs ...ui.UI) error {
-	defer cleanupFn()
+	if cleanupFn != nil {
+		defer cleanupFn()
+	}
 	events := subscription.Events()
 	var err error
 	var ux ui.UI

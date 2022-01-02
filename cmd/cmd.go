@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/pkg/profile"
+	"github.com/wagoodman/quill/internal"
 	"os"
 
 	"github.com/gookit/color"
@@ -20,19 +22,63 @@ var (
 	eventSubscription *partybus.Subscription
 )
 
-func init() {
+func NewCli() *cobra.Command {
+	v := viper.GetViper()
+
+	signCmd := newSignCmd()
+	rootCmd := must(newRootCmd(v, signCmd, setSignFlags)) // TODO: it would be nice to make a type to encapsulate the command and flag setup behavior
+	showCmd := must(newShowCmd(v))
+
+	rootCmd.AddCommand(signCmd)
+	rootCmd.AddCommand(showCmd)
+	rootCmd.AddCommand(newVersionCmd())
+
+	initCmdAliasBindings(v, rootCmd, signCmd)
+
 	cobra.OnInitialize(
-		initAppConfig,
+		initAppConfig, // note: app config uses singleton viper instance (TODO for later improvement)
 		initLogging,
 		logAppConfig,
 		initEventBus,
 	)
+
+	return rootCmd
 }
 
-func Execute() {
-	if err := rootCmd.Execute(); err != nil {
+func must(cmd *cobra.Command, err error) *cobra.Command {
+	if err != nil {
 		fmt.Fprintln(os.Stderr, color.Red.Sprint(err.Error()))
 		os.Exit(1)
+	}
+	return cmd
+}
+
+// we must setup the config-cli bindings first before the application configuration is parsed. However, this cannot
+// be done without determining what the primary command that the config options should be bound to since there are
+// shared concerns (the root-sign alias).
+func initCmdAliasBindings(viperInstance *viper.Viper, rootCmd, signCmd *cobra.Command) {
+	activeCmd, _, err := rootCmd.Find(os.Args[1:])
+	if err != nil {
+		panic(err)
+	}
+
+	switch activeCmd {
+	case rootCmd:
+		// note: we need to lazily bind config options since they are shared between both the root command
+		// and the sign command. Otherwise there will be global viper state that is in contention.
+		// See for more details: https://github.com/spf13/viper/issues/233 . Additionally, the bindings must occur BEFORE
+		// reading the application configuration, which implies that it must be an initializer (or rewrite the command
+		// initialization structure against typical patterns used with cobra, which is somewhat extreme for a
+		// temporary alias)
+		if err = bindSignConfigOptions(viperInstance, activeCmd.Flags()); err != nil {
+			panic(err)
+		}
+	default:
+		// even though the root command or sign command is NOT being run, we still need default bindings
+		// such that application config parsing passes.
+		if err = bindSignConfigOptions(viperInstance, signCmd.Flags()); err != nil {
+			panic(err)
+		}
 	}
 }
 
@@ -69,4 +115,38 @@ func initEventBus() {
 	eventSubscription = eventBus.Subscribe()
 
 	pkg.SetBus(eventBus)
+}
+
+func isVerbose() (result bool) {
+	isPipedInput, err := internal.IsPipedInput()
+	if err != nil {
+		// since we can't tell if there was piped input we assume that there could be to disable the ETUI
+		log.Warnf("unable to determine if there is piped input: %+v", err)
+		return true
+	}
+	// verbosity should consider if there is piped input (in which case we should not show the ETUI)
+	return appConfig.CliOptions.Verbosity > 0 || isPipedInput
+}
+
+type entrypoint func(cmd *cobra.Command, args []string) error
+
+func decorateRunWithProfiling(ent entrypoint) entrypoint {
+	return func(cmd *cobra.Command, args []string) error {
+		if appConfig.Dev.ProfileCPU {
+			defer profile.Start(profile.CPUProfile).Stop()
+		} else if appConfig.Dev.ProfileMem {
+			defer profile.Start(profile.MemProfile).Stop()
+		}
+
+		return ent(cmd, args)
+	}
+}
+
+func preRunProfilingValidation() entrypoint {
+	return func(cmd *cobra.Command, args []string) error {
+		if appConfig.Dev.ProfileCPU && appConfig.Dev.ProfileMem {
+			return fmt.Errorf("cannot profile CPU and memory simultaneously")
+		}
+		return nil
+	}
 }

@@ -2,32 +2,49 @@ package cmd
 
 import (
 	"fmt"
-	"os"
-
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"github.com/wagoodman/quill/internal/config"
+	"github.com/wagoodman/quill/internal/version"
 )
 
 var persistentOpts = config.CliOnlyOptions{}
 
-// rootCmd is currently an alias for the packages command
-var rootCmd = &cobra.Command{}
+func newRootCmd(v *viper.Viper, aliasFor *cobra.Command, setupFlags func(flags *pflag.FlagSet)) (*cobra.Command, error) {
+	rootCmd := &cobra.Command{
+		Short:             aliasFor.Short,
+		Long:              aliasFor.Long,
+		Args:              aliasFor.Args,
+		Example:           aliasFor.Example,
+		SilenceUsage:      true,
+		SilenceErrors:     true,
+		PreRunE:           aliasFor.PreRunE,
+		RunE:              aliasFor.RunE,
+		ValidArgsFunction: aliasFor.ValidArgsFunction,
+		Version:           version.FromBuild().Version,
+	}
 
-func init() {
-	// set universal flags
-	rootCmd.PersistentFlags().StringVarP(&persistentOpts.ConfigPath, "config", "c", "", "application config file")
+	return rootCmd, setupRootCmd(v, rootCmd.Flags(), rootCmd.PersistentFlags(), setupFlags)
+}
+
+func setupRootCmd(v *viper.Viper, flags, pFlags *pflag.FlagSet, setupFlags func(flags *pflag.FlagSet)) error {
+	pFlags.StringVarP(&persistentOpts.ConfigPath, "config", "c", "", "application config file")
 
 	flag := "quiet"
-	rootCmd.PersistentFlags().BoolP(
+	pFlags.BoolP(
 		flag, "q", false,
 		"suppress all logging output",
 	)
 
-	if err := viper.BindPFlag(flag, rootCmd.PersistentFlags().Lookup(flag)); err != nil {
-		fmt.Printf("unable to bind flag '%s': %+v", flag, err)
-		os.Exit(1)
+	if err := v.BindPFlag(flag, pFlags.Lookup(flag)); err != nil {
+		return fmt.Errorf("unable to bind persistent flag '%s': %+v", flag, err)
 	}
 
-	rootCmd.PersistentFlags().CountVarP(&persistentOpts.Verbosity, "verbose", "v", "increase verbosity (-v = info, -vv = debug)")
+	pFlags.CountVarP(&persistentOpts.Verbosity, "verbose", "v", "increase verbosity (-v = info, -vv = debug)")
+
+	// setup the flags that root is aliasing for
+	setupFlags(flags)
+
+	return nil
 }

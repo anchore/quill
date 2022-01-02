@@ -29,10 +29,10 @@ type parser interface {
 type Application struct {
 	ConfigPath string         `yaml:",omitempty" json:"configPath"`            // the location where the application config was read from (either from -c or discovered while loading)
 	Quiet      bool           `yaml:"quiet" json:"quiet" mapstructure:"quiet"` // -q, indicates to not show any status output to stderr
-	File       string         `yaml:"file" json:"file" mapstructure:"file"`    // --file, indicates to write all output to a file instead of stdout
 	CliOptions CliOnlyOptions `yaml:"-" json:"-"`                              // all options only available through the CLI (not via env vars or config)
 	Dev        development    `yaml:"dev" json:"dev" mapstructure:"dev"`
 	Log        logging        `yaml:"log" json:"log" mapstructure:"log"` // all logging-related options
+	Sign       sign           `yaml:"sign" json:"sign" mapstructure:"sign"`
 }
 
 func newApplicationConfig(v *viper.Viper, cliOpts CliOnlyOptions) *Application {
