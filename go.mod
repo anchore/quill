@@ -4,6 +4,10 @@ go 1.17
 
 require (
 	github.com/adrg/xdg v0.2.1
+	github.com/blacktop/go-macho v1.1.83
+	github.com/dustin/go-humanize v1.0.0
+	github.com/fullsailor/pkcs7 v0.0.0-20190404230743-d7302db945fa
+	github.com/go-restruct/restruct v1.2.0-alpha
 	github.com/gookit/color v1.2.7
 	github.com/hashicorp/go-multierror v1.1.0
 	github.com/mitchellh/go-homedir v1.1.0
@@ -16,6 +20,7 @@ require (
 	github.com/wagoodman/go-partybus v0.0.0-20210627031916-db1f5573bbc5
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2
 	gopkg.in/yaml.v2 v2.4.0
+	howett.net/plist v1.0.0
 )
 
 require (
@@ -34,6 +39,7 @@ require (
 	github.com/onsi/ginkgo v1.12.0 // indirect
 	github.com/onsi/gomega v1.9.0 // indirect
 	github.com/pelletier/go-toml v1.8.1 // indirect
+	github.com/pkg/errors v0.8.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/smartystreets/assertions v1.0.0 // indirect
 	github.com/spf13/afero v1.2.2 // indirect

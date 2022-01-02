@@ -1,11 +1,12 @@
 package cmd
 
 import (
+	"fmt"
 	"github.com/spf13/viper"
+	"github.com/wagoodman/quill/pkg/extract"
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 	"github.com/wagoodman/go-partybus"
 	"github.com/wagoodman/quill/internal/bus"
 	"github.com/wagoodman/quill/internal/ui"
@@ -23,19 +24,20 @@ func newShowCmd(v *viper.Viper) (*cobra.Command, error) {
 		RunE:          decorateRunWithProfiling(showExec),
 	}
 
-	setShowFlags(c.Flags())
-
-	return c, bindShowConfigOptions(v, c.Flags())
+	//setShowFlags(c.Flags())
+	//
+	//return c, bindShowConfigOptions(v, c.Flags())
+	return c, nil
 }
 
-func setShowFlags(flags *pflag.FlagSet) {
-	// TODO
-}
-
-func bindShowConfigOptions(v *viper.Viper, flags *pflag.FlagSet) error {
-	// TODO
-	return nil
-}
+//func setShowFlags(flags *pflag.FlagSet) {
+//	// TODO
+//}
+//
+//func bindShowConfigOptions(v *viper.Viper, flags *pflag.FlagSet) error {
+//	// TODO
+//	return nil
+//}
 
 func showExec(_ *cobra.Command, args []string) error {
 	path := args[0]
@@ -57,6 +59,17 @@ func showExecWorker(path string) <-chan error {
 	errs := make(chan error)
 	go func() {
 		defer close(errs)
+
+		f, err := os.Open(path)
+		if err != nil {
+			errs <- fmt.Errorf("unable to open binary: %w", err)
+			return
+		}
+
+		if err = extract.Show(f); err != nil {
+			errs <- fmt.Errorf("unable to show binary details: %w", err)
+			return
+		}
 
 		bus.Publish(partybus.Event{
 			Type: event.Exit,
