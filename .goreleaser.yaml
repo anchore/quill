@@ -1,0 +1,31 @@
+release:
+  # If set to auto, will mark the release as not ready for production in case there is an indicator for this in the
+  # tag e.g. v1.0.0-rc1 .If set to true, will mark the release as not ready for production.
+  prerelease: auto
+
+  # If set to true, will not auto-publish the release. This is done to allow us to review the changelog before publishing.
+  draft: true
+
+builds:
+  - binary: go-template-project
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+    # Set the modified timestamp on the output binary to the git timestamp (to ensure a reproducible build)
+    mod_timestamp: '{{ .CommitTimestamp }}'
+    ldflags: |
+      -w
+      -s
+      -extldflags '-static'
+      -X github.com/wagoodman/quill/internal/version.version={{.Version}}
+      -X github.com/wagoodman/quill/internal/version.gitCommit={{.Commit}}
+      -X github.com/wagoodman/quill/internal/version.buildDate={{.Date}}
+      -X github.com/wagoodman/quill/internal/version.gitTreeState={{.Env.BUILD_GIT_TREE_STATE}}
+
+archives:
+  - format: tar.gz

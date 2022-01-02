@@ -1,0 +1,6 @@
+contact_links:
+
+  - name: Join the Slack community 💬
+    # link to our community Slack registration page
+    url: https://anchore.com/slack
+    about: 'Come chat with us! Ask for help, join our software development efforts, or just give us feedback!'
