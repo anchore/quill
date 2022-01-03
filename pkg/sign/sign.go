@@ -5,9 +5,9 @@ import (
 	"encoding/asn1"
 	"fmt"
 
+	"github.com/anchore/quill/pkg/macho"
 	"github.com/fullsailor/pkcs7"
 	"github.com/go-restruct/restruct"
-	"github.com/wagoodman/quill/pkg/macho"
 )
 
 // TODO: use FS abstraction for testing?

@@ -2,15 +2,15 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/anchore/quill/pkg/extract"
 	"github.com/spf13/viper"
-	"github.com/wagoodman/quill/pkg/extract"
 	"os"
 
+	"github.com/anchore/quill/internal/bus"
+	"github.com/anchore/quill/internal/ui"
+	"github.com/anchore/quill/pkg/event"
 	"github.com/spf13/cobra"
 	"github.com/wagoodman/go-partybus"
-	"github.com/wagoodman/quill/internal/bus"
-	"github.com/wagoodman/quill/internal/ui"
-	"github.com/wagoodman/quill/pkg/event"
 )
 
 func newShowCmd(v *viper.Viper) (*cobra.Command, error) {

@@ -1,10 +1,10 @@
 package pkg
 
 import (
+	"github.com/anchore/quill/internal/bus"
+	"github.com/anchore/quill/internal/log"
+	"github.com/anchore/quill/pkg/logger"
 	"github.com/wagoodman/go-partybus"
-	"github.com/wagoodman/quill/internal/bus"
-	"github.com/wagoodman/quill/internal/log"
-	"github.com/wagoodman/quill/pkg/logger"
 )
 
 // SetLogger sets the logger object used for all logging calls.

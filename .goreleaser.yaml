@@ -22,10 +22,10 @@ builds:
       -w
       -s
       -extldflags '-static'
-      -X github.com/wagoodman/quill/internal/version.version={{.Version}}
-      -X github.com/wagoodman/quill/internal/version.gitCommit={{.Commit}}
-      -X github.com/wagoodman/quill/internal/version.buildDate={{.Date}}
-      -X github.com/wagoodman/quill/internal/version.gitTreeState={{.Env.BUILD_GIT_TREE_STATE}}
+      -X github.com/anchore/quill/internal/version.version={{.Version}}
+      -X github.com/anchore/quill/internal/version.gitCommit={{.Commit}}
+      -X github.com/anchore/quill/internal/version.buildDate={{.Date}}
+      -X github.com/anchore/quill/internal/version.gitTreeState={{.Env.BUILD_GIT_TREE_STATE}}
 
 archives:
   - format: tar.gz

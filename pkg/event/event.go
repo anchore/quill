@@ -5,8 +5,8 @@ defined here there should be a corresponding event parser defined in the parsers
 package event
 
 import (
+	"github.com/anchore/quill/internal"
 	"github.com/wagoodman/go-partybus"
-	"github.com/wagoodman/quill/internal"
 )
 
 const (

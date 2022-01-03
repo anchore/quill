@@ -8,10 +8,10 @@ import (
 	"strings"
 
 	"github.com/adrg/xdg"
+	"github.com/anchore/quill/internal"
 	"github.com/mitchellh/go-homedir"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"github.com/wagoodman/quill/internal"
 	"gopkg.in/yaml.v2"
 )
 

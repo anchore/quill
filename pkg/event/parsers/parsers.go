@@ -6,8 +6,8 @@ package parsers
 import (
 	"fmt"
 
+	"github.com/anchore/quill/pkg/event"
 	"github.com/wagoodman/go-partybus"
-	"github.com/wagoodman/quill/pkg/event"
 )
 
 type ErrBadPayload struct {

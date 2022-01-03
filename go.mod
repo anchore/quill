@@ -1,4 +1,4 @@
-module github.com/wagoodman/quill
+module github.com/anchore/quill
 
 go 1.17
 

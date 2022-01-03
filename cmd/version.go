@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/anchore/quill/internal"
+	"github.com/anchore/quill/internal/version"
 	"github.com/spf13/cobra"
-	"github.com/wagoodman/quill/internal"
-	"github.com/wagoodman/quill/internal/version"
 )
 
 var outputFormat string

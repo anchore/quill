@@ -2,18 +2,18 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/anchore/quill/internal"
 	"github.com/pkg/profile"
-	"github.com/wagoodman/quill/internal"
 	"os"
 
+	"github.com/anchore/quill/internal/config"
+	"github.com/anchore/quill/internal/log"
+	"github.com/anchore/quill/internal/logger"
+	"github.com/anchore/quill/pkg"
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/wagoodman/go-partybus"
-	"github.com/wagoodman/quill/internal/config"
-	"github.com/wagoodman/quill/internal/log"
-	"github.com/wagoodman/quill/internal/logger"
-	"github.com/wagoodman/quill/pkg"
 )
 
 var (

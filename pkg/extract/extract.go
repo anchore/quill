@@ -2,8 +2,8 @@ package extract
 
 import (
 	"fmt"
+	"github.com/anchore/quill/internal/log"
 	"github.com/blacktop/go-macho"
-	"github.com/wagoodman/quill/internal/log"
 	"io"
 )
 

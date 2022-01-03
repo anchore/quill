@@ -9,8 +9,8 @@ import (
 	"hash"
 	"unsafe"
 
+	"github.com/anchore/quill/pkg/macho"
 	"github.com/go-restruct/restruct"
-	"github.com/wagoodman/quill/pkg/macho"
 )
 
 func generateCodeDirectory(id string, hasher hash.Hash, hashes [][]byte, m *macho.File) (*macho.CodeDirectory, error) {

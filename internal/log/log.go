@@ -3,7 +3,7 @@ Package log contains the singleton object and helper functions for facilitating 
 */
 package log
 
-import "github.com/wagoodman/quill/pkg/logger"
+import "github.com/anchore/quill/pkg/logger"
 
 // Log is the singleton used to facilitate logging internally within
 var Log logger.Logger = &nopLogger{}

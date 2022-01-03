@@ -3,18 +3,17 @@ package cmd
 import (
 	"debug/macho"
 	"fmt"
-	"github.com/wagoodman/quill/pkg/sign"
 	"os"
 	"path"
 
-	"github.com/spf13/viper"
-
+	"github.com/anchore/quill/internal/bus"
+	"github.com/anchore/quill/internal/ui"
+	"github.com/anchore/quill/pkg/event"
+	"github.com/anchore/quill/pkg/sign"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
 	"github.com/wagoodman/go-partybus"
-	"github.com/wagoodman/quill/internal/bus"
-	"github.com/wagoodman/quill/internal/ui"
-	"github.com/wagoodman/quill/pkg/event"
 )
 
 func newSignCmd() *cobra.Command {
