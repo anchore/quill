@@ -37,7 +37,7 @@ func generateCodeDirectory(id string, hasher hash.Hash, hashes [][]byte, m *mach
 		if err != nil {
 			return nil, fmt.Errorf("unable to locate existing signing loader command: %w", err)
 		}
-		codeSize = signCmd.Dataoff
+		codeSize = signCmd.DataOffset
 	} else {
 		linkEditSeg := m.Segment("__LINKEDIT")
 		codeSize = uint32(linkEditSeg.Offset + linkEditSeg.Filesz)

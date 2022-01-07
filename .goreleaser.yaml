@@ -7,7 +7,7 @@ release:
   draft: true
 
 builds:
-  - binary: go-template-project
+  - binary: quill
     env:
       - CGO_ENABLED=0
     goos:
@@ -29,3 +29,4 @@ builds:
 
 archives:
   - format: tar.gz
+

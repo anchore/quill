@@ -2,9 +2,10 @@ package extract
 
 import (
 	"fmt"
+	"io"
+
 	"github.com/anchore/quill/internal/log"
 	"github.com/blacktop/go-macho"
-	"io"
 )
 
 // original source is from: https://github.com/RedMapleTech/machodump

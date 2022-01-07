@@ -2,9 +2,10 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/anchore/quill/pkg/extract"
 	"github.com/spf13/viper"
-	"os"
 
 	"github.com/anchore/quill/internal/bus"
 	"github.com/anchore/quill/internal/ui"

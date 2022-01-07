@@ -2,9 +2,10 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/anchore/quill/internal"
 	"github.com/pkg/profile"
-	"os"
 
 	"github.com/anchore/quill/internal/config"
 	"github.com/anchore/quill/internal/log"

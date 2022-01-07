@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+
 	"github.com/anchore/quill/internal/config"
 	"github.com/anchore/quill/internal/version"
 	"github.com/spf13/cobra"

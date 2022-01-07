@@ -2,9 +2,10 @@ package extract
 
 import (
 	"fmt"
-	"github.com/fullsailor/pkcs7"
 	"strings"
 	"unicode"
+
+	"github.com/fullsailor/pkcs7"
 
 	"github.com/blacktop/go-macho"
 	ctypes "github.com/blacktop/go-macho/pkg/codesign/types"

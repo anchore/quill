@@ -134,15 +134,11 @@ func addSigningData(id string, m *macho.File, keyFile, keyPassword, certFile str
 	// - entitlements blob (magic 0xfade7171)... optional, for later
 	// - blob wrapper for certificate chain + CMS message (magic 0xfade0b01)
 
-	sb := &macho.SuperBlob{
-		SuperBlobHeader: macho.SuperBlobHeader{
-			Magic: macho.CsMagicEmbeddedSignature,
-		},
-	}
+	sb := macho.NewSuperBlob(macho.MagicEmbeddedSignature)
 
-	sb.Add(macho.CsSlotCodedirectory, macho.NewBlob(macho.CsMagicCodedirectory, cdBytes))
-	sb.Add(macho.CsSlotRequirements, macho.NewBlob(macho.CsMagicRequirements, requirements))
-	sb.Add(macho.CsSlotCmsSignature, macho.NewBlob(macho.CsMagicBlobwrapper, cmsBytes))
+	sb.Add(macho.CsSlotCodedirectory, macho.NewBlob(macho.MagicCodedirectory, cdBytes))
+	sb.Add(macho.CsSlotRequirements, macho.NewBlob(macho.MagicRequirements, requirements))
+	sb.Add(macho.CsSlotCmsSignature, macho.NewBlob(macho.MagicBlobwrapper, cmsBytes))
 	sb.Finalize()
 
 	sbBytes, err := restruct.Pack(m.SigningByteOrder(), sb)
@@ -156,7 +152,7 @@ func addSigningData(id string, m *macho.File, keyFile, keyPassword, certFile str
 		return 0, err
 	}
 
-	if err = m.Patch(sbBytes, len(sbBytes), uint64(codeSigningCmd.Dataoff)); err != nil {
+	if err = m.Patch(sbBytes, len(sbBytes), uint64(codeSigningCmd.DataOffset)); err != nil {
 		return 0, fmt.Errorf("failed to patch super blob onto macho binary: %w", err)
 	}
 

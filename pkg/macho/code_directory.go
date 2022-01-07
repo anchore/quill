@@ -1,5 +1,7 @@
 package macho
 
+// Definitions From: https://github.com/Apple-FOSS-Mirror/Security/blob/5bcad85836c8bbb383f660aaf25b555a805a48e4/OSX/sec/Security/Tool/codesign.c#L53-L89
+
 const (
 	EarliestVersion     CdVersion = 0x20001
 	SupportsScatter     CdVersion = 0x20100
@@ -71,7 +73,6 @@ type CdVersion uint32
 type CdFlag uint32
 type ExecSegFlag uint64
 
-// From: https://github.com/Apple-FOSS-Mirror/Security/blob/5bcad85836c8bbb383f660aaf25b555a805a48e4/OSX/sec/Security/Tool/codesign.c#L53-L89
 type CodeDirectory struct {
 	CodeDirectoryHeader
 	/* followed by dynamic content as located by offset fields above */

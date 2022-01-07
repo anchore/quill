@@ -1,18 +1,6 @@
 package macho
 
-const (
-	// Magic numbers used by Code Signing
-	CsMagicRequirement             CsMagic = 0xfade0c00 // single Requirement blob
-	CsMagicRequirements            CsMagic = 0xfade0c01 // Requirements vector (internal requirements)
-	CsMagicCodedirectory           CsMagic = 0xfade0c02 // CodeDirectory blob
-	CsMagicEmbeddedSignature       CsMagic = 0xfade0cc0 // embedded form of signature data
-	CsMagicEmbeddedSignatureOld    CsMagic = 0xfade0b02 /* XXX */
-	CsMagicLibraryDependencyBlob   CsMagic = 0xfade0c05
-	CsMagicEmbeddedEntitlements    CsMagic = 0xfade7171 /* embedded entitlements */
-	CsMagicEmbeddedEntitlementsDer CsMagic = 0xfade7172 /* embedded entitlements */
-	CsMagicDetachedSignature       CsMagic = 0xfade0cc1 // multi-arch collection of embedded signatures
-	CsMagicBlobwrapper             CsMagic = 0xfade0b01 // used for the cms blob
-)
+// Definitions From: https://github.com/Apple-FOSS-Mirror/Security/blob/5bcad85836c8bbb383f660aaf25b555a805a48e4/OSX/sec/Security/Tool/codesign.c#L53-L89
 
 const (
 	CsSlotCodedirectory               SlotType = 0
@@ -31,4 +19,7 @@ const (
 	CsSlotTicketslot                  SlotType = 0x10002
 )
 
-type CsMagic uint32
+type BlobIndex struct {
+	Type   SlotType // type of entry
+	Offset uint32   // offset of entry (relative to superblob file offset)
+}
