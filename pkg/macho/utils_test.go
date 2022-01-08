@@ -80,7 +80,7 @@ func testAssetCopy(t *testing.T, assetName string) string {
 
 // testAsset returns the path to the cached asset file for a generated test fixture
 func testAsset(t *testing.T, assetName string) string {
-	assetPath := filepath.Join("test-fixtures", "cache", assetName)
+	assetPath := filepath.Join("test-fixtures", "assets", assetName)
 	if _, err := os.Stat(assetPath); os.IsNotExist(err) {
 		t.Fatalf("unable to find fixture %q", assetPath)
 	}

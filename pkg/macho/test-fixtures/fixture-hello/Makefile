@@ -1,5 +1,5 @@
 ROOT=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
-CACHE_DIR=$(ROOT)/../cache
+CACHE_DIR=$(ROOT)/../assets
 NAME=hello
 
 BOLD := $(shell tput -T linux bold)
