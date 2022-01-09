@@ -46,7 +46,7 @@ func (s *SuperBlob) Finalize() {
 		currentOffset += s.Blobs[idx].Length
 	}
 
-	// add extra page of 0s (expected by the codesign tool for validation)
+	// add extra page of 0s (wantHexHashes by the codesign tool for validation)
 	s.Pad = make([]byte, PageSize)
 	s.Length += uint32(len(s.Pad))
 }

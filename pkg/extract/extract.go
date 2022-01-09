@@ -9,6 +9,7 @@ import (
 )
 
 // original source is from: https://github.com/RedMapleTech/machodump
+// at the time of this writing I wasn't able to import this module due to the configured module name
 
 func Show(reader io.ReaderAt) error {
 

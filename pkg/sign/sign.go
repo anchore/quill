@@ -68,16 +68,13 @@ func addSigningData(id string, m *macho.File, keyFile, keyPassword, certFile str
 	//  input:  entire binary
 	//  output: array of hashes (for each page)
 	hasher := sha256.New()
-	hashes, err := m.HashPages(hasher)
-	if err != nil {
-		return 0, err
-	}
 
 	// generate code directory
 	//  input: binary pages (with load command, no signature)
 	//  output: code directory
 
-	cd, err := generateCodeDirectory(id, hasher, hashes, m)
+	flags := macho.LinkerSigned | macho.Adhoc // TODO: revaluate
+	cd, err := generateCodeDirectory(id, hasher, m, flags)
 	if err != nil {
 		return 0, err
 	}

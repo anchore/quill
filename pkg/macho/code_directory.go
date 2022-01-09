@@ -89,10 +89,10 @@ type CodeDirectoryHeader struct {
 	CodeLimit     uint32    // limit to main image signature range
 	HashSize      uint8     // size of each hash in bytes
 	HashType      HashType  // type of hash (cdHashType* constants)
-	//Pad1__        uint8     // unused (must be zero)
+	// Pad1__        uint8     // unused (must be zero)
 	Platform uint8 // platform identifier zero if not platform binary
 	PageSize uint8 // log2(page size in bytes) 0 => infinite
-	//Pad2__        uint32    // unused (must be zero)
+	// Pad2__        uint32    // unused (must be zero)
 	Spare2 uint32 // unused (must be zero)
 
 	/* Version 0x20100 */
@@ -100,7 +100,7 @@ type CodeDirectoryHeader struct {
 
 	/* Version 0x20200 */
 	TeamOffset uint32 /* offset of optional team identifier */
-	//Pad3__     uint32 // unused (must be zero)
+	// Pad3__     uint32 // unused (must be zero)
 
 	/* Version 0x20300 */
 	Spare3      uint32 /* unused (must be zero) */

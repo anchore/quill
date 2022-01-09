@@ -13,11 +13,10 @@ import (
 	"github.com/go-restruct/restruct"
 )
 
-func generateCodeDirectory(id string, hasher hash.Hash, hashes [][]byte, m *macho.File) (*macho.CodeDirectory, error) {
+func generateCodeDirectory(id string, hasher hash.Hash, m *macho.File, flags macho.CdFlag) (*macho.CodeDirectory, error) {
 	cdSize := unsafe.Sizeof(macho.BlobHeader{}) + unsafe.Sizeof(macho.CodeDirectoryHeader{})
 	idOff := int32(cdSize)
 	hashOff := idOff + int32(len(id)+1)
-	//cdSz := hashOff + int32(len(hashes)*hasher.Size())
 
 	var ht macho.HashType
 	switch hasher.Size() {
@@ -43,10 +42,15 @@ func generateCodeDirectory(id string, hasher hash.Hash, hashes [][]byte, m *mach
 		codeSize = uint32(linkEditSeg.Offset + linkEditSeg.Filesz)
 	}
 
+	hashes, err := m.HashPages(hasher)
+	if err != nil {
+		return nil, err
+	}
+
 	buff := bytes.Buffer{}
 
 	// write the identifier
-	_, err := buff.Write([]byte(id + "\000"))
+	_, err = buff.Write([]byte(id + "\000"))
 	if err != nil {
 		return nil, fmt.Errorf("unable to write ID to code directory: %w", err)
 	}
@@ -60,11 +64,9 @@ func generateCodeDirectory(id string, hasher hash.Hash, hashes [][]byte, m *mach
 	}
 
 	return &macho.CodeDirectory{
-		//Magic:        CSMAGIC_CODEDIRECTORY,
-		//Length:       uint32(cdSz),
 		CodeDirectoryHeader: macho.CodeDirectoryHeader{
 			Version:      macho.SupportsExecseg,
-			Flags:        macho.LinkerSigned | macho.Adhoc, // TODO: revaluate
+			Flags:        flags,
 			HashOffset:   uint32(hashOff),
 			IdentOffset:  uint32(idOff),
 			NCodeSlots:   uint32(len(hashes)),
