@@ -75,7 +75,7 @@ func testAssetCopy(t *testing.T, assetName string) string {
 	dir := t.TempDir()
 	destPath := filepath.Join(dir, assetName)
 	copyFile(t, assetPath, destPath)
-	return assetPath
+	return destPath
 }
 
 // testAsset returns the path to the cached asset file for a generated test fixture

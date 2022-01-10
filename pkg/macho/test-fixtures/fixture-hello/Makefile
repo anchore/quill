@@ -25,7 +25,7 @@ endef
 
 
 .PHONY: all
-all: check-mac signing-material build
+all: check signing-material build
 
 
 .PHONY: help
@@ -33,9 +33,10 @@ help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "$(BOLD)$(CYAN)%-25s$(RESET)%s\n", $$1, $$2}'
 
 
-.PHONY: check-mac
-check-mac:
+.PHONY: check
+check:
 	@if [ $(shell uname) != "Darwin" ]; then echo "must run this on a mac" && exit 1; fi;
+	@if [ $(shell uname -m) != "x86_64" ]; then echo "must run this on x86_64" && exit 1; fi;
 
 
 # $(SIGNED_BIN)

@@ -61,7 +61,6 @@ func TestFile_CodeSigningCmd(t *testing.T) {
 	tests := []struct {
 		name       string
 		binaryPath string
-		err        bool
 		cmd        *CodeSigningCommand
 		offset     uint64
 	}{
@@ -120,11 +119,7 @@ func TestFile_CodeSigningCmd(t *testing.T) {
 			m, err := NewFile(tt.binaryPath)
 			require.NoError(t, err)
 			cmd, offset, err := m.CodeSigningCmd()
-			if tt.err {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-			}
+			require.NoError(t, err)
 			assert.Equalf(t, tt.cmd, cmd, "signing command different")
 			assert.Equalf(t, tt.offset, offset, "signing offset different")
 		})
@@ -217,6 +212,119 @@ func TestFile_HashPages(t *testing.T) {
 			}
 
 			assert.Equal(t, tt.wantHexHashes, gotHexHash)
+		})
+	}
+}
+
+func TestFile_UpdateCodeSigningCmdDataSize(t *testing.T) {
+	generateMakeFixture(t, "fixture-hello")
+
+	tests := []struct {
+		name       string
+		binaryPath string
+		size       int
+	}{
+		{
+			name:       "can update the size of an existing code signing cmd",
+			binaryPath: testAssetCopy(t, "hello_adhoc_signed"),
+			size:       0x42,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m, err := NewFile(tt.binaryPath)
+			require.NoError(t, err)
+
+			cmd, _, err := m.CodeSigningCmd()
+			require.NoError(t, err)
+			assert.NotEqual(t, cmd.DataSize, uint32(tt.size), "size matches test value")
+
+			require.NoError(t, m.UpdateCodeSigningCmdDataSize(tt.size))
+
+			cmd, _, err = m.CodeSigningCmd()
+			require.NoError(t, err)
+			assert.Equalf(t, cmd.DataSize, uint32(tt.size), "unexpected size")
+		})
+	}
+}
+
+func TestFile_AddDummyCodeSigningCmd(t *testing.T) {
+	generateMakeFixture(t, "fixture-hello")
+
+	tests := []struct {
+		name       string
+		binaryPath string
+		offset     uint64
+		dataOffset uint32
+	}{
+		{
+			name:       "can add a new code signing segment to an unsigned binary",
+			binaryPath: testAssetCopy(t, "hello"),
+			// this should be where the next loader command will go, so "xxd -s 0x578  -l 16 ./hello" should show only zeros
+			offset: 0x578,
+			// this offset should be the end of the file, so "xxd -s 0xC110  -l 4 ./hello" will show nothing
+			dataOffset: 0xc110,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m, err := NewFile(tt.binaryPath)
+			require.NoError(t, err)
+
+			assert.False(t, m.HasCodeSigningCmd(), "already has code signing loader command")
+
+			calculatedCmdOffset := m.nextCmdOffset()
+
+			require.NoError(t, m.AddDummyCodeSigningCmd())
+
+			assert.True(t, m.HasCodeSigningCmd(), "cannot find signing loader command")
+
+			cmd, offset, err := m.CodeSigningCmd()
+			require.NoError(t, err)
+
+			// offset to loader command
+			assert.Equal(t, tt.offset, offset, "unexpected cmd offset")
+			assert.Equal(t, offset, calculatedCmdOffset, "calculated cmd offset different than placed cmd")
+
+			// offset to data that the loader command operates on
+			assert.Equal(t, tt.dataOffset, cmd.DataOffset, "unexpected data offset")
+		})
+	}
+}
+
+func TestFile_UpdateSegmentHeader(t *testing.T) {
+	generateMakeFixture(t, "fixture-hello")
+
+	tests := []struct {
+		name       string
+		binaryPath string
+		segment    string
+	}{
+		{
+			name:       "can modify single elements in segment header",
+			binaryPath: testAssetCopy(t, "hello"),
+			segment:    "__LINKEDIT",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m, err := NewFile(tt.binaryPath)
+			require.NoError(t, err)
+
+			// lets modify a single element from the segment header and make certain that
+			// the patched value can be read and that no other values changed
+			originalLinkEdit := m.Segment("__LINKEDIT")
+			modifiedLinkEdit := *originalLinkEdit
+			modifiedLinkEdit.Filesz = 0x42
+
+			err = m.UpdateSegmentHeader(modifiedLinkEdit.SegmentHeader)
+			require.NoError(t, err)
+
+			newLinkEditSegment := m.Segment("__LINKEDIT")
+
+			assert.NotEqual(t, originalLinkEdit.SegmentHeader, newLinkEditSegment.SegmentHeader)
+			assert.Equal(t, modifiedLinkEdit.SegmentHeader, newLinkEditSegment.SegmentHeader)
+			assert.Equal(t, modifiedLinkEdit.Filesz, uint64(0x42))
 		})
 	}
 }
