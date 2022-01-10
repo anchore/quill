@@ -18,7 +18,7 @@ func TestExtractBinariesTo(t *testing.T) {
 	}{
 		{
 			name:       "extract binaries from universal binary",
-			binaryPath: testAsset(t, "ls_signed"),
+			binaryPath: testAsset(t, "ls_universal_signed"),
 		},
 	}
 	for _, tt := range tests {
@@ -51,7 +51,7 @@ func TestPackageUniversalBinary(t *testing.T) {
 	}{
 		{
 			name:       "repackage binaries from universal binary",
-			binaryPath: testAsset(t, "ls_signed"),
+			binaryPath: testAsset(t, "ls_universal_signed"),
 		},
 	}
 	for _, tt := range tests {

@@ -39,8 +39,8 @@ func TestFile_HasCodeSigningCmd(t *testing.T) {
 			hasSigningCmd: true,
 		},
 		{
-			name:          "signed universal binary",
-			binaryPath:    testAsset(t, "ls_signed"),
+			name:          "signed binary extracted from universal binary",
+			binaryPath:    testAsset(t, "ls_x86_64_signed"),
 			hasSigningCmd: true,
 		},
 	}
@@ -101,18 +101,18 @@ func TestFile_CodeSigningCmd(t *testing.T) {
 			offset: 0x7a0,
 		},
 		{
-			name:       "signed universal binary",
-			binaryPath: testAsset(t, "ls_signed"),
+			name:       "signed binary extracted from a universal binary",
+			binaryPath: testAsset(t, "ls_x86_64_signed"),
 			cmd: &CodeSigningCommand{
 				Cmd:  29,
 				Size: 16,
-				// $ xxd -s 0x14E07D0  -l 4 ./syft_signed
+				// $ xxd -s 0xD230  -l 4 ./ls_x86_64_signed
 				// 014e07d0: fade 0cc0
 				// same as the MAGIC_EMBEDDED_SIGNATURE value....
-				DataOffset: 0x14E07D0,
-				DataSize:   296480,
+				DataOffset: 0xD230,
+				DataSize:   5728,
 			},
-			offset: 0x7a0,
+			offset: 0x728,
 		},
 	}
 	for _, tt := range tests {
@@ -184,8 +184,8 @@ func TestFile_HashPages(t *testing.T) {
 			},
 		},
 		{
-			name:       "for a signed, universal binary",
-			binaryPath: testAsset(t, "ls_signed"),
+			name:       "for a signed binary extracted from a universal binary",
+			binaryPath: testAsset(t, "ls_x86_64_signed"),
 			wantHexHashes: []string{
 				"6562c7e727d9f71669863f2009aea5d5b1ed202274d7367ef623e836e2b095a8",
 				"ad7facb2586fc6e966c004d7d1d16b024f5805ff7cb47c7a85dabd8b48892ca7",
