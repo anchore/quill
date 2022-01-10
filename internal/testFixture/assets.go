@@ -1,4 +1,4 @@
-package macho
+package testFixture
 
 import (
 	"bufio"
@@ -13,8 +13,8 @@ import (
 	"github.com/gookit/color"
 )
 
-// generateMakeFixture will run the default make target for the given test fixture path
-func generateMakeFixture(t *testing.T, fixtureName string) {
+// Make will run the default make target for the given test fixture path
+func Make(t *testing.T, fixtureName string) {
 	cwd, err := os.Getwd()
 	if err != nil {
 		t.Errorf("unable to get cwd: %+v", err)
@@ -69,17 +69,17 @@ func generateMakeFixture(t *testing.T, fixtureName string) {
 	}
 }
 
-// testAssetCopy will setup a new binary from copyFile of fixture for a test setup (+ autocleanup)
-func testAssetCopy(t *testing.T, assetName string) string {
-	assetPath := testAsset(t, assetName)
+// AssetCopy will setup a new binary from copyFile of fixture for a test setup (+ autocleanup)
+func AssetCopy(t *testing.T, assetName string) string {
+	assetPath := Asset(t, assetName)
 	dir := t.TempDir()
 	destPath := filepath.Join(dir, assetName)
 	copyFile(t, assetPath, destPath)
 	return destPath
 }
 
-// testAsset returns the path to the cached asset file for a generated test fixture
-func testAsset(t *testing.T, assetName string) string {
+// Asset returns the path to the cached asset file for a generated test fixture
+func Asset(t *testing.T, assetName string) string {
 	assetPath := filepath.Join("test-fixtures", "assets", assetName)
 	if _, err := os.Stat(assetPath); os.IsNotExist(err) {
 		t.Fatalf("unable to find fixture %q", assetPath)

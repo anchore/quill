@@ -6,11 +6,13 @@ import (
 	"path"
 	"testing"
 
+	"github.com/anchore/quill/internal/testFixture"
+
 	"github.com/stretchr/testify/require"
 )
 
 func TestExtractBinariesTo(t *testing.T) {
-	generateMakeFixture(t, "fixture-ls")
+	testFixture.Make(t, "fixture-ls")
 
 	tests := []struct {
 		name       string
@@ -18,7 +20,7 @@ func TestExtractBinariesTo(t *testing.T) {
 	}{
 		{
 			name:       "extract binaries from universal binary",
-			binaryPath: testAsset(t, "ls_universal_signed"),
+			binaryPath: testFixture.Asset(t, "ls_universal_signed"),
 		},
 	}
 	for _, tt := range tests {
@@ -43,7 +45,7 @@ func TestExtractBinariesTo(t *testing.T) {
 }
 
 func TestPackageUniversalBinary(t *testing.T) {
-	generateMakeFixture(t, "fixture-ls")
+	testFixture.Make(t, "fixture-ls")
 
 	tests := []struct {
 		name       string
@@ -51,7 +53,7 @@ func TestPackageUniversalBinary(t *testing.T) {
 	}{
 		{
 			name:       "repackage binaries from universal binary",
-			binaryPath: testAsset(t, "ls_universal_signed"),
+			binaryPath: testFixture.Asset(t, "ls_universal_signed"),
 		},
 	}
 	for _, tt := range tests {
