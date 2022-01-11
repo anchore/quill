@@ -56,7 +56,7 @@ func loadPrivateKey(reader io.Reader, password string) (crypto.PrivateKey, error
 
 	var privPemBytes []byte
 
-	if password != "" {
+	if password != "" && x509.IsEncryptedPEMBlock(pemObj) {
 		// why is this deprecated?
 		//	> "Legacy PEM encryption as specified in RFC 1423 is insecure by
 		//  > design. Since it does not authenticate the ciphertext, it is vulnerable to

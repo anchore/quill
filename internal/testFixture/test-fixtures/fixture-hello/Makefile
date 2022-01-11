@@ -8,7 +8,7 @@ PURPLE := $(shell tput -T linux setaf 5)
 TITLE := $(BOLD)$(PURPLE)
 RESET := $(shell tput -T linux sgr0)
 
-IDENTITY=$(hostname)
+IDENTITY=$(shell hostname)
 CN=$(IDENTITY).local
 
 BIN=$(CACHE_DIR)/$(NAME)
@@ -88,10 +88,11 @@ $(CERT_FILE): $(KEY_FILE) ## create a self-signed certificate
 	openssl req -new -key $(KEY_FILE) \
 					 -out $(CSR_FILE) \
 					 -config /etc/ssl/openssl.cnf \
-					 -subj "/C=US/ST=Test/L=Test/O=Test/CN=$(CN)"
+					 -subj "/C=US/ST=QuillTacular/L=NiQuill/O=Quillamanjaro/CN=$(CN)"
 
 	# create the certificate
-	openssl x509 -req -days 10 \
+	openssl x509 -req \
+				 -days 10000 \
 				 -in $(CSR_FILE) \
 				 -signkey $(KEY_FILE) \
 				 -out $(CERT_FILE) \
