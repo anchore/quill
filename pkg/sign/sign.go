@@ -5,6 +5,7 @@ import (
 	"encoding/asn1"
 	"fmt"
 
+	"github.com/anchore/quill/internal/log"
 	"github.com/anchore/quill/pkg/macho"
 	"github.com/fullsailor/pkcs7"
 	"github.com/go-restruct/restruct"
@@ -19,6 +20,10 @@ func Sign(id, path, keyFile, keyPassword, certFile string) error {
 	// check there already isn't a LcCodeSignature loader already (if there is, bail)
 	if m.HasCodeSigningCmd() {
 		return fmt.Errorf("already has code signing cmd")
+	}
+
+	if certFile == "" {
+		log.Warnf("only ad-hoc signing, which means that anyone can alter the binary contents without you knowing (there is no cryptographic signature)")
 	}
 
 	// [A] (patch) add **dummy** LcCodeSignature loader
@@ -73,8 +78,14 @@ func addSigningData(id string, m *macho.File, keyFile, keyPassword, certFile str
 	//  input: binary pages (with load command, no signature)
 	//  output: code directory
 
-	flags := macho.LinkerSigned | macho.Adhoc // TODO: revaluate
-	cd, err := generateCodeDirectory(id, hasher, m, flags)
+	var cdFlags macho.CdFlag
+	if certFile != "" {
+		cdFlags = macho.LinkerSigned | macho.Adhoc // TODO: revaluate
+	} else {
+		cdFlags = macho.LinkerSigned | macho.Adhoc // TODO: revaluate
+	}
+
+	cd, err := generateCodeDirectory(id, hasher, m, cdFlags)
 	if err != nil {
 		return 0, err
 	}
@@ -89,40 +100,44 @@ func addSigningData(id string, m *macho.File, keyFile, keyPassword, certFile str
 		return 0, err
 	}
 
-	// generate plist
-	//  input: code directory hashes
-	//  output: bytes
+	var cmsObj *pkcs7.SignedData
+	var cmsBytes []byte
+	if certFile != "" {
+		// generate plist
+		//  input: code directory hashes
+		//  output: bytes
 
-	plst, err := generatePList([][]byte{cdHash})
-	if err != nil {
-		return 0, err
-	}
+		plst, err := generatePList([][]byte{cdHash})
+		if err != nil {
+			return 0, err
+		}
 
-	// generate the entitlements
-	//  output: bytes?
-	// TODO
+		// generate the entitlements
+		//  output: bytes?
+		// TODO
 
-	// generate CMS
-	//  input: plist, + ?
-	//  output: bytes
-	attrs := []pkcs7.Attribute{
-		{
-			// 1.2.840.113635.100.9.1 is the PLIST
-			Type:  asn1.ObjectIdentifier{1, 2, 840, 113635, 100, 9, 1},
-			Value: plst,
-		},
-		// TODO: 1.2.840.113635.100.9.2 (what is this?)
-	}
+		// generate CMS
+		//  input: plist, + ?
+		//  output: bytes
+		attrs := []pkcs7.Attribute{
+			{
+				// 1.2.840.113635.100.9.1 is the PLIST
+				Type:  asn1.ObjectIdentifier{1, 2, 840, 113635, 100, 9, 1},
+				Value: plst,
+			},
+			// TODO: 1.2.840.113635.100.9.2 (what is this?)
+		}
 
-	// TODO: add certificate chain
-	cmsObj, cmsBytes, err := generateCMS(keyFile, keyPassword, certFile, attrs)
-	if err != nil {
-		return 0, err
+		// TODO: add certificate chain
+		cmsObj, cmsBytes, err = generateCMS(keyFile, keyPassword, certFile, attrs)
+		if err != nil {
+			return 0, err
+		}
 	}
 
 	// generate the requirements
 	//  output: bytes?
-	requirements := generateRequirements(*cmsObj)
+	requirements := generateRequirements(cmsObj)
 
 	// encode the superblob with the following blobs:
 
@@ -135,10 +150,12 @@ func addSigningData(id string, m *macho.File, keyFile, keyPassword, certFile str
 
 	sb.Add(macho.CsSlotCodedirectory, macho.NewBlob(macho.MagicCodedirectory, cdBytes))
 	sb.Add(macho.CsSlotRequirements, macho.NewBlob(macho.MagicRequirements, requirements))
-	sb.Add(macho.CsSlotCmsSignature, macho.NewBlob(macho.MagicBlobwrapper, cmsBytes))
+	if len(cmsBytes) > 0 {
+		sb.Add(macho.CsSlotCmsSignature, macho.NewBlob(macho.MagicBlobwrapper, cmsBytes))
+	}
 	sb.Finalize()
 
-	sbBytes, err := restruct.Pack(m.SigningByteOrder(), sb)
+	sbBytes, err := restruct.Pack(m.SigningByteOrder(), &sb)
 	if err != nil {
 		return 0, fmt.Errorf("unable to encode super blob: %w", err)
 	}
