@@ -100,7 +100,6 @@ func addSigningData(id string, m *macho.File, keyFile, keyPassword, certFile str
 		return 0, err
 	}
 
-	var cmsObj *pkcs7.SignedData
 	var cmsBytes []byte
 	if certFile != "" {
 		// generate plist
@@ -129,7 +128,7 @@ func addSigningData(id string, m *macho.File, keyFile, keyPassword, certFile str
 		}
 
 		// TODO: add certificate chain
-		cmsObj, cmsBytes, err = generateCMS(keyFile, keyPassword, certFile, attrs)
+		cmsBytes, err = generateCMS(keyFile, keyPassword, certFile, attrs)
 		if err != nil {
 			return 0, err
 		}
@@ -137,7 +136,7 @@ func addSigningData(id string, m *macho.File, keyFile, keyPassword, certFile str
 
 	// generate the requirements
 	//  output: bytes?
-	requirements := generateRequirements(cmsObj)
+	requirements := generateRequirements()
 
 	// encode the superblob with the following blobs:
 
