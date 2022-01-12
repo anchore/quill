@@ -147,10 +147,6 @@ func (m *File) AddDummyCodeSigningCmd() (err error) {
 	return nil
 }
 
-func (m *File) SigningByteOrder() binary.ByteOrder {
-	return binary.BigEndian
-}
-
 func (m *File) UpdateCodeSigningCmdDataSize(newSize int) (err error) {
 	cmd, offset, err := m.CodeSigningCmd()
 

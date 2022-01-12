@@ -9,25 +9,32 @@ import (
 	"hash"
 	"unsafe"
 
+	"howett.net/plist"
+
 	"github.com/anchore/quill/pkg/macho"
 	"github.com/go-restruct/restruct"
 )
 
-func generateCodeDirectory(id string, hasher hash.Hash, m *macho.File, flags macho.CdFlag) (*macho.CodeDirectory, error) {
-	cdSize := unsafe.Sizeof(macho.BlobHeader{}) + unsafe.Sizeof(macho.CodeDirectoryHeader{})
-	idOff := int32(cdSize)
-	hashOff := idOff + int32(len(id)+1)
-
-	var ht macho.HashType
-	switch hasher.Size() {
-	case sha256.Size:
-		ht = macho.HashTypeSha256
-	case sha1.Size:
-		ht = macho.HashTypeSha1
-	default:
-		return nil, fmt.Errorf("unsupported hash type")
+func generateCodeDirectory(id string, hasher hash.Hash, m *macho.File, flags macho.CdFlag) ([]byte, []byte, error) {
+	cd, err := newCodeDirectoryFromMacho(id, hasher, m, flags)
+	if err != nil {
+		return nil, nil, err
 	}
 
+	cdBytes, err := restruct.Pack(macho.SigningOrder, cd)
+	if err != nil {
+		return nil, nil, fmt.Errorf("unable to encode code directory: %w", err)
+	}
+
+	cdHash, err := generateCdHash(cd)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return cdBytes, cdHash, nil
+}
+
+func newCodeDirectoryFromMacho(id string, hasher hash.Hash, m *macho.File, flags macho.CdFlag) (*macho.CodeDirectory, error) {
 	textSeg := m.Segment("__TEXT")
 
 	var codeSize uint32
@@ -47,10 +54,28 @@ func generateCodeDirectory(id string, hasher hash.Hash, m *macho.File, flags mac
 		return nil, err
 	}
 
+	return newCodeDirectory(id, hasher, textSeg.Offset, textSeg.Filesz, codeSize, hashes, flags)
+}
+
+func newCodeDirectory(id string, hasher hash.Hash, execOffset, execSize uint64, codeSize uint32, hashes [][]byte, flags macho.CdFlag) (*macho.CodeDirectory, error) {
+	cdSize := unsafe.Sizeof(macho.BlobHeader{}) + unsafe.Sizeof(macho.CodeDirectoryHeader{})
+	idOff := int32(cdSize)
+	hashOff := idOff + int32(len(id)+1)
+
+	var ht macho.HashType
+	switch hasher.Size() {
+	case sha256.Size:
+		ht = macho.HashTypeSha256
+	case sha1.Size:
+		ht = macho.HashTypeSha1
+	default:
+		return nil, fmt.Errorf("unsupported hash type")
+	}
+
 	buff := bytes.Buffer{}
 
 	// write the identifier
-	_, err = buff.Write([]byte(id + "\000"))
+	_, err := buff.Write([]byte(id + "\000"))
 	if err != nil {
 		return nil, fmt.Errorf("unable to write ID to code directory: %w", err)
 	}
@@ -74,8 +99,8 @@ func generateCodeDirectory(id string, hasher hash.Hash, m *macho.File, flags mac
 			HashSize:     uint8(hasher.Size()),
 			HashType:     ht,
 			PageSize:     uint8(macho.PageSizeBits),
-			ExecSegBase:  textSeg.Offset,
-			ExecSegLimit: textSeg.Filesz,
+			ExecSegBase:  execOffset,
+			ExecSegLimit: execSize,
 			ExecSegFlags: macho.ExecsegMainBinary,
 		},
 		Payload: buff.Bytes(),
@@ -100,4 +125,16 @@ func generateCdHash(cd *macho.CodeDirectory) ([]byte, error) {
 	default:
 		return nil, fmt.Errorf("unsupported hash type")
 	}
+}
+
+func generateCodeDirectoryPList(hashes [][]byte) ([]byte, error) {
+	buff := bytes.Buffer{}
+	encoder := plist.NewEncoder(&buff)
+	encoder.Indent("\t")
+
+	if err := encoder.Encode(map[string][][]byte{"cdhashes": hashes}); err != nil {
+		return nil, fmt.Errorf("unable to generate plist: %w", err)
+	}
+
+	return buff.Bytes(), nil
 }

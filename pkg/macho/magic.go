@@ -1,5 +1,7 @@
 package macho
 
+import "encoding/binary"
+
 const (
 	// Magic numbers used by Code Signing
 	MagicRequirement             Magic = 0xfade0c00 // single Requirement blob
@@ -15,3 +17,5 @@ const (
 )
 
 type Magic uint32
+
+var SigningOrder = binary.BigEndian
