@@ -22,41 +22,45 @@ git lfs install
 
 Darwin executables are Mach-O formatted files that have the approximate layout:
 ```
- ┌──────────────────────────────────────┐
- │                                      │
- │ Header                               │
- │                                      │
- ├──────────────────────────────────────┤
- │ Load Command 1                       │
- ├──────────────────────────────────────┤
- │ Load Command 2                       │
- ├──────────────────────────────────────┤
- │ Load Command ...                     │
- ├──────────────────────────────────────┤
- │ Load Command N                       │
- ├──────────────────────────────────────┤
- │                                      │
- │                                      │
- │              PADDING                 │
- │                                      │
- │                                      │
- ├──────────────────────────────────────┤
- │                                      │
- │ Segment 1:  __PAGEZERO               │
- │                                      │
- ├──────────────────────────────────────┤
- │                                      │
- │ Segment 2:  __TEXT                   │
- │                                      │
- ├──────────────────────────────────────┤
- │                                      │
- │ Segment ...                          │
- │                                      │
- ├──────────────────────────────────────┤
- │                                      │
- │ Segment N:  __LINKEDIT               │
- │                                      │
- └──────────────────────────────────────┘
+
+   ┌──────────────────────────────┐      ┌──────────────────────────────┐
+   │                              │      │                              │
+   │ Header                       │      │ Header                       │
+   │                              │      │                              │
+   ├──────────────────────────────┤      ├──────────────────────────────┤
+   │ Load Command 1               │      │ Load Command 1               │
+   ├──────────────────────────────┤      ├──────────────────────────────┤
+   │ Load Command 2               │      │ Load Command 2               │
+   ├──────────────────────────────┤      ├──────────────────────────────┤
+   │ Load Command ...             │      │ Load Command ...             │
+   ├──────────────────────────────┤      ├──────────────────────────────┤
+   │ Load Command N               │      │ Load Command N               │
+   ├──────────────────────────────┤      ├──────────────────────────────┤
+   │                              │      │ Code Signing Load Command    │   <--- added by codesign/quill
+   │                              │      ├──────────────────────────────┤
+   │           PADDING            │      │                              │
+   │                              │      │           PADDING            │
+   │                              │      │                              │
+   ├──────────────────────────────┤      ├──────────────────────────────┤
+   │                              │      │                              │
+   │ Segment 1:  __PAGEZERO       │      │ Segment 1:  __PAGEZERO       │
+   │                              │      │                              │
+   ├──────────────────────────────┤      ├──────────────────────────────┤
+   │                              │      │                              │
+   │ Segment 2:  __TEXT           │      │ Segment 2:  __TEXT           │
+   │                              │      │                              │
+   ├──────────────────────────────┤      ├──────────────────────────────┤
+   │                              │      │                              │
+   │ Segment ...                  │      │ Segment ...                  │
+   │                              │      │                              │
+   ├──────────────────────────────┤      ├──────────────────────────────┤
+   │                              │      │                              │
+   │ Segment N:  __LINKEDIT       │      │ Segment N:  __LINKEDIT       │
+   │                              │      │                              │
+   └──────────────────────────────┘      ├- - - - - - - - - - - - - - - ┤
+                                         │ Code Signing "Super Blob"    │   <--- added by codesign/quill
+                                         └──────────────────────────────┘
+
 ```
 
 A few definitions:
@@ -70,7 +74,7 @@ A few definitions:
 - The `__LINKEDIT` segment is information used for dynamic linking and is required to be the last segment in the file (this is important for signing)
 
 
-### iOS Code signing
+### iOS code signing
 
 Code signing adds additional information to the binary that can be used to verify the integrity of the binary itself. 
 There are generically two ways to "sign" a macho binary:
@@ -88,6 +92,13 @@ first segment in order to add the new load command. Without this assumption ther
 load commands and segments that must be updated, which complicates signing a binary considerably. Many compilers
 tend to leave enough padding intentionally for the signing process.
 
+The code signature data at the end of the `__LINKEDIT` segment can contain the following information:
+- Entitlements blob: an XML PList enumerating the extra capabilities the binary requests access to when in use
+- Requirements blob: additional conditions required for the signature to be valid
+- Code directory blob: hashes of each page of the binary
+- Signature blob: A CMS (PKCS7) envelope containing the cryptographic signature made against the code directory blob
+
+All of these blobs are contained within a single "super blob".
 
 #### Useful resources
 
