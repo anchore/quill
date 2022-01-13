@@ -2,17 +2,16 @@ package sign
 
 import (
 	"bytes"
-	"crypto/sha1"
+	"crypto/sha1" // nolint: gosec
 	"crypto/sha256"
 	"encoding/binary"
 	"fmt"
 	"hash"
 	"unsafe"
 
-	"howett.net/plist"
-
 	"github.com/anchore/quill/pkg/macho"
 	"github.com/go-restruct/restruct"
+	"howett.net/plist"
 )
 
 func generateCodeDirectory(id string, hasher hash.Hash, m *macho.File, flags macho.CdFlag) ([]byte, []byte, error) {
@@ -115,6 +114,7 @@ func generateCdHash(cd *macho.CodeDirectory) ([]byte, error) {
 	}
 	switch cd.HashType {
 	case macho.HashTypeSha1:
+		// nolint: gosec
 		h := sha1.New()
 		h.Write(b)
 		return h.Sum(nil), nil

@@ -1,4 +1,4 @@
-package testFixture
+package testfixture
 
 import (
 	"bufio"
@@ -93,8 +93,7 @@ func copyFile(t *testing.T, src, dest string) {
 		t.Fatalf("unable to read source: %+v", err)
 	}
 
-	if err = ioutil.WriteFile(dest, input, 0644); err != nil {
+	if err = os.WriteFile(dest, input, 0600); err != nil {
 		t.Fatalf("unable to write to destintion: %+v", err)
-
 	}
 }

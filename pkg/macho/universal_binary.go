@@ -32,8 +32,8 @@ type UniversalFileHeader struct {
 
 // A UniversalArchHeader represents a fat header for a specific image architecture.
 type UniversalArchHeader struct {
-	Cpu    macho.Cpu
-	SubCpu uint32
+	CPU    macho.Cpu
+	SubCPU uint32
 	Offset uint32
 	Size   uint32
 	Align  uint32
@@ -50,7 +50,7 @@ func NewUniversalFile() UniversalFile {
 func (u *UniversalFile) Add(binaries ...string) error {
 	var offset = int64(align)
 	if len(u.Arches) > 0 {
-		lastEntry := u.Arches[len(u.Arches)]
+		lastEntry := u.Arches[len(u.Arches)-1]
 		offset = (int64(lastEntry.Offset+lastEntry.Size) + align - 1) / align * align
 	}
 	for _, path := range binaries {
@@ -69,8 +69,8 @@ func (u *UniversalFile) Add(binaries ...string) error {
 		}
 
 		u.Arches = append(u.Arches, UniversalArchHeader{
-			Cpu:    m.Cpu,
-			SubCpu: m.SubCpu,
+			CPU:    m.Cpu,
+			SubCPU: m.SubCpu,
 			Offset: uint32(offset),
 			Size:   uint32(len(data)),
 			Align:  alignBits,
@@ -80,7 +80,7 @@ func (u *UniversalFile) Add(binaries ...string) error {
 		offset += int64(len(data))
 		offset = (offset + align - 1) / align * align
 
-		u.UniversalFileHeader.Count += 1
+		u.UniversalFileHeader.Count++
 	}
 	return nil
 }

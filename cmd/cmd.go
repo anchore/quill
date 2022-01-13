@@ -5,13 +5,12 @@ import (
 	"os"
 
 	"github.com/anchore/quill/internal"
-	"github.com/pkg/profile"
-
 	"github.com/anchore/quill/internal/config"
 	"github.com/anchore/quill/internal/log"
 	"github.com/anchore/quill/internal/logger"
 	"github.com/anchore/quill/pkg"
 	"github.com/gookit/color"
+	"github.com/pkg/profile"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/wagoodman/go-partybus"
@@ -104,7 +103,6 @@ func initLogging() {
 
 	logWrapper := logger.NewLogrusLogger(cfg)
 	pkg.SetLogger(logWrapper)
-
 }
 
 func logAppConfig() {

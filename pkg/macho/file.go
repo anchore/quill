@@ -55,7 +55,7 @@ func (m *File) refresh() error {
 		return fmt.Errorf("unable to parse macho file: %w", err)
 	}
 
-	if _, err = f.Seek(io.SeekStart, 0); err != nil {
+	if _, err = f.Seek(0, io.SeekStart); err != nil {
 		return fmt.Errorf("unable to reset macho file cursor: %w", err)
 	}
 
@@ -90,7 +90,7 @@ func (m *File) nextCmdOffset() uint64 {
 func (m *File) hasRoomForNewCmd() bool {
 	readSize := int64(unsafe.Sizeof(CodeSigningCommand{}))
 	buffer := make([]byte, readSize)
-	n, err := io.ReadFull(io.NewSectionReader(m.ReaderAt, int64(m.nextCmdOffset()), readSize), buffer[:])
+	n, err := io.ReadFull(io.NewSectionReader(m.ReaderAt, int64(m.nextCmdOffset()), readSize), buffer)
 	if err != nil || int64(n) < readSize {
 		return false
 	}
@@ -103,7 +103,7 @@ func (m *File) hasRoomForNewCmd() bool {
 	return true
 }
 
-func (m *File) AddDummyCodeSigningCmd() (err error) {
+func (m *File) AddEmptyCodeSigningCmd() (err error) {
 	if m.HasCodeSigningCmd() {
 		return fmt.Errorf("loader command already exists, cannot add another")
 	}
@@ -149,6 +149,9 @@ func (m *File) AddDummyCodeSigningCmd() (err error) {
 
 func (m *File) UpdateCodeSigningCmdDataSize(newSize int) (err error) {
 	cmd, offset, err := m.CodeSigningCmd()
+	if err != nil {
+		return fmt.Errorf("unable to update existing signing loader command: %w", err)
+	}
 
 	cmd.DataSize = uint32(newSize)
 
@@ -211,7 +214,7 @@ func (m *File) HashPages(hasher hash.Hash) (hashes [][]byte, err error) {
 		return nil, fmt.Errorf("LcCodeSignature is not present, any generated page hashes will be wrong. Bailing")
 	}
 
-	if _, err = m.Seek(io.SeekStart, 0); err != nil {
+	if _, err = m.Seek(0, io.SeekStart); err != nil {
 		return nil, fmt.Errorf("unable to seek within macho binary: %w", err)
 	}
 

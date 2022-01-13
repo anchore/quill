@@ -5,16 +5,15 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/anchore/quill/internal/testFixture"
-
+	"github.com/anchore/quill/internal/testfixture"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestFile_HasCodeSigningCmd(t *testing.T) {
-	testFixture.Make(t, "fixture-hello")
-	testFixture.Make(t, "fixture-syft")
-	testFixture.Make(t, "fixture-ls")
+	testfixture.Make(t, "fixture-hello")
+	testfixture.Make(t, "fixture-syft")
+	testfixture.Make(t, "fixture-ls")
 
 	tests := []struct {
 		name          string
@@ -23,12 +22,12 @@ func TestFile_HasCodeSigningCmd(t *testing.T) {
 	}{
 		{
 			name:          "unsigned binary",
-			binaryPath:    testFixture.Asset(t, "hello"),
+			binaryPath:    testfixture.Asset(t, "hello"),
 			hasSigningCmd: false,
 		},
 		{
 			name:          "adhoc signed binary",
-			binaryPath:    testFixture.Asset(t, "hello_adhoc_signed"),
+			binaryPath:    testfixture.Asset(t, "hello_adhoc_signed"),
 			hasSigningCmd: true,
 		},
 		//{
@@ -37,12 +36,12 @@ func TestFile_HasCodeSigningCmd(t *testing.T) {
 		//},
 		{
 			name:          "signed binary",
-			binaryPath:    testFixture.Asset(t, "syft_signed"),
+			binaryPath:    testfixture.Asset(t, "syft_signed"),
 			hasSigningCmd: true,
 		},
 		{
 			name:          "signed binary extracted from universal binary",
-			binaryPath:    testFixture.Asset(t, "ls_x86_64_signed"),
+			binaryPath:    testfixture.Asset(t, "ls_x86_64_signed"),
 			hasSigningCmd: true,
 		},
 	}
@@ -56,9 +55,9 @@ func TestFile_HasCodeSigningCmd(t *testing.T) {
 }
 
 func TestFile_CodeSigningCmd(t *testing.T) {
-	testFixture.Make(t, "fixture-hello")
-	testFixture.Make(t, "fixture-syft")
-	testFixture.Make(t, "fixture-ls")
+	testfixture.Make(t, "fixture-hello")
+	testfixture.Make(t, "fixture-syft")
+	testfixture.Make(t, "fixture-ls")
 
 	tests := []struct {
 		name       string
@@ -68,11 +67,11 @@ func TestFile_CodeSigningCmd(t *testing.T) {
 	}{
 		{
 			name:       "unsigned binary shouldn't have a signing command",
-			binaryPath: testFixture.Asset(t, "hello"),
+			binaryPath: testfixture.Asset(t, "hello"),
 		},
 		{
 			name:       "adhoc signed binary",
-			binaryPath: testFixture.Asset(t, "hello_adhoc_signed"),
+			binaryPath: testfixture.Asset(t, "hello_adhoc_signed"),
 			cmd: &CodeSigningCommand{
 				Cmd:  29,
 				Size: 16,
@@ -89,7 +88,7 @@ func TestFile_CodeSigningCmd(t *testing.T) {
 		//},
 		{
 			name:       "signed binary",
-			binaryPath: testFixture.Asset(t, "syft_signed"),
+			binaryPath: testfixture.Asset(t, "syft_signed"),
 			cmd: &CodeSigningCommand{
 				Cmd:  29,
 				Size: 16,
@@ -103,7 +102,7 @@ func TestFile_CodeSigningCmd(t *testing.T) {
 		},
 		{
 			name:       "signed binary extracted from a universal binary",
-			binaryPath: testFixture.Asset(t, "ls_x86_64_signed"),
+			binaryPath: testfixture.Asset(t, "ls_x86_64_signed"),
 			cmd: &CodeSigningCommand{
 				Cmd:  29,
 				Size: 16,
@@ -129,8 +128,8 @@ func TestFile_CodeSigningCmd(t *testing.T) {
 }
 
 func TestFile_HashPages(t *testing.T) {
-	testFixture.Make(t, "fixture-hello")
-	testFixture.Make(t, "fixture-ls")
+	testfixture.Make(t, "fixture-hello")
+	testfixture.Make(t, "fixture-ls")
 
 	tests := []struct {
 		name          string
@@ -163,7 +162,7 @@ func TestFile_HashPages(t *testing.T) {
 		// and not the remaining digests of the rest of the binary.
 		{
 			name:       "for a single, adhoc signed binary",
-			binaryPath: testFixture.Asset(t, "hello_adhoc_signed"),
+			binaryPath: testfixture.Asset(t, "hello_adhoc_signed"),
 			wantHexHashes: []string{
 				"c5b6a7809f89dda17eb064b6463c6180c0403f935af3c789adf8e26b5998f1a1",
 				"ad7facb2586fc6e966c004d7d1d16b024f5805ff7cb47c7a85dabd8b48892ca7",
@@ -182,7 +181,7 @@ func TestFile_HashPages(t *testing.T) {
 		},
 		{
 			name:       "for a signed binary extracted from a universal binary",
-			binaryPath: testFixture.Asset(t, "ls_x86_64_signed"),
+			binaryPath: testfixture.Asset(t, "ls_x86_64_signed"),
 			wantHexHashes: []string{
 				"6562c7e727d9f71669863f2009aea5d5b1ed202274d7367ef623e836e2b095a8",
 				"ad7facb2586fc6e966c004d7d1d16b024f5805ff7cb47c7a85dabd8b48892ca7",
@@ -219,7 +218,7 @@ func TestFile_HashPages(t *testing.T) {
 }
 
 func TestFile_UpdateCodeSigningCmdDataSize(t *testing.T) {
-	testFixture.Make(t, "fixture-hello")
+	testfixture.Make(t, "fixture-hello")
 
 	tests := []struct {
 		name       string
@@ -228,7 +227,7 @@ func TestFile_UpdateCodeSigningCmdDataSize(t *testing.T) {
 	}{
 		{
 			name:       "can update the size of an existing code signing cmd",
-			binaryPath: testFixture.AssetCopy(t, "hello_adhoc_signed"),
+			binaryPath: testfixture.AssetCopy(t, "hello_adhoc_signed"),
 			size:       0x42,
 		},
 	}
@@ -251,7 +250,7 @@ func TestFile_UpdateCodeSigningCmdDataSize(t *testing.T) {
 }
 
 func TestFile_AddDummyCodeSigningCmd(t *testing.T) {
-	testFixture.Make(t, "fixture-hello")
+	testfixture.Make(t, "fixture-hello")
 
 	tests := []struct {
 		name       string
@@ -261,7 +260,7 @@ func TestFile_AddDummyCodeSigningCmd(t *testing.T) {
 	}{
 		{
 			name:       "can add a new code signing segment to an unsigned binary",
-			binaryPath: testFixture.AssetCopy(t, "hello"),
+			binaryPath: testfixture.AssetCopy(t, "hello"),
 			// this should be where the next loader command will go, so "xxd -s 0x578  -l 16 ./hello" should show only zeros
 			offset: 0x578,
 			// this offset should be the end of the file, so "xxd -s 0xC110  -l 4 ./hello" will show nothing
@@ -277,7 +276,7 @@ func TestFile_AddDummyCodeSigningCmd(t *testing.T) {
 
 			calculatedCmdOffset := m.nextCmdOffset()
 
-			require.NoError(t, m.AddDummyCodeSigningCmd())
+			require.NoError(t, m.AddEmptyCodeSigningCmd())
 
 			assert.True(t, m.HasCodeSigningCmd(), "cannot find signing loader command")
 
@@ -295,7 +294,7 @@ func TestFile_AddDummyCodeSigningCmd(t *testing.T) {
 }
 
 func TestFile_UpdateSegmentHeader(t *testing.T) {
-	testFixture.Make(t, "fixture-hello")
+	testfixture.Make(t, "fixture-hello")
 
 	tests := []struct {
 		name       string
@@ -304,7 +303,7 @@ func TestFile_UpdateSegmentHeader(t *testing.T) {
 	}{
 		{
 			name:       "can modify single elements in segment header",
-			binaryPath: testFixture.AssetCopy(t, "hello"),
+			binaryPath: testfixture.AssetCopy(t, "hello"),
 			segment:    "__LINKEDIT",
 		},
 	}

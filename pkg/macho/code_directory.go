@@ -43,7 +43,7 @@ const (
 	ExecSetHard        CdFlag = 0x00100000 /* set HARD on any exec'ed process */
 	ExecSetKill        CdFlag = 0x00200000 /* set KILL on any exec'ed process */
 	ExecSetEnforcement CdFlag = 0x00400000 /* set ENFORCEMENT on any exec'ed process */
-	ExecInheritSip     CdFlag = 0x00800000 /* set INSTALLER on any exec'ed process */
+	ExecInheritSIP     CdFlag = 0x00800000 /* set INSTALLER on any exec'ed process */
 
 	Killed         CdFlag = 0x01000000 /* was killed by kernel for invalidity */
 	DyldPlatform   CdFlag = 0x02000000 /* dyld used to load this is a platform binary */
@@ -55,7 +55,7 @@ const (
 	DevCode             CdFlag = 0x40000000 /* code is dev signed, cannot be loaded into prod signed code (will go away with rdar://problem/28322552) */
 	DatavaultController CdFlag = 0x80000000 /* has Data Vault controller entitlement */
 
-	ENTITLEMENT_FLAGS CdFlag = (GetTaskAllow | Installer | DatavaultController | NvramUnrestricted)
+	EntitlementFlags CdFlag = (GetTaskAllow | Installer | DatavaultController | NvramUnrestricted)
 )
 
 /* executable segment flags */

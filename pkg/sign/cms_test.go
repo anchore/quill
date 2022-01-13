@@ -5,19 +5,15 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/scylladb/go-set/strset"
-
-	"github.com/stretchr/testify/assert"
-
-	"github.com/anchore/quill/internal/testFixture"
-
-	"github.com/stretchr/testify/require"
-
+	"github.com/anchore/quill/internal/testfixture"
 	"github.com/fullsailor/pkcs7"
+	"github.com/scylladb/go-set/strset"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_generateCMS(t *testing.T) {
-	testFixture.Make(t, "fixture-x509")
+	testfixture.Make(t, "fixture-x509")
 
 	type args struct {
 		keyFile     string
@@ -33,9 +29,9 @@ func Test_generateCMS(t *testing.T) {
 		{
 			name: "adds expected attributes into CMS envelope",
 			args: args{
-				keyFile:     testFixture.Asset(t, "x509-key.pem"),
+				keyFile:     testfixture.Asset(t, "x509-key.pem"),
 				keyPassword: "5w0rdf15h",
-				certFile:    testFixture.Asset(t, "x509-cert.pem"),
+				certFile:    testfixture.Asset(t, "x509-cert.pem"),
 				attributes: []pkcs7.Attribute{
 					{
 						// 1.2.840.113635.100.9.1 is the PLIST

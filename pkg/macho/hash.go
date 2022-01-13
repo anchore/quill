@@ -24,7 +24,7 @@ func hashChunks(hasher hash.Hash, chunkSize int, data []byte) (hashes [][]byte, 
 
 loop:
 	for idx := 0; idx < dataSize; {
-		bufferLen, err := io.ReadFull(dataReader, buf[:])
+		bufferLen, err := io.ReadFull(dataReader, buf)
 		switch err {
 		case nil, io.ErrUnexpectedEOF:
 			break
@@ -43,7 +43,7 @@ loop:
 		hasher.Write(buf[:bufferLen])
 		sum := hasher.Sum(nil)
 
-		hashes = append(hashes, sum[:])
+		hashes = append(hashes, sum)
 	}
 	return hashes, nil
 }

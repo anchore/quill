@@ -3,13 +3,13 @@ package sign
 import (
 	"testing"
 
-	"github.com/anchore/quill/internal/testFixture"
+	"github.com/anchore/quill/internal/testfixture"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func Test_loadCertFromFile(t *testing.T) {
-	testFixture.Make(t, "fixture-hello")
+	testfixture.Make(t, "fixture-hello")
 
 	tests := []struct {
 		filename     string
@@ -17,7 +17,7 @@ func Test_loadCertFromFile(t *testing.T) {
 		locality     []string
 	}{
 		{
-			filename:     testFixture.Asset(t, "hello-cert.pem"),
+			filename:     testfixture.Asset(t, "hello-cert.pem"),
 			organization: []string{"Quillamanjaro"},
 			locality:     []string{"NiQuill"},
 		},
@@ -36,8 +36,8 @@ func Test_loadCertFromFile(t *testing.T) {
 }
 
 func Test_loadPrivateKeyFromFile(t *testing.T) {
-	testFixture.Make(t, "fixture-hello")
-	testFixture.Make(t, "fixture-x509")
+	testfixture.Make(t, "fixture-hello")
+	testfixture.Make(t, "fixture-x509")
 
 	tests := []struct {
 		name         string
@@ -48,11 +48,11 @@ func Test_loadPrivateKeyFromFile(t *testing.T) {
 	}{
 		{
 			name:     "key without password",
-			filename: testFixture.Asset(t, "hello-key.pem"),
+			filename: testfixture.Asset(t, "hello-key.pem"),
 		},
 		{
 			name:     "encrypted key (with password)",
-			filename: testFixture.Asset(t, "x509-key.pem"),
+			filename: testfixture.Asset(t, "x509-key.pem"),
 			password: "5w0rdf15h",
 		},
 	}

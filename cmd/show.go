@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/anchore/quill/pkg/extract"
-	"github.com/spf13/viper"
-
 	"github.com/anchore/quill/internal/bus"
 	"github.com/anchore/quill/internal/ui"
 	"github.com/anchore/quill/pkg/event"
+	"github.com/anchore/quill/pkg/extract"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
 	"github.com/wagoodman/go-partybus"
 )
 
@@ -25,20 +25,19 @@ func newShowCmd(v *viper.Viper) (*cobra.Command, error) {
 		RunE:          decorateRunWithProfiling(showExec),
 	}
 
-	//setShowFlags(c.Flags())
-	//
-	//return c, bindShowConfigOptions(v, c.Flags())
-	return c, nil
+	setShowFlags(c.Flags())
+
+	return c, bindShowConfigOptions(v, c.Flags())
 }
 
-//func setShowFlags(flags *pflag.FlagSet) {
-//	// TODO
-//}
-//
-//func bindShowConfigOptions(v *viper.Viper, flags *pflag.FlagSet) error {
-//	// TODO
-//	return nil
-//}
+func setShowFlags(flags *pflag.FlagSet) {
+	// TODO
+}
+
+func bindShowConfigOptions(v *viper.Viper, flags *pflag.FlagSet) error {
+	// TODO
+	return nil
+}
 
 func showExec(_ *cobra.Command, args []string) error {
 	path := args[0]

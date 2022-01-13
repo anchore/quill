@@ -76,6 +76,7 @@ $(TEMPDIR):
 
 .PHONY: bootstrap-tools
 bootstrap-tools: $(TEMPDIR)
+	GOBIN=$(shell realpath $(TEMPDIR)) go install github.com/rinchsan/gosimports/cmd/gosimports@latest
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(TEMPDIR)/ v1.42.1
 	curl -sSfL https://raw.githubusercontent.com/wagoodman/go-bouncer/master/bouncer.sh | sh -s -- -b $(TEMPDIR)/ v0.2.0
 	curl -sSfL https://raw.githubusercontent.com/anchore/chronicle/main/install.sh | sh -s -- -b $(TEMPDIR)/ v0.3.0
@@ -95,6 +96,10 @@ static-analysis: lint check-go-mod-tidy check-licenses
 .PHONY: lint
 lint: ## Run gofmt + golangci lint checks
 	$(call title,Running linters)
+	# ensure there are no import
+	@printf "files with gosimports issues: [$(shell $(TEMPDIR)/gosimports -l .)]\n"
+	@test -z "$(shell $(TEMPDIR)/gosimports -l .)"
+
 	# ensure there are no go fmt differences
 	@printf "files with gofmt issues: [$(shell gofmt -l -s .)]\n"
 	@test -z "$(shell gofmt -l -s .)"
@@ -109,6 +114,7 @@ lint: ## Run gofmt + golangci lint checks
 .PHONY: lint-fix
 lint-fix: ## Auto-format all source code + run golangci lint fixers
 	$(call title,Running lint fixers)
+	$(TEMPDIR)/gosimports -w .
 	gofmt -w -s .
 	$(LINTCMD) --fix
 	go mod tidy

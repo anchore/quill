@@ -56,6 +56,7 @@ func loadPrivateKey(reader io.Reader, password string) (crypto.PrivateKey, error
 
 	var privPemBytes []byte
 
+	// nolint: staticcheck // we have no other alternatives
 	if password != "" && x509.IsEncryptedPEMBlock(pemObj) {
 		// why is this deprecated?
 		//	> "Legacy PEM encryption as specified in RFC 1423 is insecure by
@@ -64,7 +65,12 @@ func loadPrivateKey(reader io.Reader, password string) (crypto.PrivateKey, error
 		//
 		// This method of encrypting the key isn't recommended anymore.
 		// See https://github.com/golang/go/issues/8860 for more discussion
+
+		// nolint: staticcheck // we have no other alternatives
 		privPemBytes, err = x509.DecryptPEMBlock(pemObj, []byte(password))
+		if err != nil {
+			return nil, fmt.Errorf("unable to decrypt PEM block: %w", err)
+		}
 	} else {
 		privPemBytes = pemObj.Bytes
 	}

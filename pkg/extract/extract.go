@@ -12,7 +12,6 @@ import (
 // at the time of this writing I wasn't able to import this module due to the configured module name
 
 func Show(reader io.ReaderAt) error {
-
 	machoFile, err := macho.NewFile(reader)
 
 	if err != nil {
@@ -25,7 +24,6 @@ func Show(reader io.ReaderAt) error {
 	if sig == nil {
 		// print file details
 		printFileDetails(machoFile)
-		//printLibs(machoFile.ImportedLibraries())
 		printLoads(machoFile.Loads)
 
 		fmt.Println("no code signing section in binary")

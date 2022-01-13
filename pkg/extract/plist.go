@@ -11,11 +11,10 @@ import (
 
 // getEntsFromXMLString extracts the entitlements from an XML string
 func getEntsFromXMLString(entString string) (*entsStruct, error) {
-
 	bytes := []byte(entString)
 
 	if len(bytes) < 1 {
-		return nil, fmt.Errorf("No entitlements string")
+		return nil, fmt.Errorf("no entitlements string")
 	}
 
 	ents, err := processPlist(bytes)
@@ -63,8 +62,8 @@ type stringArrayEntry struct {
 // Annoying structure means we have to do it token by token
 // as each entry is a key followed by either trues, strings or arrays
 // and we need to match keys to entries
+// nolint: funlen,gocognit
 func processPlist(data []byte) (*entsStruct, error) {
-
 	r := bytes.NewReader(data)
 	decoder := xml.NewDecoder(r)
 
@@ -85,23 +84,11 @@ func processPlist(data []byte) (*entsStruct, error) {
 		// Inspect the type of the token just read.
 		switch thisToken := thisToken.(type) {
 		default:
-			//log.Printf("Unknown type: %v", thisToken)
-		case xml.EndElement:
-			//log.Printf("End %v", thisToken)
-		case xml.CharData:
-			//log.Printf("CharData %v", thisToken)
-		case xml.Comment:
-			//log.Printf("Comment %v", thisToken)
-		case xml.ProcInst:
-			//log.Printf("ProcInst %v", thisToken)
-		case xml.Directive:
-			//log.Printf("Directive %v", thisToken)
 		// start element is the only one we care about
 		case xml.StartElement:
 			element := thisToken.Name.Local
 
 			switch element {
-
 			case "key":
 				var key string
 				err := decoder.DecodeElement(&key, &thisToken)
@@ -139,8 +126,6 @@ func processPlist(data []byte) (*entsStruct, error) {
 				err := decoder.DecodeElement(&value, &thisToken)
 
 				if err == nil {
-					//log.Printf("String %s: %q", lastKey, value)
-
 					var entry stringEntry
 					entry.Name = lastKey
 					entry.Value = value
@@ -154,8 +139,6 @@ func processPlist(data []byte) (*entsStruct, error) {
 				err := decoder.DecodeElement(&value, &thisToken)
 
 				if err == nil {
-					//log.Printf("String %s: %q", lastKey, value)
-
 					var entry integerEntry
 					entry.Name = lastKey
 					valueInt, _ := strconv.Atoi(value)
@@ -171,13 +154,8 @@ func processPlist(data []byte) (*entsStruct, error) {
 				if err == nil {
 					var entry stringArrayEntry
 					entry.Name = lastKey
-
-					for _, str := range arr.Strings {
-						entry.Values = append(entry.Values, str)
-					}
-
+					entry.Values = append(entry.Values, arr.Strings...)
 					ents.StringArrayValues = append(ents.StringArrayValues, entry)
-
 					values++
 				}
 			}
@@ -185,7 +163,7 @@ func processPlist(data []byte) (*entsStruct, error) {
 	}
 
 	if keys != values {
-		return nil, fmt.Errorf("Mismatched numbers of keys (%d) and values (%d)", keys, values)
+		return nil, fmt.Errorf("mismatched numbers of keys (%d) and values (%d)", keys, values)
 	}
 
 	return &ents, nil

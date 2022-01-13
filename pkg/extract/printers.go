@@ -5,12 +5,11 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/fullsailor/pkcs7"
-
 	"github.com/blacktop/go-macho"
 	ctypes "github.com/blacktop/go-macho/pkg/codesign/types"
 	"github.com/blacktop/go-macho/types"
 	"github.com/dustin/go-humanize/english"
+	"github.com/fullsailor/pkcs7"
 )
 
 // original source is from: https://github.com/RedMapleTech/machodump
@@ -33,15 +32,6 @@ func printFileDetails(m *macho.File) {
 		m.UUID())
 }
 
-// printLibs prints the loaded libraries to console
-func printLibs(libs []string) {
-	fmt.Printf("File imports %s\n", english.Plural(len(libs), "library:", "libraries:"))
-
-	for i, lib := range libs {
-		fmt.Printf("\t%d: %q\n", i, lib)
-	}
-}
-
 // printLoads prints the interesting load commands to console
 func printLoads(loads []macho.Load) {
 	fmt.Printf("File has %s. Interesting %s:\n", english.Plural(len(loads), "load command", "load commands"), english.PluralWord(len(loads), "command", "commands"))
@@ -61,10 +51,10 @@ func printLoads(loads []macho.Load) {
 }
 
 // printCDs prints the code directory details to console
-func printCDs(CDs []ctypes.CodeDirectory) {
-	fmt.Printf("Binary has %s:\n", english.Plural(len(CDs), "Code Directory", "Code Directories"))
+func printCDs(cds []ctypes.CodeDirectory) {
+	fmt.Printf("Binary has %s:\n", english.Plural(len(cds), "Code Directory", "Code Directories"))
 
-	for i, dir := range CDs {
+	for i, dir := range cds {
 		fmt.Printf("\tCodeDirectory %d:\n", i)
 
 		fmt.Printf("\t\tIdent: \"%s\"\n", dir.ID)
@@ -75,9 +65,9 @@ func printCDs(CDs []ctypes.CodeDirectory) {
 
 		fmt.Printf("\t\tCD Hash: %s\n", dir.CDHash)
 		fmt.Printf("\t\tCode slots: %d\n", len(dir.CodeSlots))
-		//for _, slot := range dir.CodeSlots {
-		//	fmt.Printf("\t\t\t%s\n", slot.Desc)
-		//}
+		// for _, slot := range dir.CodeSlots {
+		//  	fmt.Printf("\t\t\t%s\n", slot.Desc)
+		// }
 
 		fmt.Printf("\t\tSpecial slots: %d\n", len(dir.SpecialSlots))
 
@@ -97,8 +87,8 @@ func printRequirements(reqs []ctypes.Requirement) {
 }
 
 // printEnts prints the entitlements to console
+// nolint: funlen
 func printEnts(ents *entsStruct) {
-
 	if ents == nil {
 		fmt.Printf("Binary has no entitlements\n")
 		return
@@ -144,7 +134,6 @@ func printEnts(ents *entsStruct) {
 		fmt.Printf("Binary has %s:\n", english.Plural(len(ents.StringArrayValues), "string array entitlement", "string array entitlements"))
 
 		for i, ent := range ents.StringArrayValues {
-
 			valueList := ""
 
 			for _, str := range ent.Values {
@@ -166,7 +155,6 @@ func printEnts(ents *entsStruct) {
 
 // printCMSSig parses the PKCS7 blob, extracting the certificate common names
 func printCMSSig(data []byte) error {
-
 	p7, err := pkcs7.Parse(data)
 	if err != nil {
 		return fmt.Errorf("unable to parse CMS: %w", err)
@@ -194,18 +182,17 @@ func printCMSSig(data []byte) error {
 		for ui, att := range signer.UnauthenticatedAttributes {
 			fmt.Printf("\t\t\tAttribute %d\n", ui)
 			fmt.Printf("\t\t\tType: %+v\n", att.Type)
-			//fmt.Printf("\t\t\tCompound?: %+v\n", att.Value.IsCompound)
-			//fmt.Printf("\t\t\tValue: %q\n\n", string(att.Value.Bytes))
+			// fmt.Printf("\t\t\tCompound?: %+v\n", att.Value.IsCompound)
+			// fmt.Printf("\t\t\tValue: %q\n\n", string(att.Value.Bytes))
 		}
 
 		fmt.Printf("\t\tAuthenticated Attributes (%d):\n", len(signer.AuthenticatedAttributes))
 		for ui, att := range signer.AuthenticatedAttributes {
 			fmt.Printf("\t\t\tAttribute %d\n", ui)
 			fmt.Printf("\t\t\tType: %+v\n", att.Type)
-			//fmt.Printf("\t\t\tCompound?: %+v\n", att.Value.IsCompound)
-			//fmt.Printf("\t\t\tValue: %q\n\n", string(att.Value.Bytes))
+			// fmt.Printf("\t\t\tCompound?: %+v\n", att.Value.IsCompound)
+			// fmt.Printf("\t\t\tValue: %q\n\n", string(att.Value.Bytes))
 		}
-
 	}
 
 	return nil

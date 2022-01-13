@@ -22,8 +22,8 @@ func Sign(id, path, keyFile, keyPassword, certFile string) error {
 		log.Warnf("only ad-hoc signing, which means that anyone can alter the binary contents without you knowing (there is no cryptographic signature)")
 	}
 
-	// [A] (patch) add **dummy** LcCodeSignature loader
-	if err = m.AddDummyCodeSigningCmd(); err != nil {
+	// (patch) add empty LcCodeSignature loader (offset and size references are not set)
+	if err = m.AddEmptyCodeSigningCmd(); err != nil {
 		return err
 	}
 
@@ -33,6 +33,7 @@ func Sign(id, path, keyFile, keyPassword, certFile string) error {
 		return fmt.Errorf("failed to add signing data on pass=1: %w", err)
 	}
 
+	// (patch) make certain offset and size references to the superblob are finalized in the binary
 	if err = updateSuperBlobOffsetReferences(m, uint64(len(sbBytes))); err != nil {
 		return nil
 	}
