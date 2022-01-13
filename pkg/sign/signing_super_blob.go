@@ -11,6 +11,7 @@ import (
 func generateSigningSuperBlob(id string, m *macho.File, keyFile, keyPassword, certFile string) ([]byte, error) {
 	var cdFlags macho.CdFlag
 	if certFile != "" {
+		// TODO: add options to enable more strict rules (such as macho.Hard)
 		cdFlags = macho.Runtime
 	} else {
 		cdFlags = macho.LinkerSigned | macho.Adhoc

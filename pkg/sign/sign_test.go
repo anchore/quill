@@ -8,7 +8,9 @@ import (
 )
 
 func TestSign(t *testing.T) {
+	test.Make(t, "fixture-x509")
 	test.Make(t, "fixture-hello")
+	test.Make(t, "fixture-syft")
 
 	type args struct {
 		id          string
@@ -28,6 +30,16 @@ func TestSign(t *testing.T) {
 				path:     test.AssetCopy(t, "hello"),
 				keyFile:  test.Asset(t, "hello-key.pem"),
 				certFile: test.Asset(t, "hello-cert.pem"),
+			},
+		},
+		{
+			name: "sign the syft binary (with a password)",
+			args: args{
+				id:          "syft-id",
+				path:        test.AssetCopy(t, "syft_unsigned"),
+				keyFile:     test.Asset(t, "x509-key.pem"),
+				certFile:    test.Asset(t, "x509-cert.pem"),
+				keyPassword: "5w0rdf15h",
 			},
 		},
 	}

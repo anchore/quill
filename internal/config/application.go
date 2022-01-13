@@ -132,7 +132,7 @@ func (cfg *Application) parseLogLevelOption() error {
 		case v >= 2:
 			cfg.Log.LevelOpt = logrus.DebugLevel
 		default:
-			cfg.Log.LevelOpt = logrus.ErrorLevel
+			cfg.Log.LevelOpt = logrus.WarnLevel
 		}
 	}
 
