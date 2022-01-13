@@ -5,15 +5,15 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/anchore/quill/internal/testfixture"
+	"github.com/anchore/quill/internal/test"
 	"github.com/fullsailor/pkcs7"
 	"github.com/scylladb/go-set/strset"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func Test_generateCMS(t *testing.T) {
-	testfixture.Make(t, "fixture-x509")
+func Test_generateCMSWithAttributes(t *testing.T) {
+	test.Make(t, "fixture-x509")
 
 	type args struct {
 		keyFile     string
@@ -29,9 +29,9 @@ func Test_generateCMS(t *testing.T) {
 		{
 			name: "adds expected attributes into CMS envelope",
 			args: args{
-				keyFile:     testfixture.Asset(t, "x509-key.pem"),
+				keyFile:     test.Asset(t, "x509-key.pem"),
 				keyPassword: "5w0rdf15h",
-				certFile:    testfixture.Asset(t, "x509-cert.pem"),
+				certFile:    test.Asset(t, "x509-cert.pem"),
 				attributes: []pkcs7.Attribute{
 					{
 						// 1.2.840.113635.100.9.1 is the PLIST
@@ -51,7 +51,7 @@ func Test_generateCMS(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			dataBytes, err := generateCMS(tt.args.keyFile, tt.args.keyPassword, tt.args.certFile, tt.args.attributes)
+			dataBytes, err := generateCMSWithAttributes(tt.args.keyFile, tt.args.keyPassword, tt.args.certFile, tt.args.attributes)
 			require.NoError(t, err)
 
 			pkcs7Obj, err := pkcs7.Parse(dataBytes)

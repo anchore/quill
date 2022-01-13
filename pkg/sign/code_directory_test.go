@@ -6,14 +6,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/anchore/quill/internal/testfixture"
+	"github.com/anchore/quill/internal/test"
 	"github.com/anchore/quill/pkg/macho"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func Test_generateCodeDirectory(t *testing.T) {
-	testfixture.Make(t, "fixture-hello")
+	test.Make(t, "fixture-hello")
 
 	tests := []struct {
 		name       string
@@ -27,7 +27,7 @@ func Test_generateCodeDirectory(t *testing.T) {
 			name:       "for a single, adhoc signed binary",
 			id:         "my-id",
 			hasher:     sha256.New(),
-			binaryPath: testfixture.AssetCopy(t, "hello_adhoc_signed"),
+			binaryPath: test.AssetCopy(t, "hello_adhoc_signed"),
 			expectedCD: macho.CodeDirectory{
 				CodeDirectoryHeader: macho.CodeDirectoryHeader{
 					Version:       132096,

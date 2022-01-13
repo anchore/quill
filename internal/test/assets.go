@@ -1,4 +1,4 @@
-package testfixture
+package test
 
 import (
 	"bufio"
