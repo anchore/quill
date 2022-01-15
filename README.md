@@ -14,15 +14,20 @@ $ quill sign <path/to/binary>
 $ quill sign <path/to/binary> --key <path/to/PEM/key> --cert <path/to/PEM/cert>
 ```
 
-# TODO
-- unit tests
-- codesign comparison tests
-- ad-hoc signing entrypoint
-- allow for multiple certs to be provided
-- fix: code signature offset for larger binaries
-- add signing requirements derived from cert input
-- add signing requirements from user input
-- add signing entitlements from usr input
+## TODO
+
+- [x] unit tests
+- [x] codesign comparison tests
+- [x] ad-hoc signing entrypoint
+- [ ] allow for multiple certs to be provided
+- [x] fix: code signature offset for larger binaries
+- [ ] add signing requirements derived from cert input
+- [ ] add signing requirements from user input
+- [ ] add signing entitlements from usr input
+- [ ] fix: signing with cms (fails codesign validation currently)
+- [ ] add support for universal binaries (partially done, needs to wrap the signing function)
+
+*Future opportunities*
 - could this be integrated with gon?
 - could this also perform notarization?
 - could we add windows signing support?

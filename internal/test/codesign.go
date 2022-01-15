@@ -1,54 +1,86 @@
 package test
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 	"testing"
+
+	"github.com/acarl005/stripansi"
+	"github.com/stretchr/testify/assert"
 )
 
+type OutputAssertion func(tb testing.TB, stdout string)
+
+func AssertContains(data string) OutputAssertion {
+	return func(tb testing.TB, stdout string) {
+		tb.Helper()
+		if !strings.Contains(stripansi.Strip(stdout), data) {
+			tb.Errorf("missing debug output: %q", data)
+		}
+	}
+}
+
+func AssertSignedOutput(tb testing.TB, stdout string) {
+	tb.Helper()
+	if !strings.Contains(stripansi.Strip(stdout), "valid on disk") {
+		tb.Error("failed signed assertion: is not valid on disk")
+	}
+	if !strings.Contains(stripansi.Strip(stdout), "satisfies its Designated Requirement") {
+		tb.Error("failed signed assertion: does not satisfy designated requirement")
+	}
+}
+
 func AssertBinarySigned(t *testing.T, path string) {
-	// TODO: assert specific traits from debug output
-	runCodesignVerify(t, path)
+	output := runCodesignVerify(t, path)
+	AssertSignedOutput(t, output)
+	if t.Failed() {
+		t.Logf("signature verification output: \n%s", output)
+	}
+}
+
+func AssertDebugOutput(t *testing.T, path string, assertions ...OutputAssertion) {
+	output := runCodesignShow(t, path)
+
+	for _, traitFn := range assertions {
+		traitFn(t, output)
+	}
+
+	if t.Failed() {
+		t.Logf("signature debug output: \n%s", output)
+	}
 }
 
 func runCodesignVerify(t testing.TB, path string) string {
-	cmd := exec.Command("codesign", "-d", "--verbose=6", "--verify", path)
-	stdout, stderr := runCommand(cmd, nil)
+	cmd := exec.Command("codesign", "-d", "--verbose=4", "--verify", path)
+	output := runCommand(t, cmd, nil)
 	if cmd.ProcessState.ExitCode() != 0 {
-		t.Log("STDOUT", stdout)
-		t.Log("STDERR", stderr)
+		t.Log(output)
 		t.Log("codesign verify failed")
-		t.Fail()
 	}
-	return stdout
+	return output
 }
 
 func runCodesignShow(t testing.TB, path string) string {
-	cmd := exec.Command("codesign", "-d", "--verbose=6", path)
-	stdout, stderr := runCommand(cmd, nil)
+	cmd := exec.Command("codesign", "-d", "--verbose=4", path)
+	output := runCommand(t, cmd, nil)
 	if cmd.ProcessState.ExitCode() != 0 {
-		t.Log("STDOUT", stdout)
-		t.Log("STDERR", stderr)
+		t.Log(output)
 		t.Log("codesign show failed")
-		t.Fail()
 	}
-	return stdout
+	return output
 }
 
-func runCommand(cmd *exec.Cmd, env map[string]string) (string, string) {
+func runCommand(t testing.TB, cmd *exec.Cmd, env map[string]string) string {
 	if env != nil {
 		cmd.Env = append(os.Environ(), envMapToSlice(env)...)
 	}
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
 
-	// ignore errors since this may be what the test expects
-	cmd.Run()
+	output, err := cmd.CombinedOutput()
+	assert.NoError(t, err)
 
-	return stdout.String(), stderr.String()
+	return string(output)
 }
 
 func envMapToSlice(env map[string]string) (envList []string) {
