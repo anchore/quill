@@ -63,24 +63,22 @@ $(ADHOC_SIGNED_BIN): $(BIN) ## create a "adhoc" signed binary
 	$(call title,Ad-hoc signing of "$(NAME)")
 	cp $(BIN) $(ADHOC_SIGNED_BIN).tmp
 
-	codesign -fs - $(ADHOC_SIGNED_BIN).tmp
+	codesign -f --options runtime --verbose=4 --timestamp -s - $(ADHOC_SIGNED_BIN).tmp
 	mv $(ADHOC_SIGNED_BIN).tmp $(ADHOC_SIGNED_BIN)
 
 	# signing information
-	codesign -dvv $(ADHOC_SIGNED_BIN)
+	codesign -d --verbose=4 $(ADHOC_SIGNED_BIN)
+	codesign -verify --verbose=4 $(ADHOC_SIGNED_BIN)
 
 
-$(KEYCHAIN_PATH):
-	$(call title,Creating test keychain "$(KEYCHAIN_NAME)")
+$(SIGNED_BIN): $(P12_FILE) $(BIN) ## create a signed binary
+	$(call title,Signing "$(NAME)")
 	@if [ ! -f "$(KEYCHAIN_PATH)" ]; then \
   		security create-keychain -p "$(KEYCHAIN_PASSWORD)" "$(KEYCHAIN_NAME)"; \
   	else \
   	  echo "keychain '$(KEYCHAIN_NAME)' already exists"; \
   	fi
 
-
-$(SIGNED_BIN): $(KEYCHAIN_PATH) $(P12_FILE) $(BIN) ## create a signed binary
-	$(call title,Signing "$(NAME)")
 	# import the cert into the keychain if it is not already trusted by the system
 	# note: set the partition list for this certificate's private key to include "apple-tool:" and "apple:" allows the codesign command to access this keychain item without an interactive user prompt.
 	security verify-cert -k $(KEYCHAIN_PATH) -c $(CERT_FILE) || \
