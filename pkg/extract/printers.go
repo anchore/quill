@@ -172,7 +172,7 @@ func printCMSSig(data []byte) error {
 
 	fmt.Printf("\nCMS Signature has %d signers:\n", len(p7.Signers))
 	for idx, signer := range p7.Signers {
-		fmt.Printf("\tSigner %d:\n", idx)
+		fmt.Printf("\tSigner %d:\n", idx+1)
 		fmt.Println("\t\tIssuerAndSerialNumber: ")
 		fmt.Printf("\t\t\tName: %q\n", string(signer.IssuerAndSerialNumber.IssuerName.FullBytes))
 		fmt.Printf("\t\t\tSerial: 0x%x\n", signer.IssuerAndSerialNumber.SerialNumber)
@@ -190,8 +190,8 @@ func printCMSSig(data []byte) error {
 		for ui, att := range signer.AuthenticatedAttributes {
 			fmt.Printf("\t\t\tAttribute %d\n", ui)
 			fmt.Printf("\t\t\tType: %+v\n", att.Type)
-			// fmt.Printf("\t\t\tCompound?: %+v\n", att.Value.IsCompound)
-			// fmt.Printf("\t\t\tValue: %q\n\n", string(att.Value.Bytes))
+			fmt.Printf("\t\t\tCompound?: %+v\n", att.Value.IsCompound)
+			fmt.Printf("\t\t\tValue: %q\n\n", fmt.Sprintf("%x", att.Value.Bytes))
 		}
 	}
 

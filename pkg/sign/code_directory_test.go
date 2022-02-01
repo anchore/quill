@@ -2,6 +2,8 @@ package sign
 
 import (
 	"crypto/sha256"
+	"encoding/hex"
+	"fmt"
 	"hash"
 	"strings"
 	"testing"
@@ -12,44 +14,59 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_generateCodeDirectory(t *testing.T) {
+func Test_newCodeDirectoryFromMacho(t *testing.T) {
 	test.Make(t, "fixture-hello")
 
 	tests := []struct {
-		name       string
-		id         string
-		hasher     hash.Hash
-		binaryPath string
-		expectedCD macho.CodeDirectory
+		name             string
+		id               string
+		hasher           hash.Hash
+		binaryPath       string
+		requirementsHash string
+		pListHash        string
+		expectedCD       macho.CodeDirectory
+		expectedHashes   []string
 	}{
 
 		{
-			name:       "for a single, adhoc signed binary",
-			id:         "my-id",
-			hasher:     sha256.New(),
-			binaryPath: test.AssetCopy(t, "hello_adhoc_signed"),
+			name:             "for a single, adhoc signed binary",
+			id:               "hello_adhoc_signed-5555494473a48f08821b3cb388dfa59f39babf39",
+			hasher:           sha256.New(),
+			binaryPath:       test.AssetCopy(t, "hello_adhoc_signed"),
+			requirementsHash: "987920904eab650e75788c054aa0b0524e6a80bfc71aa32df8d237a61743f986",
+			pListHash:        "0000000000000000000000000000000000000000000000000000000000000000",
 			expectedCD: macho.CodeDirectory{
 				CodeDirectoryHeader: macho.CodeDirectoryHeader{
-					Version:       132096,
-					Flags:         131074,
-					HashOffset:    94,
-					IdentOffset:   88,
-					NSpecialSlots: 0,
+					Version:       0x20400,
+					Flags:         0x20002,
+					HashOffset:    0xd4,
+					IdentOffset:   0x58,
+					NSpecialSlots: 2,
 					NCodeSlots:    13,
-					CodeLimit:     49424,
+					CodeLimit:     0xc110,
 					HashSize:      32,
 					HashType:      2,
-					Platform:      0,
 					PageSize:      12,
-					Spare2:        0,
-					ScatterOffset: 0,
-					TeamOffset:    0,
-					Spare3:        0,
-					CodeLimit64:   0,
-					ExecSegBase:   0,
-					ExecSegLimit:  16384,
+					ExecSegLimit:  0x4000,
 					ExecSegFlags:  1,
 				},
+			},
+			expectedHashes: []string{
+				"987920904eab650e75788c054aa0b0524e6a80bfc71aa32df8d237a61743f986", // -2 (req)
+				"0000000000000000000000000000000000000000000000000000000000000000", // -1 (plist)
+				"c5b6a7809f89dda17eb064b6463c6180c0403f935af3c789adf8e26b5998f1a1", // 0...
+				"ad7facb2586fc6e966c004d7d1d16b024f5805ff7cb47c7a85dabd8b48892ca7",
+				"ad7facb2586fc6e966c004d7d1d16b024f5805ff7cb47c7a85dabd8b48892ca7",
+				"f3bdeccacea29137c43abb1a4eab59408abdac615834e8db464bad3c15525a99",
+				"ad7facb2586fc6e966c004d7d1d16b024f5805ff7cb47c7a85dabd8b48892ca7",
+				"ad7facb2586fc6e966c004d7d1d16b024f5805ff7cb47c7a85dabd8b48892ca7",
+				"ad7facb2586fc6e966c004d7d1d16b024f5805ff7cb47c7a85dabd8b48892ca7",
+				"ad7facb2586fc6e966c004d7d1d16b024f5805ff7cb47c7a85dabd8b48892ca7",
+				"7475d6c89d2de31db7ebf77586309b2ea6cf8b157fec1534bce1583f4b5cdc7f",
+				"ad7facb2586fc6e966c004d7d1d16b024f5805ff7cb47c7a85dabd8b48892ca7",
+				"ad7facb2586fc6e966c004d7d1d16b024f5805ff7cb47c7a85dabd8b48892ca7",
+				"ad7facb2586fc6e966c004d7d1d16b024f5805ff7cb47c7a85dabd8b48892ca7",
+				"5e0e53aa1376a57469dadf6a2602839a509b4bdb438b506b4b0845a9dd33a2c1",
 			},
 		},
 	}
@@ -57,57 +74,95 @@ func Test_generateCodeDirectory(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			m, err := macho.NewFile(tt.binaryPath)
 			require.NoError(t, err)
-			actualCD, err := newCodeDirectoryFromMacho(tt.id, tt.hasher, m, macho.LinkerSigned|macho.Adhoc)
+
+			reqBytes, err := hex.DecodeString(tt.requirementsHash)
+			require.NoError(t, err)
+
+			pListBytes, err := hex.DecodeString(tt.pListHash)
+			require.NoError(t, err)
+
+			actualCD, err := newCodeDirectoryFromMacho(tt.id, tt.hasher, m, macho.LinkerSigned|macho.Adhoc, reqBytes, pListBytes)
 			require.NoError(t, err)
 
 			// make certain the headers match
 			assert.Equal(t, tt.expectedCD.CodeDirectoryHeader, actualCD.CodeDirectoryHeader)
 
-			// we don't verify the entire payload, since other tests cover this. Instead, we want to ensure that packing
-			// of the ID is done correctly.
-			assert.True(t, strings.HasPrefix(string(actualCD.Payload), tt.id+"\000"))
+			expectedPrefix := tt.id + "\000"
+
+			// verify that there is an ID + null byte prefix
+			assert.True(t, strings.HasPrefix(string(actualCD.Payload), expectedPrefix))
+
+			// verify each embedded hash
+			hashBytes := chunk(actualCD.Payload[len(expectedPrefix):], int(tt.expectedCD.HashSize))
+			for idx, actual := range hashBytes {
+				expected := tt.expectedHashes[idx]
+				actualStr := fmt.Sprintf("%x", actual)
+				assert.Equalf(t, expected, actualStr, "different hash at idx=%d", idx)
+			}
+
+			require.Len(t, hashBytes, int(tt.expectedCD.NSpecialSlots+tt.expectedCD.NCodeSlots))
 		})
 	}
 }
 
-func Test_generateCodeDirectoryPList(t *testing.T) {
+func chunk(slice []byte, chunkSize int) [][]byte {
+	var chunks [][]byte
+	for i := 0; i < len(slice); i += chunkSize {
+		end := i + chunkSize
+		if end > len(slice) {
+			end = len(slice)
+		}
+
+		chunks = append(chunks, slice[i:end])
+	}
+
+	return chunks
+}
+
+func Test_generateCodeDirectory(t *testing.T) {
+	test.Make(t, "fixture-hello")
 
 	tests := []struct {
-		name          string
-		input         []string
-		expectedPlist string
+		name             string
+		id               string
+		hasher           hash.Hash
+		binaryPath       string
+		requirementsHash string
+		pListHash        string
+		cdHash           string
+		cdBytes          string
 	}{
+
 		{
-			name: "plist contains cd hashes",
-			input: []string{
-				"ce0f6c28b5869ff166714da5fe08554c70c731a335ff9702e38b00f81ad348c6",
-				"58da67f67fd35f245e872227fe38340c9f7f6f5dfac962e5c8197cb54a8e8326",
-				"73c9c98668a34c54d131ff609d0bf129068d1b5ed3efd7cdfe753f909596456c",
-			},
-			expectedPlist: `<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-	<dict>
-		<key>cdhashes</key>
-		<array>
-			<data>Y2UwZjZjMjhiNTg2OWZmMTY2NzE0ZGE1ZmUwODU1NGM3MGM3MzFhMzM1ZmY5NzAyZTM4YjAwZjgxYWQzNDhjNg==</data>
-			<data>NThkYTY3ZjY3ZmQzNWYyNDVlODcyMjI3ZmUzODM0MGM5ZjdmNmY1ZGZhYzk2MmU1YzgxOTdjYjU0YThlODMyNg==</data>
-			<data>NzNjOWM5ODY2OGEzNGM1NGQxMzFmZjYwOWQwYmYxMjkwNjhkMWI1ZWQzZWZkN2NkZmU3NTNmOTA5NTk2NDU2Yw==</data>
-		</array>
-	</dict>
-</plist>`,
+			name:             "for a single, adhoc signed binary",
+			id:               "hello_adhoc_signed-5555494473a48f08821b3cb388dfa59f39babf39",
+			hasher:           sha256.New(),
+			binaryPath:       test.AssetCopy(t, "hello_adhoc_signed"),
+			requirementsHash: "987920904eab650e75788c054aa0b0524e6a80bfc71aa32df8d237a61743f986",
+			pListHash:        "0000000000000000000000000000000000000000000000000000000000000000",
+			// from: codesign -d --verbose=4 <path/to>/assets/hello_adhoc_signed
+			// value of "CandidateCDHashFull" key for "sha256"
+			cdHash: "5b6a36c959fc03cbd87367d400ce96e4f73ca9da5f61a5de46c6cd82679ac775",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var data [][]byte
-			for _, hs := range tt.input {
-				data = append(data, []byte(hs))
-			}
-			actualPlist, err := generateCodeDirectoryPList(data)
+			m, err := macho.NewFile(tt.binaryPath)
 			require.NoError(t, err)
 
-			assert.Equal(t, tt.expectedPlist, string(actualPlist))
+			reqBytes, err := hex.DecodeString(tt.requirementsHash)
+			require.NoError(t, err)
+
+			pListBytes, err := hex.DecodeString(tt.pListHash)
+			require.NoError(t, err)
+
+			cdBlob, actualCDHash, err := generateCodeDirectory(tt.id, tt.hasher, m, macho.LinkerSigned|macho.Adhoc, reqBytes, pListBytes)
+			require.NoError(t, err)
+
+			fmt.Println(fmt.Sprintf("%x", cdBlob))
+
+			// we already have the CD under test, let's test the hash
+			assert.Equal(t, tt.cdHash, fmt.Sprintf("%x", actualCDHash))
 		})
 	}
 }

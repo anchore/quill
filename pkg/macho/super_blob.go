@@ -25,13 +25,16 @@ func NewSuperBlob(magic Magic) SuperBlob {
 	}
 }
 
-func (s *SuperBlob) Add(t SlotType, b Blob) {
+func (s *SuperBlob) Add(t SlotType, b *Blob) {
+	if b == nil {
+		return
+	}
 	index := BlobIndex{
 		Type: t,
 		// Note: offset can only be set after all blobs are added
 	}
 	s.Index = append(s.Index, index)
-	s.Blobs = append(s.Blobs, b)
+	s.Blobs = append(s.Blobs, *b)
 	s.Count++
 	s.Length += b.Length + uint32(unsafe.Sizeof(index))
 }
@@ -46,7 +49,7 @@ func (s *SuperBlob) Finalize() {
 		currentOffset += s.Blobs[idx].Length
 	}
 
-	// add extra page of 0s (wantHexHashes by the codesign tool for validation)
-	s.Pad = make([]byte, PageSize)
+	// add extra few pages of 0s (wanted by the codesign tool for validation)
+	s.Pad = make([]byte, PageSize*4)
 	s.Length += uint32(len(s.Pad))
 }

@@ -1,6 +1,7 @@
 package sign
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"fmt"
 
@@ -14,31 +15,33 @@ func generateSigningSuperBlob(id string, m *macho.File, keyFile, keyPassword, ce
 		// TODO: add options to enable more strict rules (such as macho.Hard)
 		cdFlags = macho.Runtime
 	} else {
-		cdFlags = macho.LinkerSigned | macho.Adhoc
+		cdFlags = macho.Adhoc
 	}
 
-	cdBytes, cdHash, err := generateCodeDirectory(id, sha256.New(), m, cdFlags)
+	requirementsBlob, requirementsHashBytes, err := generateRequirements(sha256.New())
+	if err != nil {
+		return nil, fmt.Errorf("unable to create requirements: %w", err)
+	}
+
+	// TODO: add entitlements, for the meantime, don't include it
+	entitlementsHashBytes := bytes.Repeat([]byte{0}, sha256.New().Size())
+
+	cdBlob, cdHash, err := generateCodeDirectory(id, sha256.New(), m, cdFlags, requirementsHashBytes, entitlementsHashBytes)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create code directory: %w", err)
 	}
 
-	// TODO: generate the entitlements (output: bytes)
-
-	cmsBytes, err := generateCMS(keyFile, keyPassword, certFile, cdHash)
+	cmsBlob, err := generateCMS(keyFile, keyPassword, certFile, cdHash)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create signature block: %w", err)
 	}
 
-	requirements := generateRequirements()
-
 	sb := macho.NewSuperBlob(macho.MagicEmbeddedSignature)
 
-	sb.Add(macho.CsSlotCodedirectory, macho.NewBlob(macho.MagicCodedirectory, cdBytes))
-	sb.Add(macho.CsSlotRequirements, macho.NewBlob(macho.MagicRequirements, requirements))
-	if len(cmsBytes) > 0 {
-		// an ad-hoc signature has no CMS block
-		sb.Add(macho.CsSlotCmsSignature, macho.NewBlob(macho.MagicBlobwrapper, cmsBytes))
-	}
+	sb.Add(macho.CsSlotCodedirectory, cdBlob)
+	sb.Add(macho.CsSlotRequirements, requirementsBlob)
+	sb.Add(macho.CsSlotCmsSignature, cmsBlob)
+
 	sb.Finalize()
 
 	sbBytes, err := restruct.Pack(macho.SigningOrder, &sb)

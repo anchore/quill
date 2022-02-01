@@ -89,26 +89,27 @@ type CodeDirectoryHeader struct {
 	CodeLimit     uint32    // limit to main image signature range
 	HashSize      uint8     // size of each hash in bytes
 	HashType      HashType  // type of hash (cdHashType* constants)
-	// Pad1__        uint8     // unused (must be zero)
-	Platform uint8 // platform identifier zero if not platform binary
-	PageSize uint8 // log2(page size in bytes) 0 => infinite
-	// Pad2__        uint32    // unused (must be zero)
-	Spare2 uint32 // unused (must be zero)
+	Platform      uint8     // platform identifier zero if not platform binary
+	PageSize      uint8     // log2(page size in bytes) 0 => infinite
+	Spare2        uint32    // unused (must be zero)
+
+	EndEarliest [0]uint8
 
 	/* Version 0x20100 */
-	ScatterOffset uint32 /* offset of optional scatter vector */
+	ScatterOffset  uint32 /* offset of optional scatter vector */
+	EndWithScatter [0]uint8
 
 	/* Version 0x20200 */
-	TeamOffset uint32 /* offset of optional team identifier */
-	// Pad3__     uint32 // unused (must be zero)
+	TeamOffset  uint32 /* offset of optional team identifier */
+	EndWithTeam [0]uint8
 
 	/* Version 0x20300 */
-	Spare3      uint32 /* unused (must be zero) */
-	CodeLimit64 uint64 /* limit to main image signature range, 64 bits */
+	Spare3             uint32 /* unused (must be zero) */
+	CodeLimit64        uint64 /* limit to main image signature range, 64 bits */
+	EndWithCodeLimit64 [0]uint8
 
 	/* Version 0x20400 */
 	ExecSegBase  uint64      /* offset of executable segment */
 	ExecSegLimit uint64      /* limit of executable segment */
 	ExecSegFlags ExecSegFlag /* exec segment flags */
-
 }
