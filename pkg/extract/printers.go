@@ -5,11 +5,11 @@ import (
 	"strings"
 	"unicode"
 
+	"github.com/anchore/quill/internal/pkcs7"
 	"github.com/blacktop/go-macho"
 	ctypes "github.com/blacktop/go-macho/pkg/codesign/types"
 	"github.com/blacktop/go-macho/types"
 	"github.com/dustin/go-humanize/english"
-	"github.com/fullsailor/pkcs7"
 )
 
 // original source is from: https://github.com/RedMapleTech/machodump
@@ -191,7 +191,7 @@ func printCMSSig(data []byte) error {
 			fmt.Printf("\t\t\tAttribute %d\n", ui)
 			fmt.Printf("\t\t\tType: %+v\n", att.Type)
 			fmt.Printf("\t\t\tCompound?: %+v\n", att.Value.IsCompound)
-			fmt.Printf("\t\t\tValue: %q\n\n", fmt.Sprintf("%x", att.Value.Bytes))
+			fmt.Printf("\t\t\tASN1 Value: %q\n\n", fmt.Sprintf("%x", att.Value.Bytes))
 		}
 	}
 

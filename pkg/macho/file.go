@@ -1,6 +1,7 @@
 package macho
 
 import (
+	"bytes"
 	"debug/macho"
 	"encoding/binary"
 	"fmt"
@@ -225,6 +226,79 @@ func (m *File) HashPages(hasher hash.Hash) (hashes [][]byte, err error) {
 	}
 
 	return hashChunks(hasher, PageSize, b)
+}
+
+func (m *File) CDBytes(order binary.ByteOrder) (cd []byte, err error) {
+	cmd, _, err := m.CodeSigningCmd()
+	if err != nil {
+		return nil, fmt.Errorf("unable to extract code signing cmd: %w", err)
+	}
+
+	superBlobBytes := make([]byte, cmd.DataSize)
+	if _, err := m.ReadAt(superBlobBytes, int64(cmd.DataOffset)); err != nil {
+		return nil, fmt.Errorf("unable to extract code signing block from macho binary: %w", err)
+	}
+
+	superBlobReader := bytes.NewReader(superBlobBytes)
+
+	csBlob := SuperBlob{}
+	if err := binary.Read(superBlobReader, SigningOrder, &csBlob.SuperBlobHeader); err != nil {
+		return nil, fmt.Errorf("unable to extract superblob header from macho binary: %w", err)
+	}
+
+	csBlob.Index = make([]BlobIndex, csBlob.Count)
+	if err := binary.Read(superBlobReader, SigningOrder, &csBlob.Index); err != nil {
+		return nil, err
+	}
+
+	for _, index := range csBlob.Index {
+
+		if _, err := superBlobReader.Seek(int64(index.Offset), io.SeekStart); err != nil {
+			return nil, fmt.Errorf("unable to seek to code signing blob index=%d: %w", index.Offset, err)
+		}
+
+		switch index.Type {
+		case CsSlotCodedirectory, CsSlotAlternateCodedirectories:
+
+			var cdBlobHeader BlobHeader
+			// read the header
+			if err := binary.Read(superBlobReader, SigningOrder, &cdBlobHeader); err != nil {
+				return nil, err
+			}
+
+			var cdHeader CodeDirectoryHeader
+			if err := binary.Read(superBlobReader, SigningOrder, &cdHeader); err != nil {
+				return nil, err
+			}
+
+			// head back to the beginning of the CD
+			if _, err := superBlobReader.Seek(int64(index.Offset), io.SeekStart); err != nil {
+				return nil, fmt.Errorf("unable to seek to code directory: %w", err)
+			}
+
+			cdBytes := make([]byte, cdBlobHeader.Length)
+			// note: though the binary may be LE or BE, for hashing we always use LE
+			// note: the entire blob is encoded, not just the code directory (which is only the blob payload)
+			if err := binary.Read(superBlobReader, order, &cdBytes); err != nil {
+				return nil, err
+			}
+
+			return cdBytes, nil
+
+		}
+
+	}
+	return nil, fmt.Errorf("unable to find code directory to hash")
+}
+
+func (m *File) HashCD(hasher hash.Hash) (hash []byte, err error) {
+	cdBytes, err := m.CDBytes(binary.LittleEndian)
+	if err != nil {
+		return nil, err
+	}
+	hasher.Reset()
+	hasher.Write(cdBytes)
+	return hasher.Sum(nil), nil
 }
 
 func packSegment(magic uint32, order binary.ByteOrder, h macho.SegmentHeader) ([]byte, error) {

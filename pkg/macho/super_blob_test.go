@@ -62,7 +62,7 @@ func TestSuperBlob_Add(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			s := NewSuperBlob(MagicEmbeddedSignature)
 			for _, a := range tt.args {
-				s.Add(a.slotType, a.blob)
+				s.Add(a.slotType, &a.blob)
 			}
 
 			var expectedBlobs []Blob
@@ -100,7 +100,7 @@ func TestSuperBlob_Finalize(t *testing.T) {
 					blob:     NewBlob(MagicCodedirectory, []byte("payload!")),
 				},
 			},
-			wantLength: 24 + PageSize,
+			wantLength: 24 + PageSize*4,
 			wantIndexOffsets: []int{
 				20,
 			},
@@ -113,7 +113,7 @@ func TestSuperBlob_Finalize(t *testing.T) {
 					blob:     NewBlob(MagicRequirements, nil),
 				},
 			},
-			wantLength: 16 + PageSize,
+			wantLength: 16 + PageSize*4,
 			wantIndexOffsets: []int{
 				20,
 			},
@@ -134,7 +134,7 @@ func TestSuperBlob_Finalize(t *testing.T) {
 					blob:     NewBlob(MagicRequirements, []byte("yet another payload!")),
 				},
 			},
-			wantLength: 92 + PageSize,
+			wantLength: 92 + PageSize*4,
 			wantIndexOffsets: []int{
 				36,
 				52,
@@ -146,7 +146,7 @@ func TestSuperBlob_Finalize(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			s := NewSuperBlob(MagicEmbeddedSignature)
 			for _, a := range tt.args {
-				s.Add(a.slotType, a.blob)
+				s.Add(a.slotType, &a.blob)
 			}
 			s.Finalize()
 
@@ -159,7 +159,7 @@ func TestSuperBlob_Finalize(t *testing.T) {
 			expectedBlobLength, expectedOffsets := assertSuperBlobs(t, expectedBlobs, s)
 
 			// the total length should be the header + size of all blobs + size of all indexes + 1 page of 0s
-			assert.Equal(t, int(s.Length), expectedBlobLength+PageSize, "bad super blob length")
+			assert.Equal(t, int(s.Length), expectedBlobLength+PageSize*4, "bad super blob length")
 			assert.Equal(t, int(s.Length), tt.wantLength, "bad super blob length (from hard coded value)")
 
 			// ensure we calculated all offsets correctly
