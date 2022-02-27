@@ -5,23 +5,42 @@ import (
 	"encoding/asn1"
 	"fmt"
 
-	"howett.net/plist"
-
+	"github.com/anchore/quill/internal/pkcs7"
 	"github.com/anchore/quill/pkg/macho"
-
-	"github.com/fullsailor/pkcs7"
+	"howett.net/plist"
 )
 
 var (
 	// 1.2.840.113635.100.9.1 : signed attribute containing plist of code directory hashes
-	cdHashPlistOID = asn1.ObjectIdentifier{1, 2, 840, 113635, 100, 9, 1}
+	oidCDHashPlist = asn1.ObjectIdentifier{1, 2, 840, 113635, 100, 9, 1}
 
 	// 1.2.840.113635.100.9.2 : signed attribute containing the SHA-256 of code directory digests
-	cdHashSha256OID = asn1.ObjectIdentifier{1, 2, 840, 113635, 100, 9, 2}
+	oidCDHashSha256 = asn1.ObjectIdentifier{1, 2, 840, 113635, 100, 9, 2}
+
+	// 1.2.840.113549.1.9.4 : message digest (set by the pkcs7 package)
+	//oidCDMessageDigest = asn1.ObjectIdentifier{1, 2, 840, 113549, 1, 9, 4}
 
 	// 2.16.840.1.101.3.4.2.1 : secure hash algorithm that uses a 256 bit key (SHA256)
-	sha256OID = asn1.ObjectIdentifier{2, 16, 840, 1, 101, 3, 4, 2, 1}
+	oidSHA256 = asn1.ObjectIdentifier{2, 16, 840, 1, 101, 3, 4, 2, 1}
+
+	// describes the CMD enveloped data (not signed)
+	oidData = asn1.ObjectIdentifier{1, 2, 840, 113549, 1, 7, 1}
 )
+
+type attributeContentInfo struct {
+	ContentType asn1.ObjectIdentifier
+	Content     asn1.RawValue `asn1:"explicit,optional"`
+}
+
+func sha256Attribute(cdHash []byte) pkcs7.Attribute {
+	return pkcs7.Attribute{
+		Type: oidCDHashSha256,
+		Value: attributeContentInfo{
+			ContentType: oidSHA256,
+			Content:     asn1.RawValue{Tag: asn1.TagOctetString, Bytes: cdHash},
+		},
+	}
+}
 
 func generateCMS(keyFile, keyPassword, certFile string, cdHash []byte) (*macho.Blob, error) {
 	var cmsBytes []byte
@@ -33,22 +52,13 @@ func generateCMS(keyFile, keyPassword, certFile string, cdHash []byte) (*macho.B
 
 		attrs := []pkcs7.Attribute{
 			{
-				Type:  cdHashPlistOID,
+				Type:  oidCDHashPlist,
 				Value: plst,
 			},
-			{
-				Type: cdHashSha256OID,
-				Value: struct {
-					HashAlgorithm asn1.ObjectIdentifier
-					Value         []byte
-				}{
-					HashAlgorithm: sha256OID,
-					Value:         cdHash,
-				},
-			},
+			sha256Attribute(cdHash),
 		}
 		// TODO: add certificate chain
-		cmsBytes, err = generateCMSWithAttributes(keyFile, keyPassword, certFile, attrs)
+		cmsBytes, err = generateCMSWithAttributes(keyFile, keyPassword, certFile, attrs, cdHash)
 		if err != nil {
 			return nil, err
 		}
@@ -71,8 +81,9 @@ func generateCodeDirectoryPList(hashes [][]byte) ([]byte, error) {
 	return buff.Bytes(), nil
 }
 
-func generateCMSWithAttributes(keyFile, keyPassword, certFile string, attributes []pkcs7.Attribute) ([]byte, error) {
-	signedData, err := pkcs7.NewSignedData(nil)
+func generateCMSWithAttributes(keyFile, keyPassword, certFile string, attributes []pkcs7.Attribute, cdHash []byte) ([]byte, error) {
+	// TODO: I haven't been able to explain this --looks like apple overrides the CMS digest of the message (which is empty) and uses this spot to indicate the digest of the CD instead.
+	signedData, err := pkcs7.NewSignedDataAttributes(cdHash)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create signed data: %w", err)
 	}

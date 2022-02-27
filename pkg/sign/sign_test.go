@@ -8,9 +8,6 @@ import (
 )
 
 func TestSign(t *testing.T) {
-	test.Make(t, "fixture-x509")
-	test.Make(t, "fixture-hello")
-	test.Make(t, "fixture-syft")
 
 	type args struct {
 		id          string

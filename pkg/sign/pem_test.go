@@ -9,7 +9,6 @@ import (
 )
 
 func Test_loadCertFromFile(t *testing.T) {
-	test.Make(t, "fixture-hello")
 
 	tests := []struct {
 		filename     string
@@ -36,8 +35,6 @@ func Test_loadCertFromFile(t *testing.T) {
 }
 
 func Test_loadPrivateKeyFromFile(t *testing.T) {
-	test.Make(t, "fixture-hello")
-	test.Make(t, "fixture-x509")
 
 	tests := []struct {
 		name         string

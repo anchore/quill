@@ -19,24 +19,39 @@ func generateCodeDirectory(id string, hasher hash.Hash, m *macho.File, flags mac
 		return nil, nil, err
 	}
 
-	cdBytes, err := restruct.Pack(macho.SigningOrder, cd)
+	blob, err := packCodeDirectory(cd, macho.SigningOrder)
 	if err != nil {
-		return nil, nil, fmt.Errorf("unable to encode code directory: %w", err)
+		return nil, nil, err
 	}
 
-	blob := macho.NewBlob(macho.MagicCodedirectory, cdBytes)
-
-	// note: though the binary may be LE or BE, for hashing we always use LE
-	// note: the entire blob is encoded, not just the code directory (which is only the blob payload)
-	cdHashInput, err := restruct.Pack(binary.LittleEndian, blob)
+	hashVal, err := hashCodeDirectory(hasher, blob)
 	if err != nil {
-		return nil, nil, fmt.Errorf("unable to encode code directory: %w", err)
+		return nil, nil, err
+	}
+
+	return blob, hashVal, nil
+}
+
+func hashCodeDirectory(hasher hash.Hash, blob *macho.Blob) ([]byte, error) {
+	cdHashInput, err := restruct.Pack(macho.SigningOrder, blob)
+	if err != nil {
+		return nil, fmt.Errorf("unable to pack code directory: %w", err)
 	}
 
 	hasher.Reset()
 	hasher.Write(cdHashInput)
 
-	return &blob, hasher.Sum(nil), nil
+	return hasher.Sum(nil), nil
+}
+
+func packCodeDirectory(cd *macho.CodeDirectory, order binary.ByteOrder) (*macho.Blob, error) {
+	cdBytes, err := restruct.Pack(order, cd)
+	if err != nil {
+		return nil, fmt.Errorf("unable to encode code directory: %w", err)
+	}
+
+	blob := macho.NewBlob(macho.MagicCodedirectory, cdBytes)
+	return &blob, nil
 }
 
 func newCodeDirectoryFromMacho(id string, hasher hash.Hash, m *macho.File, flags macho.CdFlag, requirementsHashBytes, entitlementsHashBytes []byte) (*macho.CodeDirectory, error) {
@@ -81,8 +96,7 @@ func newCodeDirectory(id string, hasher hash.Hash, execOffset, execSize uint64, 
 	buff := bytes.Buffer{}
 
 	// write the identifier
-	_, err := buff.Write([]byte(id + "\000"))
-	if err != nil {
+	if _, err := buff.Write([]byte(id + "\000")); err != nil {
 		return nil, fmt.Errorf("unable to write ID to code directory: %w", err)
 	}
 
@@ -103,19 +117,21 @@ func newCodeDirectory(id string, hasher hash.Hash, execOffset, execSize uint64, 
 
 	return &macho.CodeDirectory{
 		CodeDirectoryHeader: macho.CodeDirectoryHeader{
-			Version:       macho.SupportsExecseg,
-			Flags:         flags,
-			HashOffset:    uint32(hashOff),
-			IdentOffset:   uint32(idOff),
-			NSpecialSlots: uint32(2), // requirements + plist
-			NCodeSlots:    uint32(len(hashes)),
-			CodeLimit:     codeSize,
-			HashSize:      uint8(hasher.Size()),
-			HashType:      ht,
-			PageSize:      uint8(macho.PageSizeBits),
-			ExecSegBase:   execOffset,
-			ExecSegLimit:  execSize,
-			ExecSegFlags:  macho.ExecsegMainBinary,
+			Version:          macho.SupportsRuntime,
+			Flags:            flags,
+			HashOffset:       uint32(hashOff),
+			IdentOffset:      uint32(idOff),
+			NSpecialSlots:    uint32(2), // requirements + plist
+			NCodeSlots:       uint32(len(hashes)),
+			CodeLimit:        codeSize,
+			HashSize:         uint8(hasher.Size()),
+			HashType:         ht,
+			PageSize:         uint8(macho.PageSizeBits),
+			ExecSegBase:      execOffset,
+			ExecSegLimit:     execSize,
+			ExecSegFlags:     macho.ExecsegMainBinary,
+			Runtime:          0x0c0100,
+			PreEncryptOffset: 0x0,
 		},
 		Payload: buff.Bytes(),
 	}, nil

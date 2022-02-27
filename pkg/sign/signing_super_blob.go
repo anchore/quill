@@ -5,6 +5,8 @@ import (
 	"crypto/sha256"
 	"fmt"
 
+	"github.com/anchore/quill/internal/log"
+
 	"github.com/anchore/quill/pkg/macho"
 	"github.com/go-restruct/restruct"
 )
@@ -13,6 +15,7 @@ func generateSigningSuperBlob(id string, m *macho.File, keyFile, keyPassword, ce
 	var cdFlags macho.CdFlag
 	if certFile != "" {
 		// TODO: add options to enable more strict rules (such as macho.Hard)
+		// note: we must at least support the runtime option for notarization (requirement introduced in macOS 10.14 / Mojave).
 		cdFlags = macho.Runtime
 	} else {
 		cdFlags = macho.Adhoc
@@ -30,6 +33,8 @@ func generateSigningSuperBlob(id string, m *macho.File, keyFile, keyPassword, ce
 	if err != nil {
 		return nil, fmt.Errorf("unable to create code directory: %w", err)
 	}
+
+	log.Debugf("CD Hash: %x", cdHash)
 
 	cmsBlob, err := generateCMS(keyFile, keyPassword, certFile, cdHash)
 	if err != nil {

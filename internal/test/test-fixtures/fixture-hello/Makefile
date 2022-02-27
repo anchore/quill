@@ -98,7 +98,7 @@ $(SIGNED_BIN): $(P12_FILE) $(BIN) ## create a signed binary
 	# sign the binary
 	cp $(BIN) $(SIGNED_BIN).tmp
 
-	codesign -s $(IDENTITY) --keychain $(KEYCHAIN_PATH) $(SIGNED_BIN).tmp
+	codesign -s $(IDENTITY) --options runtime --keychain $(KEYCHAIN_PATH) $(SIGNED_BIN).tmp
 
 	mv $(SIGNED_BIN).tmp $(SIGNED_BIN)
 
