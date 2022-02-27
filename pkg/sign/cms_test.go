@@ -184,15 +184,16 @@ func Test_generateCodeDirectoryPList(t *testing.T) {
 				"58da67f67fd35f245e872227fe38340c9f7f6f5dfac962e5c8197cb54a8e8326",
 				"73c9c98668a34c54d131ff609d0bf129068d1b5ed3efd7cdfe753f909596456c",
 			},
+			// note: the hashes are truncated to the sha1 byte size
 			expectedPlist: `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 	<dict>
 		<key>cdhashes</key>
 		<array>
-			<data>Y2UwZjZjMjhiNTg2OWZmMTY2NzE0ZGE1ZmUwODU1NGM3MGM3MzFhMzM1ZmY5NzAyZTM4YjAwZjgxYWQzNDhjNg==</data>
-			<data>NThkYTY3ZjY3ZmQzNWYyNDVlODcyMjI3ZmUzODM0MGM5ZjdmNmY1ZGZhYzk2MmU1YzgxOTdjYjU0YThlODMyNg==</data>
-			<data>NzNjOWM5ODY2OGEzNGM1NGQxMzFmZjYwOWQwYmYxMjkwNjhkMWI1ZWQzZWZkN2NkZmU3NTNmOTA5NTk2NDU2Yw==</data>
+			<data>Y2UwZjZjMjhiNTg2OWZmMTY2NzE=</data>
+			<data>NThkYTY3ZjY3ZmQzNWYyNDVlODc=</data>
+			<data>NzNjOWM5ODY2OGEzNGM1NGQxMzE=</data>
 		</array>
 	</dict>
 </plist>`,

@@ -165,6 +165,13 @@ func printCMSSig(data []byte) error {
 		return nil
 	}
 
+	var valid = "true"
+	if err := p7.Verify(); err != nil {
+		valid = fmt.Sprintf("false: %+v", err.Error())
+	}
+	fmt.Printf("\nCMS Valid: %s\n", valid)
+
+	fmt.Printf("\nCMS Signature Length: %d\n", len(data))
 	fmt.Printf("\nCMS Signature has %d certificates:\n", len(p7.Certificates))
 	for _, cert := range p7.Certificates {
 		fmt.Printf("\tCN: %q\n", cert.Subject.CommonName)

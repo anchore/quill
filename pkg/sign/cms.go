@@ -2,6 +2,7 @@ package sign
 
 import (
 	"bytes"
+	"crypto"
 	"encoding/asn1"
 	"fmt"
 
@@ -68,7 +69,17 @@ func generateCodeDirectoryPList(hashes [][]byte) ([]byte, error) {
 	encoder := plist.NewEncoder(&buff)
 	encoder.Indent("\t")
 
-	if err := encoder.Encode(map[string][][]byte{"cdhashes": hashes}); err != nil {
+	// note: in the codesign -dv output, there is a difference between CandidateCDHash and CandidateCDHashFull --though other
+	// references to the CD hash are the same as CandidateCDHashFull, the plist contains the CandidateCDHash. What's the
+	// real difference? This looks to be an artifact of Apple starting with SHA1 as the CD hash algorithm, as it seems
+	// that the hash size allowed should match that of SHA1, regardless of the algorithm
+	maxSize := crypto.SHA1.Size()
+	var truncatedHashes [][]byte
+	for _, h := range hashes {
+		truncatedHashes = append(truncatedHashes, h[:maxSize])
+	}
+
+	if err := encoder.Encode(map[string][][]byte{"cdhashes": truncatedHashes}); err != nil {
 		return nil, fmt.Errorf("unable to generate plist: %w", err)
 	}
 
