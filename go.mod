@@ -3,10 +3,10 @@ module github.com/anchore/quill
 go 1.17
 
 require (
+	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d
 	github.com/adrg/xdg v0.2.1
 	github.com/blacktop/go-macho v1.1.83
 	github.com/dustin/go-humanize v1.0.0
-	github.com/fullsailor/pkcs7 v0.0.0-20190404230743-d7302db945fa
 	github.com/go-restruct/restruct v1.2.0-alpha
 	github.com/gookit/color v1.2.7
 	github.com/hashicorp/go-multierror v1.1.0
@@ -25,7 +25,6 @@ require (
 )
 
 require (
-	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/hashicorp/errwrap v1.0.0 // indirect
@@ -58,3 +57,5 @@ require (
 	gopkg.in/ini.v1 v1.56.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect
 )
+
+replace github.com/wagoodman/pkcs7 => ../pkcs7
