@@ -51,6 +51,7 @@ func (s *SuperBlob) Finalize() {
 
 	// add extra few pages of 0s (wanted by the codesign tool for validation)
 	// TODO: remove offset fiddling... just testing something
-	s.Pad = make([]byte, (PageSize*4)-0x10d)
+	//s.Pad = make([]byte, (PageSize * 4))
+	s.Pad = make([]byte, 0x4920-s.Length-0xc)
 	s.Length += uint32(len(s.Pad))
 }

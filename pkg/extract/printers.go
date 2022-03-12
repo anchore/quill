@@ -1,16 +1,22 @@
 package extract
 
 import (
+	"crypto/x509"
 	"encoding/hex"
 	"fmt"
 	"strings"
 	"unicode"
+
+	"github.com/davecgh/go-spew/spew"
+
+	cms "github.com/github/smimesign/ietf-cms"
 
 	"github.com/anchore/quill/internal/pkcs7"
 	"github.com/blacktop/go-macho"
 	ctypes "github.com/blacktop/go-macho/pkg/codesign/types"
 	"github.com/blacktop/go-macho/types"
 	"github.com/dustin/go-humanize/english"
+	"github.com/github/smimesign/ietf-cms/protocol"
 )
 
 // original source is from: https://github.com/RedMapleTech/machodump
@@ -157,6 +163,62 @@ func printEnts(ents *entsStruct) {
 // printCMSSig parses the PKCS7 blob, extracting the certificate common names
 func printCMSSig(data []byte) error {
 	fmt.Printf("%s", hex.Dump(data))
+
+	ci, err := protocol.ParseContentInfo(data)
+	if err != nil {
+		return err
+	}
+
+	psd, err := ci.SignedDataContent()
+	if err != nil {
+		return fmt.Errorf("bad cms: %w", err)
+	}
+
+	spew.Dump(psd)
+
+	certs, err := psd.X509Certificates()
+	if err != nil {
+		return fmt.Errorf("bad ietf certs: %w", err)
+	}
+
+	fmt.Println("Certs:")
+	for _, c := range certs {
+		fmt.Printf("\tCN: %q\n", c.Subject.CommonName)
+		fmt.Printf("\tName: %q %+v\n", c.Issuer.CommonName, c.Issuer.Names)
+		fmt.Printf("\tSerial: %s\n", c.Issuer.SerialNumber)
+
+	}
+
+	fmt.Printf("\nCMS Signature has %d signers:\n", len(psd.SignerInfos))
+	for idx, signer := range psd.SignerInfos {
+		fmt.Printf("\tSigner %d:\n", idx+1)
+		fmt.Printf("\t\tDigest Algorithm: %+v\n", signer.DigestAlgorithm.Algorithm.String())
+
+		fmt.Printf("\t\tAuthenticated Attributes (%d):\n", len(signer.SignedAttrs))
+		for ui, att := range signer.SignedAttrs {
+			fmt.Printf("\t\t\tAttribute %d\n", ui)
+			fmt.Printf("\t\t\tType: %+v\n", att.Type)
+			fmt.Printf("\t\t\tCompound?: %+v\n", att.RawValue.IsCompound)
+			fmt.Printf("\t\t\tASN1 Bytes: %q\n\n", fmt.Sprintf("%x", att.RawValue.Bytes))
+			v, err := att.Value()
+			if err != nil {
+				return fmt.Errorf("bad value: %w", err)
+			}
+			fmt.Printf("\t\t\tASN1 Value: %+v\n\n", v)
+		}
+	}
+
+	sd, err := cms.ParseSignedData(data)
+	if err != nil {
+		return err
+	}
+
+	verifyCerts, err := sd.Verify(x509.VerifyOptions{})
+	fmt.Printf("verify certs (%d): %+v\n", len(verifyCerts), verifyCerts)
+	fmt.Printf("verified?: %+v\n", err)
+
+	return nil
+	fmt.Println("=========================================================================")
 
 	p7, err := pkcs7.Parse(data)
 	if err != nil {

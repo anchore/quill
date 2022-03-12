@@ -678,7 +678,7 @@ func (sd *SignedData) AddSigner(cert *x509.Certificate, pkey crypto.PrivateKey, 
 	signer := signerInfo{
 		AuthenticatedAttributes:   finalAttrs,
 		DigestAlgorithm:           pkix.AlgorithmIdentifier{Algorithm: oidSHA256},
-		DigestEncryptionAlgorithm: pkix.AlgorithmIdentifier{Algorithm: oidSignatureSHA1WithRSA},
+		DigestEncryptionAlgorithm: pkix.AlgorithmIdentifier{Algorithm: oidSignatureSHA256WithRSA},
 		IssuerAndSerialNumber:     ias,
 		EncryptedDigest:           signature,
 		Version:                   1,

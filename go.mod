@@ -7,6 +7,7 @@ require (
 	github.com/adrg/xdg v0.2.1
 	github.com/blacktop/go-macho v1.1.83
 	github.com/dustin/go-humanize v1.0.0
+	github.com/github/smimesign v0.2.0
 	github.com/go-restruct/restruct v1.2.0-alpha
 	github.com/gookit/color v1.2.7
 	github.com/hashicorp/go-multierror v1.1.0
@@ -52,10 +53,7 @@ require (
 	golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d // indirect
 	golang.org/x/sys v0.0.0-20210423082822-04245dca01da // indirect
 	golang.org/x/text v0.3.6 // indirect
-	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543 // indirect
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 	gopkg.in/ini.v1 v1.56.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect
 )
-
-replace github.com/wagoodman/pkcs7 => ../pkcs7
