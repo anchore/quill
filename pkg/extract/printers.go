@@ -1,6 +1,7 @@
 package extract
 
 import (
+	"encoding/hex"
 	"fmt"
 	"strings"
 	"unicode"
@@ -155,6 +156,8 @@ func printEnts(ents *entsStruct) {
 
 // printCMSSig parses the PKCS7 blob, extracting the certificate common names
 func printCMSSig(data []byte) error {
+	fmt.Printf("%s", hex.Dump(data))
+
 	p7, err := pkcs7.Parse(data)
 	if err != nil {
 		return fmt.Errorf("unable to parse CMS: %w", err)
