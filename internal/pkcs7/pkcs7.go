@@ -553,33 +553,12 @@ func NewSignedData(data []byte) (*SignedData, error) {
 		Content:     asn1.RawValue{Class: 2, Tag: 0, Bytes: content, IsCompound: true},
 	}
 	digAlg := pkix.AlgorithmIdentifier{
-		Algorithm: oidSHA256,
+		Algorithm:  oidSHA256,
+		Parameters: asn1.RawValue{Tag: asn1.TagNull},
 	}
 	h := crypto.SHA256.New()
 	h.Write(data)
 	md := h.Sum(nil)
-	sd := signedData{
-		ContentInfo:                ci,
-		Version:                    1,
-		DigestAlgorithmIdentifiers: []pkix.AlgorithmIdentifier{digAlg},
-	}
-	return &SignedData{sd: sd, messageDigest: md}, nil
-}
-
-// NewSignedDataAttributes initializes a SignedData with no content and sets the attribute digest
-func NewSignedDataAttributes(md []byte) (*SignedData, error) {
-	content, err := asn1.Marshal([]byte{})
-	if err != nil {
-		return nil, err
-	}
-	ci := contentInfo{
-		ContentType: oidData,
-		Content:     asn1.RawValue{Class: 2, Tag: 0, Bytes: content, IsCompound: true},
-	}
-	digAlg := pkix.AlgorithmIdentifier{
-		Algorithm: oidSHA256,
-	}
-
 	sd := signedData{
 		ContentInfo:                ci,
 		Version:                    1,
@@ -665,7 +644,8 @@ func (sd *SignedData) AddSigner(cert *x509.Certificate, pkey crypto.PrivateKey, 
 	if err != nil {
 		return err
 	}
-	signature, err := signAttributes(finalAttrs, pkey, crypto.SHA1)
+
+	signature, err := signAttributes(finalAttrs, pkey, crypto.SHA256)
 	if err != nil {
 		return err
 	}
@@ -677,8 +657,8 @@ func (sd *SignedData) AddSigner(cert *x509.Certificate, pkey crypto.PrivateKey, 
 
 	signer := signerInfo{
 		AuthenticatedAttributes:   finalAttrs,
-		DigestAlgorithm:           pkix.AlgorithmIdentifier{Algorithm: oidSHA256},
-		DigestEncryptionAlgorithm: pkix.AlgorithmIdentifier{Algorithm: oidSignatureSHA256WithRSA},
+		DigestAlgorithm:           pkix.AlgorithmIdentifier{Algorithm: oidSHA256, Parameters: asn1.RawValue{Tag: asn1.TagNull}},
+		DigestEncryptionAlgorithm: pkix.AlgorithmIdentifier{Algorithm: oidSignatureSHA256WithRSA, Parameters: asn1.RawValue{Tag: asn1.TagNull}},
 		IssuerAndSerialNumber:     ias,
 		EncryptedDigest:           signature,
 		Version:                   1,
@@ -735,7 +715,7 @@ func signAttributes(attrs []attribute, pkey crypto.PrivateKey, hash crypto.Hash)
 	hashed := h.Sum(nil)
 	switch priv := pkey.(type) {
 	case *rsa.PrivateKey:
-		return rsa.SignPKCS1v15(rand.Reader, priv, crypto.SHA1, hashed)
+		return rsa.SignPKCS1v15(rand.Reader, priv, hash, hashed)
 	}
 	return nil, ErrUnsupportedAlgorithm
 }

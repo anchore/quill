@@ -5,8 +5,6 @@ import (
 	"crypto/sha256"
 	"fmt"
 
-	"github.com/anchore/quill/internal/log"
-
 	"github.com/anchore/quill/pkg/macho"
 	"github.com/go-restruct/restruct"
 )
@@ -29,14 +27,12 @@ func generateSigningSuperBlob(id string, m *macho.File, keyFile, keyPassword, ce
 	// TODO: add entitlements, for the meantime, don't include it
 	entitlementsHashBytes := bytes.Repeat([]byte{0}, sha256.New().Size())
 
-	cdBlob, cdHash, err := generateCodeDirectory(id, sha256.New(), m, cdFlags, requirementsHashBytes, entitlementsHashBytes)
+	cdBlob, err := generateCodeDirectory(id, sha256.New(), m, cdFlags, requirementsHashBytes, entitlementsHashBytes)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create code directory: %w", err)
 	}
 
-	log.Debugf("CD Hash: %x", cdHash)
-
-	cmsBlob, err := generateCMS(keyFile, keyPassword, certFile, cdHash)
+	cmsBlob, err := generateCMS(keyFile, keyPassword, certFile, cdBlob)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create signature block: %w", err)
 	}

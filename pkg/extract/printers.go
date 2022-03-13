@@ -2,7 +2,6 @@ package extract
 
 import (
 	"crypto/x509"
-	"encoding/hex"
 	"fmt"
 	"strings"
 	"unicode"
@@ -162,7 +161,7 @@ func printEnts(ents *entsStruct) {
 
 // printCMSSig parses the PKCS7 blob, extracting the certificate common names
 func printCMSSig(data []byte) error {
-	fmt.Printf("%s", hex.Dump(data))
+	//fmt.Printf("%s", hex.EncodeToString(data))
 
 	ci, err := protocol.ParseContentInfo(data)
 	if err != nil {
