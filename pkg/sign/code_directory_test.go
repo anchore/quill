@@ -9,10 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/go-restruct/restruct"
-
 	"github.com/anchore/quill/internal/test"
 	"github.com/anchore/quill/pkg/macho"
+	"github.com/go-restruct/restruct"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -184,8 +183,15 @@ func Test_generateCodeDirectory(t *testing.T) {
 			pListBytes, err := hex.DecodeString(tt.pListHash)
 			require.NoError(t, err)
 
-			cdBlob, actualCDHash, err := generateCodeDirectory(tt.id, tt.hasher, m, tt.flags, reqBytes, pListBytes)
+			cdBlob, err := generateCodeDirectory(tt.id, tt.hasher, m, tt.flags, reqBytes, pListBytes)
 			require.NoError(t, err)
+
+			cdBytes, err := cdBlob.Pack()
+			require.NoError(t, err)
+
+			hasher := sha256.New()
+			hasher.Write(cdBytes)
+			actualCDHash := hasher.Sum(nil)
 
 			// grab CD from binary that already has the CD....
 			expectedCDBytes, err := m.CDBytes(binary.LittleEndian)

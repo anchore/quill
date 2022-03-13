@@ -27,18 +27,6 @@ func generateCodeDirectory(id string, hasher hash.Hash, m *macho.File, flags mac
 	return blob, nil
 }
 
-func hashCodeDirectory(hasher hash.Hash, blob *macho.Blob) ([]byte, error) {
-	cdHashInput, err := restruct.Pack(macho.SigningOrder, blob)
-	if err != nil {
-		return nil, fmt.Errorf("unable to pack code directory: %w", err)
-	}
-
-	hasher.Reset()
-	hasher.Write(cdHashInput)
-
-	return hasher.Sum(nil), nil
-}
-
 func packCodeDirectory(cd *macho.CodeDirectory, order binary.ByteOrder) (*macho.Blob, error) {
 	cdBytes, err := restruct.Pack(order, cd)
 	if err != nil {

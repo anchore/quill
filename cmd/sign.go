@@ -103,7 +103,7 @@ func signExecWorker(p string) <-chan error {
 		if id == "" {
 			id = path.Base(p)
 		}
-		
+
 		if err := sign.Sign(id, p, appConfig.Sign.PrivateKey, appConfig.Sign.Password, appConfig.Sign.Certificate); err != nil {
 			errs <- err
 		}

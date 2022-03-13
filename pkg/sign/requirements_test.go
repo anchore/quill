@@ -8,10 +8,9 @@ import (
 	"testing"
 
 	"github.com/anchore/quill/internal/test"
+	"github.com/anchore/quill/pkg/macho"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/anchore/quill/pkg/macho"
 )
 
 // TODO: throw away?
@@ -73,7 +72,7 @@ func Test_generateRequirements(t *testing.T) {
 		{
 			name:     "verify hello_signed",
 			hasher:   sha256.New(),
-			wantHash: "6099109d8a483c1e1d6f52bc1e2763b26e084309366253065d3e9306dd532921",
+			wantHash: "987920904eab650e75788c054aa0b0524e6a80bfc71aa32df8d237a61743f986", // empty requirements set
 		},
 	}
 	for _, tt := range tests {

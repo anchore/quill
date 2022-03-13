@@ -6,15 +6,12 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/davecgh/go-spew/spew"
-
-	cms "github.com/github/smimesign/ietf-cms"
-
-	"github.com/anchore/quill/internal/pkcs7"
 	"github.com/blacktop/go-macho"
 	ctypes "github.com/blacktop/go-macho/pkg/codesign/types"
 	"github.com/blacktop/go-macho/types"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/dustin/go-humanize/english"
+	cms "github.com/github/smimesign/ietf-cms"
 	"github.com/github/smimesign/ietf-cms/protocol"
 )
 
@@ -161,8 +158,6 @@ func printEnts(ents *entsStruct) {
 
 // printCMSSig parses the PKCS7 blob, extracting the certificate common names
 func printCMSSig(data []byte) error {
-	//fmt.Printf("%s", hex.EncodeToString(data))
-
 	ci, err := protocol.ParseContentInfo(data)
 	if err != nil {
 		return err
@@ -185,7 +180,6 @@ func printCMSSig(data []byte) error {
 		fmt.Printf("\tCN: %q\n", c.Subject.CommonName)
 		fmt.Printf("\tName: %q %+v\n", c.Issuer.CommonName, c.Issuer.Names)
 		fmt.Printf("\tSerial: %s\n", c.Issuer.SerialNumber)
-
 	}
 
 	fmt.Printf("\nCMS Signature has %d signers:\n", len(psd.SignerInfos))
@@ -215,56 +209,6 @@ func printCMSSig(data []byte) error {
 	verifyCerts, err := sd.Verify(x509.VerifyOptions{})
 	fmt.Printf("verify certs (%d): %+v\n", len(verifyCerts), verifyCerts)
 	fmt.Printf("verified?: %+v\n", err)
-
-	return nil
-	fmt.Println("=========================================================================")
-
-	p7, err := pkcs7.Parse(data)
-	if err != nil {
-		return fmt.Errorf("unable to parse CMS: %w", err)
-	}
-
-	if p7 == nil {
-		fmt.Printf("No certificates found")
-		return nil
-	}
-
-	var valid = "true"
-	if err := p7.Verify(); err != nil {
-		valid = fmt.Sprintf("false: %+v", err.Error())
-	}
-	fmt.Printf("\nCMS Valid: %s\n", valid)
-
-	fmt.Printf("\nCMS Signature Length: %d\n", len(data))
-	fmt.Printf("\nCMS Signature has %d certificates:\n", len(p7.Certificates))
-	for _, cert := range p7.Certificates {
-		fmt.Printf("\tCN: %q\n", cert.Subject.CommonName)
-	}
-
-	fmt.Printf("\nCMS Signature has %d signers:\n", len(p7.Signers))
-	for idx, signer := range p7.Signers {
-		fmt.Printf("\tSigner %d:\n", idx+1)
-		fmt.Println("\t\tIssuerAndSerialNumber: ")
-		fmt.Printf("\t\t\tName: %q\n", string(signer.IssuerAndSerialNumber.IssuerName.FullBytes))
-		fmt.Printf("\t\t\tSerial: 0x%x\n", signer.IssuerAndSerialNumber.SerialNumber)
-		fmt.Printf("\t\tDigest Algorithm: %+v\n", signer.DigestAlgorithm.Algorithm)
-
-		fmt.Printf("\t\tUnauthenticated Attributes (%d):\n", len(signer.UnauthenticatedAttributes))
-		for ui, att := range signer.UnauthenticatedAttributes {
-			fmt.Printf("\t\t\tAttribute %d\n", ui)
-			fmt.Printf("\t\t\tType: %+v\n", att.Type)
-			// fmt.Printf("\t\t\tCompound?: %+v\n", att.Value.IsCompound)
-			// fmt.Printf("\t\t\tValue: %q\n\n", string(att.Value.Bytes))
-		}
-
-		fmt.Printf("\t\tAuthenticated Attributes (%d):\n", len(signer.AuthenticatedAttributes))
-		for ui, att := range signer.AuthenticatedAttributes {
-			fmt.Printf("\t\t\tAttribute %d\n", ui)
-			fmt.Printf("\t\t\tType: %+v\n", att.Type)
-			fmt.Printf("\t\t\tCompound?: %+v\n", att.Value.IsCompound)
-			fmt.Printf("\t\t\tASN1 Value: %q\n\n", fmt.Sprintf("%x", att.Value.Bytes))
-		}
-	}
 
 	return nil
 }

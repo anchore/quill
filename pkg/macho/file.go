@@ -252,7 +252,6 @@ func (m *File) CDBytes(order binary.ByteOrder) (cd []byte, err error) {
 	}
 
 	for _, index := range csBlob.Index {
-
 		if _, err := superBlobReader.Seek(int64(index.Offset), io.SeekStart); err != nil {
 			return nil, fmt.Errorf("unable to seek to code signing blob index=%d: %w", index.Offset, err)
 		}
@@ -284,9 +283,7 @@ func (m *File) CDBytes(order binary.ByteOrder) (cd []byte, err error) {
 			}
 
 			return cdBytes, nil
-
 		}
-
 	}
 	return nil, fmt.Errorf("unable to find code directory to hash")
 }

@@ -6,6 +6,7 @@ require (
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d
 	github.com/adrg/xdg v0.2.1
 	github.com/blacktop/go-macho v1.1.83
+	github.com/davecgh/go-spew v1.1.1
 	github.com/dustin/go-humanize v1.0.0
 	github.com/github/smimesign v0.2.0
 	github.com/go-restruct/restruct v1.2.0-alpha
@@ -13,7 +14,6 @@ require (
 	github.com/hashicorp/go-multierror v1.1.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pkg/profile v1.5.0
-	github.com/scylladb/go-set v1.0.2
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.0.1-0.20200909172742-8a63648dd905
 	github.com/spf13/pflag v1.0.5
@@ -22,11 +22,9 @@ require (
 	github.com/wagoodman/go-partybus v0.0.0-20210627031916-db1f5573bbc5
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2
 	gopkg.in/yaml.v2 v2.4.0
-	howett.net/plist v1.0.0
 )
 
 require (
-	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/hashicorp/errwrap v1.0.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
