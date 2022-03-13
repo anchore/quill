@@ -11,9 +11,6 @@ import (
 )
 
 func TestFile_HasCodeSigningCmd(t *testing.T) {
-	test.Make(t, "fixture-hello")
-	test.Make(t, "fixture-syft")
-	test.Make(t, "fixture-ls")
 
 	tests := []struct {
 		name          string
@@ -55,9 +52,6 @@ func TestFile_HasCodeSigningCmd(t *testing.T) {
 }
 
 func TestFile_CodeSigningCmd(t *testing.T) {
-	test.Make(t, "fixture-hello")
-	test.Make(t, "fixture-syft")
-	test.Make(t, "fixture-ls")
 
 	tests := []struct {
 		name       string
@@ -128,8 +122,6 @@ func TestFile_CodeSigningCmd(t *testing.T) {
 }
 
 func TestFile_HashPages(t *testing.T) {
-	test.Make(t, "fixture-hello")
-	test.Make(t, "fixture-ls")
 
 	tests := []struct {
 		name          string
@@ -144,7 +136,7 @@ func TestFile_HashPages(t *testing.T) {
 		// Page size=4096
 		//    -2=987920904eab650e75788c054aa0b0524e6a80bfc71aa32df8d237a61743f986
 		//    -1=0000000000000000000000000000000000000000000000000000000000000000
-		//     0=c5b6a7809f89dda17eb064b6463c6180c0403f935af3c789adf8e26b5998f1a1
+		//     0=6f2e05a7f326971086c1490166cdde3bed360b0ef7e2d83bdbb2b9c7f6baa7fb
 		//     1=ad7facb2586fc6e966c004d7d1d16b024f5805ff7cb47c7a85dabd8b48892ca7
 		//     2=ad7facb2586fc6e966c004d7d1d16b024f5805ff7cb47c7a85dabd8b48892ca7
 		//     3=f3bdeccacea29137c43abb1a4eab59408abdac615834e8db464bad3c15525a99
@@ -164,7 +156,7 @@ func TestFile_HashPages(t *testing.T) {
 			name:       "for a single, adhoc signed binary",
 			binaryPath: test.Asset(t, "hello_adhoc_signed"),
 			wantHexHashes: []string{
-				"c5b6a7809f89dda17eb064b6463c6180c0403f935af3c789adf8e26b5998f1a1",
+				"6f2e05a7f326971086c1490166cdde3bed360b0ef7e2d83bdbb2b9c7f6baa7fb",
 				"ad7facb2586fc6e966c004d7d1d16b024f5805ff7cb47c7a85dabd8b48892ca7",
 				"ad7facb2586fc6e966c004d7d1d16b024f5805ff7cb47c7a85dabd8b48892ca7",
 				"f3bdeccacea29137c43abb1a4eab59408abdac615834e8db464bad3c15525a99",
@@ -218,7 +210,6 @@ func TestFile_HashPages(t *testing.T) {
 }
 
 func TestFile_UpdateCodeSigningCmdDataSize(t *testing.T) {
-	test.Make(t, "fixture-hello")
 
 	tests := []struct {
 		name       string
@@ -250,7 +241,6 @@ func TestFile_UpdateCodeSigningCmdDataSize(t *testing.T) {
 }
 
 func TestFile_AddDummyCodeSigningCmd(t *testing.T) {
-	test.Make(t, "fixture-hello")
 
 	tests := []struct {
 		name       string
@@ -294,7 +284,6 @@ func TestFile_AddDummyCodeSigningCmd(t *testing.T) {
 }
 
 func TestFile_UpdateSegmentHeader(t *testing.T) {
-	test.Make(t, "fixture-hello")
 
 	tests := []struct {
 		name       string
@@ -326,6 +315,43 @@ func TestFile_UpdateSegmentHeader(t *testing.T) {
 			assert.NotEqual(t, originalLinkEdit.SegmentHeader, newLinkEditSegment.SegmentHeader)
 			assert.Equal(t, modifiedLinkEdit.SegmentHeader, newLinkEditSegment.SegmentHeader)
 			assert.Equal(t, modifiedLinkEdit.Filesz, uint64(0x42))
+		})
+	}
+}
+
+func TestFile_HashCD(t *testing.T) {
+
+	tests := []struct {
+		name        string
+		binaryPath  string
+		wantHexHash string
+	}{
+		// From command: codesign -d --verbose=4 ./hello_adhoc_signed
+		// Summary:
+		// ... CandidateCDHashFull sha256=9a67ae1589673370c8c4ef663f68806bc830e65abf4d94767fa5ceb65552b9ee
+		{
+			name:        "for a single, adhoc signed binary",
+			binaryPath:  test.Asset(t, "hello_adhoc_signed"),
+			wantHexHash: "797dae995e866f71402a1722d51da86c33d75137b3f5304e3a76c2a15f693e1b",
+		},
+		{
+			name:        "for a single, signed binary",
+			binaryPath:  test.Asset(t, "hello_signed"),
+			wantHexHash: "9a67ae1589673370c8c4ef663f68806bc830e65abf4d94767fa5ceb65552b9ee",
+		},
+		{
+			name:        "for a signed binary extracted from a universal binary",
+			binaryPath:  test.Asset(t, "ls_x86_64_signed"),
+			wantHexHash: "e5924a41536d7e829edf456e96658c8487920de81d89667682bce711d7973efe",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m, err := NewFile(tt.binaryPath)
+			require.NoError(t, err)
+			gotHashBytes, err := m.HashCD(sha256.New())
+			require.NoError(t, err)
+			assert.Equal(t, tt.wantHexHash, fmt.Sprintf("%x", gotHashBytes))
 		})
 	}
 }

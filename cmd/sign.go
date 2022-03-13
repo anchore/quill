@@ -34,7 +34,12 @@ func newSignCmd() *cobra.Command {
 
 func setSignFlags(flags *pflag.FlagSet) {
 	flags.StringP(
-		"key", "", "",
+		"identity", "i", "",
+		"identifier to encode into the code directory of the code signing super bloc (default is derived from other input)",
+	)
+
+	flags.StringP(
+		"key", "k", "",
 		"path to the private key (PEM formatted only)",
 	)
 
@@ -45,6 +50,10 @@ func setSignFlags(flags *pflag.FlagSet) {
 }
 
 func bindSignConfigOptions(v *viper.Viper, flags *pflag.FlagSet) error {
+	if err := v.BindPFlag("sign.identity", flags.Lookup("identity")); err != nil {
+		return err
+	}
+
 	if err := v.BindPFlag("sign.key", flags.Lookup("key")); err != nil {
 		return err
 	}
@@ -89,7 +98,11 @@ func signExecWorker(p string) <-chan error {
 	go func() {
 		defer close(errs)
 
-		id := path.Base(p)
+		id := appConfig.Sign.Identity
+
+		if id == "" {
+			id = path.Base(p)
+		}
 
 		if err := sign.Sign(id, p, appConfig.Sign.PrivateKey, appConfig.Sign.Password, appConfig.Sign.Certificate); err != nil {
 			errs <- err

@@ -8,9 +8,6 @@ import (
 )
 
 func TestSign(t *testing.T) {
-	test.Make(t, "fixture-x509")
-	test.Make(t, "fixture-hello")
-	test.Make(t, "fixture-syft")
 
 	type args struct {
 		id          string
@@ -32,17 +29,18 @@ func TestSign(t *testing.T) {
 				path: test.AssetCopy(t, "hello"),
 			},
 			assertions: []test.OutputAssertion{
-				test.AssertContains("CodeDirectory v=20400 size=513 flags=0x20002(adhoc,linker-signed) hashes=13+0 location=embedded"),
+				test.AssertContains("CodeDirectory v=20500 size=585 flags=0x2(adhoc) hashes=13+2 location=embedded"),
 				test.AssertContains("Hash type=sha256 size=32"),
-				test.AssertContains("CandidateCDHash sha256=1ef4506947e8a5a2388e91bf2b319fa45746cc82"),
-				test.AssertContains("CandidateCDHashFull sha256=1ef4506947e8a5a2388e91bf2b319fa45746cc82f98e49838dd63db9155d6fca"),
-				test.AssertContains("CMSDigest=1ef4506947e8a5a2388e91bf2b319fa45746cc82f98e49838dd63db9155d6fca"),
+				test.AssertContains("CandidateCDHash sha256=75be1f393e6650da91bf4e78e1d5bb09c90b671f"),
+				test.AssertContains("CandidateCDHashFull sha256=75be1f393e6650da91bf4e78e1d5bb09c90b671f52865a2149c239040364fd66"),
+				test.AssertContains("CDHash=75be1f393e6650da91bf4e78e1d5bb09c90b671f"),
+				test.AssertContains("CMSDigest=75be1f393e6650da91bf4e78e1d5bb09c90b671f52865a2149c239040364fd66"),
 				test.AssertContains("CMSDigestType=2"),
 				test.AssertContains("Signature=adhoc"),
 				test.AssertContains("Info.plist=not bound"),
 				test.AssertContains("TeamIdentifier=not set"),
 				test.AssertContains("Sealed Resources=none"),
-				test.AssertContains("Internal requirements=none"),
+				test.AssertContains("Internal requirements count=0 size=12"),
 			},
 		},
 		{
@@ -52,20 +50,20 @@ func TestSign(t *testing.T) {
 				path: test.AssetCopy(t, "syft_unsigned"),
 			},
 			assertions: []test.OutputAssertion{
-				test.AssertContains("CodeDirectory v=20400 size=208832 flags=0x20002(adhoc,linker-signed) hashes=6523+0 location=embedded"),
+				test.AssertContains("CodeDirectory v=20500 size=208904 flags=0x2(adhoc) hashes=6523+2 location=embedded"),
 				test.AssertContains("Hash type=sha256 size=32"),
-				test.AssertContains("CandidateCDHash sha256=a2c8eb9a76e4af5eea609d4db9f723ff01896ee8"),
-				test.AssertContains("CandidateCDHashFull sha256=a2c8eb9a76e4af5eea609d4db9f723ff01896ee89bcfd23a760e7a966ac9d110"),
-				test.AssertContains("CMSDigest=a2c8eb9a76e4af5eea609d4db9f723ff01896ee89bcfd23a760e7a966ac9d110"),
+				test.AssertContains("CandidateCDHash sha256=ba0302d64e12b56a26b88e42b008fffa078c7360"),
+				test.AssertContains("CandidateCDHashFull sha256=ba0302d64e12b56a26b88e42b008fffa078c7360ecbda378626815263b6a9d8f"),
+				test.AssertContains("CDHash=ba0302d64e12b56a26b88e42b008fffa078c7360"),
+				test.AssertContains("CMSDigest=ba0302d64e12b56a26b88e42b008fffa078c7360ecbda378626815263b6a9d8f"),
 				test.AssertContains("CMSDigestType=2"),
 				test.AssertContains("Signature=adhoc"),
 				test.AssertContains("Info.plist=not bound"),
 				test.AssertContains("TeamIdentifier=not set"),
 				test.AssertContains("Sealed Resources=none"),
-				test.AssertContains("Internal requirements=none"),
+				test.AssertContains("Internal requirements count=0 size=12"),
 			},
 		},
-		// until CMS block is fixed the following tests will fail:
 		{
 			name: "sign the hello binary",
 			args: args{
@@ -74,19 +72,21 @@ func TestSign(t *testing.T) {
 				keyFile:  test.Asset(t, "hello-key.pem"),
 				certFile: test.Asset(t, "hello-cert.pem"),
 			},
-			//assertions: []test.OutputAssertion{
-			//	test.AssertContains("CodeDirectory v=20400 size=510 flags=0x10000(runtime) hashes=13+0 location=embedded"),
-			//	test.AssertContains("Hash type=sha256 size=32"),
-			//	test.AssertContains("CandidateCDHash sha256=6e291fbdc2c3a1a1e628dca4337c87a43390582e"),
-			//	test.AssertContains("CandidateCDHashFull sha256=6e291fbdc2c3a1a1e628dca4337c87a43390582e4fa288f14e907ced58d53e35"),
-			//	test.AssertContains("CMSDigest=6e291fbdc2c3a1a1e628dca4337c87a43390582e4fa288f14e907ced58d53e35"),
-			//	test.AssertContains("CMSDigestType=2"),
-			//	test.AssertContains("Signature=adhoc"),
-			//	test.AssertContains("Info.plist=not bound"),
-			//	test.AssertContains("TeamIdentifier=not set"),
-			//	test.AssertContains("Sealed Resources=none"),
-			//	test.AssertContains("Internal requirements=none"),
-			//},
+			assertions: []test.OutputAssertion{
+				test.AssertContains("CodeDirectory v=20500 size=582 flags=0x10000(runtime) hashes=13+2 location=embedded"),
+				test.AssertContains("Hash type=sha256 size=32"),
+				test.AssertContains("CandidateCDHash sha256=e94e41499a43d1fc823d36983a635264239c8c31"),
+				test.AssertContains("CandidateCDHashFull sha256=e94e41499a43d1fc823d36983a635264239c8c31412f19f4e8787eb5a83b29da"),
+				test.AssertContains("CDHash=e94e41499a43d1fc823d36983a635264239c8c31"),
+				test.AssertContains("CMSDigest=e94e41499a43d1fc823d36983a635264239c8c31412f19f4e8787eb5a83b29da"),
+				test.AssertContains("CMSDigestType=2"),
+				test.AssertContains("Signature size="), // assert not adhoc
+				test.AssertContains("Authority=quill-test-hello"),
+				test.AssertContains("Info.plist=not bound"),
+				test.AssertContains("TeamIdentifier=not set"),
+				test.AssertContains("Sealed Resources=none"),
+				test.AssertContains("Internal requirements count=0 size=12"),
+			},
 		},
 		{
 			name: "sign the syft binary (with a password)",
@@ -97,19 +97,21 @@ func TestSign(t *testing.T) {
 				certFile:    test.Asset(t, "x509-cert.pem"),
 				keyPassword: "5w0rdf15h",
 			},
-			//assertions: []test.OutputAssertion{
-			//	test.AssertContains("CodeDirectory v=20400 size=208832 flags=0x10000(runtime) hashes=6523+0 location=embedded"),
-			//	test.AssertContains("Hash type=sha256 size=32"),
-			//	test.AssertContains("CandidateCDHash sha256=a2c8eb9a76e4af5eea609d4db9f723ff01896ee8"),
-			//	test.AssertContains("CandidateCDHashFull sha256=a2c8eb9a76e4af5eea609d4db9f723ff01896ee89bcfd23a760e7a966ac9d110"),
-			//	test.AssertContains("CMSDigest=a2c8eb9a76e4af5eea609d4db9f723ff01896ee89bcfd23a760e7a966ac9d110"),
-			//	test.AssertContains("CMSDigestType=2"),
-			//	test.AssertContains("Signature=adhoc"),
-			//	test.AssertContains("Info.plist=not bound"),
-			//	test.AssertContains("TeamIdentifier=not set"),
-			//	test.AssertContains("Sealed Resources=none"),
-			//	test.AssertContains("Internal requirements=none"),
-			//},
+			assertions: []test.OutputAssertion{
+				test.AssertContains("CodeDirectory v=20500 size=208904 flags=0x10000(runtime) hashes=6523+2 location=embedded"),
+				test.AssertContains("Hash type=sha256 size=32"),
+				test.AssertContains("CandidateCDHash sha256=6de57d1afedd91276e44f95814374f2f991aa504"),
+				test.AssertContains("CandidateCDHashFull sha256=6de57d1afedd91276e44f95814374f2f991aa50469e3ec7c93ac456967091545"),
+				test.AssertContains("CDHash=6de57d1afedd91276e44f95814374f2f991aa504"),
+				test.AssertContains("CMSDigest=6de57d1afedd91276e44f95814374f2f991aa50469e3ec7c93ac456967091545"),
+				test.AssertContains("CMSDigestType=2"),
+				test.AssertContains("Signature size="), // assert not adhoc
+				test.AssertContains("Authority=quill-test-hello"),
+				test.AssertContains("Info.plist=not bound"),
+				test.AssertContains("TeamIdentifier=not set"),
+				test.AssertContains("Sealed Resources=none"),
+				test.AssertContains("Internal requirements count=0 size=12"),
+			},
 		},
 	}
 	for _, tt := range tests {

@@ -1,61 +1,45 @@
 package sign
 
 import (
-	"encoding/asn1"
+	"crypto"
+	"crypto/x509"
 	"fmt"
 
-	"github.com/fullsailor/pkcs7"
+	"github.com/anchore/quill/pkg/macho"
+	cms "github.com/github/smimesign/ietf-cms"
 )
 
-func generateCMS(keyFile, keyPassword, certFile string, cdHash []byte) ([]byte, error) {
+func generateCMS(keyFile, keyPassword, certFile string, cdBlob *macho.Blob) (*macho.Blob, error) {
+	cdBlobBytes, err := cdBlob.Pack()
+	if err != nil {
+		return nil, err
+	}
+
 	var cmsBytes []byte
 	if certFile != "" {
-		plst, err := generateCodeDirectoryPList([][]byte{cdHash})
+		privateKey, err := loadPrivateKeyFromFile(keyFile, keyPassword)
 		if err != nil {
 			return nil, err
 		}
 
-		attrs := []pkcs7.Attribute{
-			{
-				// 1.2.840.113635.100.9.1 is the PLIST
-				Type:  asn1.ObjectIdentifier{1, 2, 840, 113635, 100, 9, 1},
-				Value: plst,
-			},
-			// TODO: 1.2.840.113635.100.9.2 (what is this?)
+		signer, ok := privateKey.(crypto.Signer)
+		if !ok {
+			return nil, fmt.Errorf("unable to derive signer from private key")
 		}
 
 		// TODO: add certificate chain
-		cmsBytes, err = generateCMSWithAttributes(keyFile, keyPassword, certFile, attrs)
+		cert, err := loadCertFromFile(certFile)
 		if err != nil {
 			return nil, err
 		}
-	}
-	return cmsBytes, nil
-}
 
-func generateCMSWithAttributes(keyFile, keyPassword, certFile string, attributes []pkcs7.Attribute) ([]byte, error) {
-	signedData, err := pkcs7.NewSignedData(nil)
-	if err != nil {
-		return nil, fmt.Errorf("unable to create signed data: %w", err)
+		cmsBytes, err = cms.SignDetached(cdBlobBytes, []*x509.Certificate{cert}, signer)
+		if err != nil {
+			return nil, fmt.Errorf("unable to sign code directory: %w", err)
+		}
 	}
 
-	privateKey, err := loadPrivateKeyFromFile(keyFile, keyPassword)
-	if err != nil {
-		return nil, err
-	}
+	blob := macho.NewBlob(macho.MagicBlobwrapper, cmsBytes)
 
-	cert, err := loadCertFromFile(certFile)
-	if err != nil {
-		return nil, err
-	}
-
-	err = signedData.AddSigner(cert, privateKey, pkcs7.SignerInfoConfig{
-		ExtraSignedAttributes: attributes,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("unable to add signer: %w", err)
-	}
-
-	b, err := signedData.Finish()
-	return b, err
+	return &blob, nil
 }

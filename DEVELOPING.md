@@ -100,6 +100,12 @@ The code signature data at the end of the `__LINKEDIT` segment can contain the f
 
 All of these blobs are contained within a single "super blob".
 
+
+## Historical Notes
+- plist with CD hashes as a signed CMS attribute does not appear to be required (was implemented, and now removed)
+- sha256 nested set as a signed CMS attribute does not appear to be required (was implemented, and now removed)
+
+
 #### Useful resources
 
 - Macho: https://redmaple.tech/blogs/macho-files/
