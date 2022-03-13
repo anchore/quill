@@ -39,9 +39,9 @@ func sha256Attribute(cdHash []byte) pkcs7.Attribute {
 }
 
 func generateCMS(keyFile, keyPassword, certFile string, cdBlob *macho.Blob) (*macho.Blob, error) {
-	cdBlobBytes, err := codeDirectoryBlobBytes(cdBlob)
+	cdBlobBytes, err := cdBlob.Pack()
 	if err != nil {
-		return nil, fmt.Errorf("unable to encode CD blob: %w", err)
+		return nil, err
 	}
 
 	// TODO: cleanup
