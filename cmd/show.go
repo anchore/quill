@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/anchore/quill/internal/bus"
 	"github.com/anchore/quill/internal/ui"
@@ -13,6 +14,18 @@ import (
 	"github.com/spf13/viper"
 	"github.com/wagoodman/go-partybus"
 )
+
+type formatOption string
+
+const (
+	textFormat formatOption = "text"
+	jsonFormat formatOption = "json"
+)
+
+var allFormatOptions = []formatOption{
+	textFormat,
+	jsonFormat,
+}
 
 func newShowCmd(v *viper.Viper) (*cobra.Command, error) {
 	c := &cobra.Command{
@@ -31,11 +44,17 @@ func newShowCmd(v *viper.Viper) (*cobra.Command, error) {
 }
 
 func setShowFlags(flags *pflag.FlagSet) {
-	// TODO
+	flags.StringP(
+		"output", "o", string(textFormat),
+		fmt.Sprintf("the format to show (available = %+v)", allFormatOptions),
+	)
+
 }
 
 func bindShowConfigOptions(v *viper.Viper, flags *pflag.FlagSet) error {
-	// TODO
+	if err := v.BindPFlag("output", flags.Lookup("output")); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -46,8 +65,13 @@ func showExec(_ *cobra.Command, args []string) error {
 		return err
 	}
 
+	option := parseFormat(appConfig.Output)
+	if option == "" {
+		return fmt.Errorf("unknown format provided: %q", appConfig.Output)
+	}
+
 	return eventLoop(
-		showExecWorker(path),
+		showExecWorker(path, option),
 		setupSignals(),
 		eventSubscription,
 		nil,
@@ -55,18 +79,12 @@ func showExec(_ *cobra.Command, args []string) error {
 	)
 }
 
-func showExecWorker(path string) <-chan error {
+func showExecWorker(path string, option formatOption) <-chan error {
 	errs := make(chan error)
 	go func() {
 		defer close(errs)
 
-		f, err := os.Open(path)
-		if err != nil {
-			errs <- fmt.Errorf("unable to open binary: %w", err)
-			return
-		}
-
-		if err = extract.Show(f); err != nil {
+		if err := showFormat(path, option); err != nil {
 			errs <- fmt.Errorf("unable to show binary details: %w", err)
 			return
 		}
@@ -76,4 +94,24 @@ func showExecWorker(path string) <-chan error {
 		})
 	}()
 	return errs
+}
+
+func showFormat(path string, option formatOption) error {
+	switch option {
+	case textFormat:
+		return extract.ShowText(path, os.Stdout)
+	case jsonFormat:
+		return extract.ShowJSON(path, os.Stdout)
+	}
+	return fmt.Errorf("unknown format: %q", option)
+}
+
+func parseFormat(option string) formatOption {
+	switch strings.ToLower(option) {
+	case string(textFormat):
+		return textFormat
+	case string(jsonFormat):
+		return jsonFormat
+	}
+	return ""
 }

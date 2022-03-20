@@ -1,57 +1,56 @@
 package extract
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
+	"os"
 
-	"github.com/anchore/quill/internal/log"
-	"github.com/blacktop/go-macho"
+	"github.com/anchore/quill/pkg/macho"
+	blacktopMacho "github.com/blacktop/go-macho"
 )
 
-// original source is from: https://github.com/RedMapleTech/machodump
-// at the time of this writing I wasn't able to import this module due to the configured module name
-
-func Show(reader io.ReaderAt) error {
-	machoFile, err := macho.NewFile(reader)
-
+func newFile(path string) (*file, error) {
+	f, err := os.Open(path)
 	if err != nil {
-		return fmt.Errorf("unable to parse macho formatted file: %w", err)
+		return nil, fmt.Errorf("unable to open file: %w", err)
 	}
-
-	// get code signature
-	sig := machoFile.CodeSignature()
-
-	if sig == nil {
-		// print file details
-		printFileDetails(machoFile)
-		printLoads(machoFile.Loads)
-
-		fmt.Println("no code signing section in binary")
-		return nil
-	}
-
-	// get array of entitlements
-	ents, err := getEntsFromXMLString(sig.Entitlements)
+	blacktopMachoFile, err := blacktopMacho.NewFile(f)
 	if err != nil {
-		log.Warnf("unable to extract entities: %s\n", err.Error())
+		return nil, fmt.Errorf("unable to parse macho formatted file with blacktop: %w", err)
 	}
 
-	// print the details
-	printCDs(sig.CodeDirectories)
-
-	printRequirements(sig.Requirements)
-
-	if ents != nil {
-		printEnts(ents)
+	internalFile, err := macho.NewFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse macho formatted file with blacktop: %w", err)
 	}
 
-	// parse the CMS sig, if it's there
-	if len(sig.CMSSignature) > 0 {
-		if err = printCMSSig(sig.CMSSignature); err != nil {
-			log.Warnf("unable to extract CMS signature: %s", err.Error())
-		}
-	} else {
-		fmt.Println("code signing section does not contain any CMS signatures")
+	return &file{
+		blacktopFile: blacktopMachoFile, // has several stringer helpers for common enum values
+		internalFile: internalFile,      // has the ability to extract raw CD bytes
+	}, nil
+}
+
+func ShowJSON(path string, writer io.Writer) error {
+	f, err := newFile(path)
+	if err != nil {
+		return err
 	}
-	return nil
+
+	details := getDetails(*f)
+	en := json.NewEncoder(writer)
+	en.SetIndent("", "  ")
+	return en.Encode(details)
+}
+
+func ShowText(path string, writer io.Writer) error {
+	f, err := newFile(path)
+	if err != nil {
+		return err
+	}
+
+	details := getDetails(*f)
+	_, err = writer.Write([]byte(details.String()))
+
+	return err
 }

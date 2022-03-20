@@ -285,7 +285,60 @@ func (m *File) CDBytes(order binary.ByteOrder) (cd []byte, err error) {
 			return cdBytes, nil
 		}
 	}
-	return nil, fmt.Errorf("unable to find code directory to hash")
+	return nil, fmt.Errorf("unable to find code directory")
+}
+
+func (m *File) CMSBlobBytes(order binary.ByteOrder) (cd []byte, err error) {
+	cmd, _, err := m.CodeSigningCmd()
+	if err != nil {
+		return nil, fmt.Errorf("unable to extract code signing cmd: %w", err)
+	}
+
+	superBlobBytes := make([]byte, cmd.DataSize)
+	if _, err := m.ReadAt(superBlobBytes, int64(cmd.DataOffset)); err != nil {
+		return nil, fmt.Errorf("unable to extract code signing block from macho binary: %w", err)
+	}
+
+	superBlobReader := bytes.NewReader(superBlobBytes)
+
+	csBlob := SuperBlob{}
+	if err := binary.Read(superBlobReader, SigningOrder, &csBlob.SuperBlobHeader); err != nil {
+		return nil, fmt.Errorf("unable to extract superblob header from macho binary: %w", err)
+	}
+
+	csBlob.Index = make([]BlobIndex, csBlob.Count)
+	if err := binary.Read(superBlobReader, SigningOrder, &csBlob.Index); err != nil {
+		return nil, err
+	}
+
+	for _, index := range csBlob.Index {
+		if _, err := superBlobReader.Seek(int64(index.Offset), io.SeekStart); err != nil {
+			return nil, fmt.Errorf("unable to seek to code signing blob index=%d: %w", index.Offset, err)
+		}
+
+		switch index.Type {
+		case CsSlotCmsSignature:
+
+			var blobHeader BlobHeader
+			// read the header
+			if err := binary.Read(superBlobReader, SigningOrder, &blobHeader); err != nil {
+				return nil, err
+			}
+
+			// head back to the beginning of the CD
+			if _, err := superBlobReader.Seek(int64(index.Offset), io.SeekStart); err != nil {
+				return nil, fmt.Errorf("unable to seek to CMS bob: %w", err)
+			}
+
+			b := make([]byte, blobHeader.Length)
+			if err := binary.Read(superBlobReader, order, &b); err != nil {
+				return nil, err
+			}
+
+			return b, nil
+		}
+	}
+	return nil, fmt.Errorf("unable to find CMS blob")
 }
 
 func (m *File) HashCD(hasher hash.Hash) (hash []byte, err error) {
