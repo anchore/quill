@@ -37,87 +37,80 @@ func (d SectionDigest) String() string {
 	return fmt.Sprintf("idx=%-3d @0x%-5x %s:%s", d.Index, d.Offset, d.Algorithm, d.Value)
 }
 
-func getCodeDirectories(m file) []CodeDirectoryDetails {
-	// TODO: must support multiple CDs, this is common
-	b, err := m.internalFile.CDBytes(macho.SigningOrder)
-	if err != nil {
-		// TODO
-		panic(err)
-	}
+func getCodeDirectories(m file) (cdObjs []CodeDirectoryDetails) {
+	for idx, cd := range m.blacktopFile.CodeSignature().CodeDirectories {
+		b, err := m.internalFile.CDBytes(macho.SigningOrder, idx)
+		if err != nil {
+			// TODO
+			panic(err)
+		}
 
-	cds := m.blacktopFile.CodeSignature().CodeDirectories
-	// TODO: must support multiple CDs, this is common
-	if len(cds) > 1 || len(cds) == 0 {
-		// TODO
-		panic(err)
-	}
-	cd := cds[0]
-
-	var hashes []SectionDigest
-	for _, cs := range cd.CodeSlots {
-		hashes = append(hashes, SectionDigest{
-			Digest: Digest{
-				Algorithm: cleanAlgorithmName(cd.Header.HashType.String()),
-				Value:     hex.EncodeToString(cs.Hash),
-			},
-			Index:  int64(cs.Index),
-			Offset: uint64(cs.Page),
-		})
-	}
-
-	var specialHashes []SectionDigest
-	for _, cs := range cd.SpecialSlots {
-		specialHashes = append(specialHashes, SectionDigest{
-			Digest: Digest{
-				Algorithm: cleanAlgorithmName(cd.Header.HashType.String()),
-				Value:     hex.EncodeToString(cs.Hash),
-			},
-			Index: -int64(cs.Index),
-		})
-	}
-
-	hashObj := crypto.SHA256
-	hasher := hashObj.New()
-	hasher.Write(b)
-	hash := hasher.Sum(nil)
-
-	return []CodeDirectoryDetails{
-		{
-			Blob: BlobDetails{
-				Base64: base64.StdEncoding.EncodeToString(b),
-				Digest: Digest{
-					Algorithm: algorithmName(hashObj),
-					Value:     hex.EncodeToString(hash),
-				},
-			},
-			PageDigests:    hashes,
-			SpecialDigests: specialHashes,
-			DeclaredDigest: SectionDigest{
-				Index:  int64(cd.Header.ExecSegBase),
-				Offset: cd.Header.ExecSegLimit,
+		var hashes []SectionDigest
+		for _, cs := range cd.CodeSlots {
+			hashes = append(hashes, SectionDigest{
 				Digest: Digest{
 					Algorithm: cleanAlgorithmName(cd.Header.HashType.String()),
-					Value:     cd.CDHash,
+					Value:     hex.EncodeToString(cs.Hash),
+				},
+				Index:  int64(cs.Index),
+				Offset: uint64(cs.Page),
+			})
+		}
+
+		var specialHashes []SectionDigest
+		for _, cs := range cd.SpecialSlots {
+			specialHashes = append(specialHashes, SectionDigest{
+				Digest: Digest{
+					Algorithm: cleanAlgorithmName(cd.Header.HashType.String()),
+					Value:     hex.EncodeToString(cs.Hash),
+				},
+				Index: -int64(cs.Index),
+			})
+		}
+
+		hashObj := crypto.SHA256
+		hasher := hashObj.New()
+		hasher.Write(b)
+		hash := hasher.Sum(nil)
+		cdObjs = append(cdObjs,
+			CodeDirectoryDetails{
+				Blob: BlobDetails{
+					Base64: base64.StdEncoding.EncodeToString(b),
+					Digest: Digest{
+						Algorithm: algorithmName(hashObj),
+						Value:     hex.EncodeToString(hash),
+					},
+				},
+				PageDigests:    hashes,
+				SpecialDigests: specialHashes,
+				DeclaredDigest: SectionDigest{
+					Index:  int64(cd.Header.ExecSegBase),
+					Offset: cd.Header.ExecSegLimit,
+					Digest: Digest{
+						Algorithm: cleanAlgorithmName(cd.Header.HashType.String()),
+						Value:     cd.CDHash,
+					},
+				},
+				TeamID:   cd.TeamID,
+				ID:       cd.ID,
+				Platform: cd.Header.Platform,
+				Version: DescribedValue{
+					Value:       cd.Header.Version,
+					Description: cd.Header.Version.String(),
+				},
+				Flags: DescribedValue{
+					Value:       cd.Header.Flags,
+					Description: cd.Header.Flags.String(),
 				},
 			},
-			TeamID:   cd.TeamID,
-			ID:       cd.ID,
-			Platform: cd.Header.Platform,
-			Version: DescribedValue{
-				Value:       cd.Header.Version,
-				Description: cd.Header.Version.String(),
-			},
-			Flags: DescribedValue{
-				Value:       cd.Header.Flags,
-				Description: cd.Header.Flags.String(),
-			},
-		},
+		)
 	}
+	return cdObjs
 }
 
 func (c CodeDirectoryDetails) String() string {
 	var specialDigests []string
-	for _, d := range c.PageDigests {
+	for _, d := range c.SpecialDigests {
 		specialDigests = append(specialDigests, d.String())
 	}
 

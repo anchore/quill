@@ -90,7 +90,7 @@ func getSignatures(m file) []SignatureDetails {
 	}
 
 	// TODO: support multiple CDs
-	cdBytes, err := m.internalFile.CDBytes(macho.SigningOrder)
+	cdBytes, err := m.internalFile.CDBytes(macho.SigningOrder, 0)
 	if err != nil {
 		// TODO
 		panic(err)
@@ -227,16 +227,102 @@ func (s Signer) String() string {
 	)
 }
 
+func addIfUsageSet(usageHints []string, val x509.KeyUsage, bit x509.KeyUsage, title string) []string {
+	if val&bit != 0 {
+		usageHints = append(usageHints, title)
+	}
+	return usageHints
+}
+
 func (c Certificate) String() string {
+	var exts []string
+	for _, ext := range c.Parsed.Extensions {
+		exts = append(exts, ext.Id.String())
+	}
+
+	var usageHints []string
+	usageHints = addIfUsageSet(usageHints, c.Parsed.KeyUsage, x509.KeyUsageDigitalSignature, "digital signature")
+	usageHints = addIfUsageSet(usageHints, c.Parsed.KeyUsage, x509.KeyUsageCertSign, "cert sign")
+	usageHints = addIfUsageSet(usageHints, c.Parsed.KeyUsage, x509.KeyUsageContentCommitment, "content commitment")
+	usageHints = addIfUsageSet(usageHints, c.Parsed.KeyUsage, x509.KeyUsageDataEncipherment, "data encipherment")
+	usageHints = addIfUsageSet(usageHints, c.Parsed.KeyUsage, x509.KeyUsageCRLSign, "CRL sign")
+	usageHints = addIfUsageSet(usageHints, c.Parsed.KeyUsage, x509.KeyUsageDecipherOnly, "decipher only")
+	usageHints = addIfUsageSet(usageHints, c.Parsed.KeyUsage, x509.KeyUsageEncipherOnly, "encipher only")
+	usageHints = addIfUsageSet(usageHints, c.Parsed.KeyUsage, x509.KeyUsageKeyAgreement, "key agreement")
+	usageHints = addIfUsageSet(usageHints, c.Parsed.KeyUsage, x509.KeyUsageKeyEncipherment, "key encipherment")
+
+	var usageHint string
+	if len(usageHints) > 0 {
+		usageHint = fmt.Sprintf("(%s)", strings.Join(usageHints, ", "))
+	}
+
+	var usages []string
+	for _, u := range c.Parsed.ExtKeyUsage {
+		value := fmt.Sprintf("0x%x", u)
+		var hint string
+		switch u {
+		case x509.ExtKeyUsageClientAuth:
+			hint = "(client)"
+		case x509.ExtKeyUsageAny:
+			hint = "(any)"
+		case x509.ExtKeyUsageCodeSigning:
+			hint = "(code signing)"
+		case x509.ExtKeyUsageEmailProtection:
+			hint = "(email protection)"
+		case x509.ExtKeyUsageIPSECEndSystem:
+			hint = "(IPSEC end system)"
+		case x509.ExtKeyUsageIPSECTunnel:
+			hint = "(IPSEC tunnel)"
+		case x509.ExtKeyUsageIPSECUser:
+			hint = "(IPSEC user)"
+		case x509.ExtKeyUsageMicrosoftCommercialCodeSigning:
+			hint = "(microsoft commercial code signing)"
+		case x509.ExtKeyUsageMicrosoftKernelCodeSigning:
+			hint = "(microsoft kernel code signing)"
+		case x509.ExtKeyUsageNetscapeServerGatedCrypto:
+			hint = "(netscape server gated crypto)"
+		case x509.ExtKeyUsageOCSPSigning:
+			hint = "(OCSP signing)"
+		case x509.ExtKeyUsageServerAuth:
+			hint = "(server auth)"
+		case x509.ExtKeyUsageTimeStamping:
+			hint = "(timestamping)"
+		}
+		usages = append(usages, value+" "+hint)
+	}
+
+	usagesStr := "[]"
+	if len(usages) > 0 {
+		usagesStr = fmt.Sprintf("[\n%s\n]", doIndent(strings.Join(usages, ",\n"), "  "))
+	}
+
 	return tprintf(
-		`Subject CN:        {{.Parsed.Subject.CommonName}}
-Issuer CN:         {{.Parsed.Issuer.CommonName}}
-Issuer Serial:         {{.Parsed.Issuer.SerialNumber}}
+		`Subject:
+  CN:  {{.Parsed.Subject.CommonName}}
+  OU:  {{.SOU}}
+Issuer:
+  CN:  {{.Parsed.Issuer.CommonName}}
+  OU:  {{.IOU}}
+KeyUsage:   {{.Usage}} {{.UsageHint}}
+Extensions: {{.Extensions}}
+ExtendedKeyUsage: {{.ExtendedUsage}}
 `,
 		struct {
 			Certificate
+			SOU           string
+			IOU           string
+			Usage         string
+			UsageHint     string
+			ExtendedUsage string
+			Extensions    string
 		}{
-			Certificate: c,
+			Certificate:   c,
+			SOU:           strings.Join(c.Parsed.Subject.OrganizationalUnit, ", "),
+			IOU:           strings.Join(c.Parsed.Issuer.OrganizationalUnit, ", "),
+			Usage:         fmt.Sprintf("0x%x", c.Parsed.KeyUsage),
+			UsageHint:     usageHint,
+			ExtendedUsage: usagesStr,
+			Extensions:    strings.Join(exts, ", "),
 		},
 	)
 }
@@ -249,7 +335,7 @@ func (s SignatureDetails) String() string {
 
 	var certs []string
 	for idx, c := range s.Certificates {
-		certs = append(certs, fmt.Sprintf("Certificate %d:\n%s", idx+1, strings.TrimRight(doIndent(c.String(), "  "), " \n")))
+		certs = append(certs, fmt.Sprintf("Certificate %d:\n%s\n", idx+1, strings.TrimRight(doIndent(c.String(), "  "), " \n")))
 	}
 
 	var signers []string

@@ -228,7 +228,7 @@ func (m *File) HashPages(hasher hash.Hash) (hashes [][]byte, err error) {
 	return hashChunks(hasher, PageSize, b)
 }
 
-func (m *File) CDBytes(order binary.ByteOrder) (cd []byte, err error) {
+func (m *File) CDBytes(order binary.ByteOrder, ith int) (cd []byte, err error) {
 	cmd, _, err := m.CodeSigningCmd()
 	if err != nil {
 		return nil, fmt.Errorf("unable to extract code signing cmd: %w", err)
@@ -251,6 +251,8 @@ func (m *File) CDBytes(order binary.ByteOrder) (cd []byte, err error) {
 		return nil, err
 	}
 
+	var found int
+blobIndex:
 	for _, index := range csBlob.Index {
 		if _, err := superBlobReader.Seek(int64(index.Offset), io.SeekStart); err != nil {
 			return nil, fmt.Errorf("unable to seek to code signing blob index=%d: %w", index.Offset, err)
@@ -258,6 +260,10 @@ func (m *File) CDBytes(order binary.ByteOrder) (cd []byte, err error) {
 
 		switch index.Type {
 		case CsSlotCodedirectory, CsSlotAlternateCodedirectories:
+			found += 1
+			if found <= ith {
+				continue blobIndex
+			}
 
 			var cdBlobHeader BlobHeader
 			// read the header
@@ -285,8 +291,10 @@ func (m *File) CDBytes(order binary.ByteOrder) (cd []byte, err error) {
 			return cdBytes, nil
 		}
 	}
-	return nil, fmt.Errorf("unable to find code directory")
+	return nil, ErrNoCodeDirectory
 }
+
+var ErrNoCodeDirectory = fmt.Errorf("unable to find code directory")
 
 func (m *File) CMSBlobBytes(order binary.ByteOrder) (cd []byte, err error) {
 	cmd, _, err := m.CodeSigningCmd()
@@ -342,7 +350,8 @@ func (m *File) CMSBlobBytes(order binary.ByteOrder) (cd []byte, err error) {
 }
 
 func (m *File) HashCD(hasher hash.Hash) (hash []byte, err error) {
-	cdBytes, err := m.CDBytes(binary.LittleEndian)
+	// TODO: support multiple CDs
+	cdBytes, err := m.CDBytes(binary.LittleEndian, 0)
 	if err != nil {
 		return nil, err
 	}

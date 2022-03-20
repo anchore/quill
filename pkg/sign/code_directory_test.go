@@ -108,7 +108,7 @@ func Test_newCodeDirectoryFromMacho(t *testing.T) {
 			require.Len(t, hashBytes, int(tt.expectedCD.NSpecialSlots+tt.expectedCD.NCodeSlots))
 
 			// grab CD from binary that already has the CD....
-			expectedCDBytes, err := m.CDBytes(binary.LittleEndian)
+			expectedCDBytes, err := m.CDBytes(binary.LittleEndian, 0)
 			require.NoError(t, err)
 
 			// grab the bytes for our CD that we crafted (not for hashing)...
@@ -194,7 +194,7 @@ func Test_generateCodeDirectory(t *testing.T) {
 			actualCDHash := hasher.Sum(nil)
 
 			// grab CD from binary that already has the CD....
-			expectedCDBytes, err := m.CDBytes(binary.LittleEndian)
+			expectedCDBytes, err := m.CDBytes(binary.LittleEndian, 0)
 			require.NoError(t, err)
 
 			actualCDBytes, err := restruct.Pack(macho.SigningOrder, cdBlob)
