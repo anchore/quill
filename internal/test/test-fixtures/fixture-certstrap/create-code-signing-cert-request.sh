@@ -25,7 +25,6 @@ set -x
 
 DIR=$1
 CA_CERT_PATH=$2
-CA_CERT_KEY_PATH=$3
 # note: this is derived from the Makefile
 NAME=certstrap-leaf
 
@@ -35,16 +34,12 @@ IDENTITY=${NAME}-code-signing-id
 ## OpenSSL material
 
 KEY_PASSWORD="topsykretts"
-P12_PASSWORD=${KEY_PASSWORD}
 
 # note: this is defined by the Makefile
 KEY_FILE=$FILE_PREFIX.key
 # note: this is defined by the Makefile
 CSR_FILE=$FILE_PREFIX.csr
-# note: this is defined by the Makefile
-CERT_FILE=$FILE_PREFIX.crt
 EXT_FILE=$FILE_PREFIX-ext.cnf
-P12_FILE=$FILE_PREFIX.p12
 
 EXT_SECTION=codesign_reqext
 
