@@ -36,6 +36,7 @@ $(CA_INTERMEDIATE_CERT_PATH):
 	$(CERTSTEAP_CMD) \
 		init \
 			--common-name $(CA_ROOT_NAME) \
+			--expires '25 years' \
 			--passphrase $(PASSPHRASE)
 
 	# request intermediate cert
@@ -48,6 +49,7 @@ $(CA_INTERMEDIATE_CERT_PATH):
 		sign \
 			$(CA_INTERMEDIATE_NAME) \
 			--CA $(CA_ROOT_NAME) \
+			--expires '25 years' \
 			--passphrase $(PASSPHRASE) \
 			--intermediate
 
@@ -62,6 +64,7 @@ $(CERT_LEAF_PATH): $(CA_INTERMEDIATE_CERT_PATH)
 		sign \
 			$(CERT_LEAF_NAME) \
 			--CA $(CA_INTERMEDIATE_NAME) \
+			--expires '25 years' \
 			--passphrase $(PASSPHRASE)
 
 	# verify the certificate: we should see our x509 extensions needed for codesigning
