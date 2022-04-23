@@ -19,7 +19,6 @@ CHANGELOG.md
 .tmp/
 coverage.txt
 bin/
-*.pem
 
 # Binaries for programs and plugins
 *.exe

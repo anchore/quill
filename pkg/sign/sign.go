@@ -7,7 +7,8 @@ import (
 	"github.com/anchore/quill/pkg/macho"
 )
 
-func Sign(id, path, keyFile, keyPassword, certFile string) error {
+// TODO: use chain and embed
+func Sign(id, path, keyFile, keyPassword, certFile, chainFile string) error {
 	m, err := macho.NewFile(path)
 	if err != nil {
 		return err

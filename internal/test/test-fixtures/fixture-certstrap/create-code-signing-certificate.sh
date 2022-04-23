@@ -25,11 +25,12 @@ set -x
 
 DIR=$1
 CA_CERT_PATH=$2
+CA_CERT_KEY_PATH=$3
+IDENTITY=$4
+
 # note: this is derived from the Makefile
 NAME=certstrap-leaf
-
 FILE_PREFIX=$DIR/$NAME
-IDENTITY=${NAME}-code-signing-id
 
 ## OpenSSL material
 
@@ -37,6 +38,8 @@ KEY_PASSWORD="topsykretts"
 
 # note: this is defined by the Makefile
 KEY_FILE=$FILE_PREFIX.key
+# note: this is defined by the Makefile
+CERT_FILE=$FILE_PREFIX.crt
 # note: this is defined by the Makefile
 CSR_FILE=$FILE_PREFIX.csr
 EXT_FILE=$FILE_PREFIX-ext.cnf
@@ -85,3 +88,26 @@ openssl req \
 
 # verify the csr: we should see X509 v3 extensions for codesigning in the CSR
 openssl req -in "$CSR_FILE" -noout -text | grep -A1 "X509v3" || exit_with_error "could not find x509 extensions in CSR"
+
+  # note: Extensions in certificates are not transferred to certificate requests and vice versa. This means that
+  # just because the CSR has x509 v3 extensions doesn't mean that you'll see these extensions in the cert output.
+  # To prove this do:
+  # 	openssl x509 -text -noout -in server.crt | grep -A10 "X509v3 extensions:"
+  # ... and you will see no output (if -extensions is not used). (see https://www.openssl.org/docs/man1.1.0/man1/x509.html#BUGS)
+  # To get the extensions, use "-extensions codesign_reqext" when creating the cert. The codesign_reqext value matches
+  # the section name in the ext file used in CSR / cert creation (-extfile and -config).
+  openssl x509 \
+            -req \
+            -days 100000 \
+            -in "$CSR_FILE" \
+            -out "$CERT_FILE" \
+            -extfile "$EXT_FILE" \
+            -CA "${CA_CERT_PATH}" \
+            -CAkey "${CA_CERT_KEY_PATH}" \
+            -CAcreateserial \
+            -passin "pass:$KEY_PASSWORD" \
+            -extensions $EXT_SECTION
+
+  # verify the certificate: we should see our extensions
+  openssl x509 -text -noout -in "$CERT_FILE" | grep -A1 'X509v3' || exit_with_error "could not find x509 extensions in certificate"
+  openssl x509 -text -noout -in "$CERT_FILE" | grep -A1 'X509v3' | grep 'Code Signing' || exit_with_error "could not find Code Signing x509 extension in certificate"

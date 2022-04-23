@@ -31,7 +31,7 @@ $ quill sign <path/to/binary> --key <path/to/PEM/key> --cert <path/to/PEM/cert>
 - [ ] add signing entitlements from usr input
 - [ ] add support for universal binaries (partially done, needs to wrap the signing function)
 - [ ] Check that input 509 certs have the v3 extensions necessary for codesigning
-- [ ] Support pkcs12 envelopes instead of key + cert input
+- [ ] Support pkcs12 envelopes instead of key + cert + chain input
 
 *Future opportunities*
 - could this also perform notarization?
