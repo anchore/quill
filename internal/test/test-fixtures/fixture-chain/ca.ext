@@ -1,0 +1,5 @@
+# see https://superuser.com/questions/738612/openssl-ca-keyusage-extension
+[ default ]
+basicConstraints = critical,CA:true                        # recommended to be marked critical. required for a ca
+keyUsage         = critical,keyCertSign,digitalSignature   # required to be marked critical. required for signing certs
+# note: CAs/ICAs should not have any extendedKeyUsage specified (for codeSigning)
