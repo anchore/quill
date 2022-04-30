@@ -2,12 +2,14 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/anchore/go-logger"
 	"os"
+	"strings"
 
+	"github.com/anchore/go-logger/adapter/logrus"
 	"github.com/anchore/quill/internal"
 	"github.com/anchore/quill/internal/config"
 	"github.com/anchore/quill/internal/log"
-	"github.com/anchore/quill/internal/logger"
 	"github.com/anchore/quill/pkg"
 	"github.com/gookit/color"
 	"github.com/pkg/profile"
@@ -93,16 +95,31 @@ func initAppConfig() {
 }
 
 func initLogging() {
-	cfg := logger.LogrusConfig{
-		EnableConsole: (appConfig.Log.FileLocation == "" || appConfig.CliOptions.Verbosity > 0) && !appConfig.Quiet,
-		EnableFile:    appConfig.Log.FileLocation != "",
-		Level:         appConfig.Log.LevelOpt,
-		Structured:    appConfig.Log.Structured,
-		FileLocation:  appConfig.Log.FileLocation,
+
+	var levelObj logger.Level = logger.DebugLevel
+	level := appConfig.Log.Level
+	switch strings.ToLower(level) {
+	case "info":
+		levelObj = logger.InfoLevel
+	case "debug":
+		levelObj = logger.DebugLevel
+	case "warn":
+		levelObj = logger.WarnLevel
+	case "trace":
+		levelObj = logger.TraceLevel
+	case "error":
+		levelObj = logger.ErrorLevel
 	}
 
-	logWrapper := logger.NewLogrusLogger(cfg)
-	pkg.SetLogger(logWrapper)
+	lgr, err := logrus.New(logrus.Config{
+		EnableConsole: (appConfig.Log.FileLocation == "" || appConfig.CliOptions.Verbosity > 0) && !appConfig.Quiet,
+		FileLocation:  appConfig.Log.FileLocation,
+		Level:         levelObj,
+	})
+	if err != nil {
+		panic(err)
+	}
+	pkg.SetLogger(lgr)
 }
 
 func logAppConfig() {

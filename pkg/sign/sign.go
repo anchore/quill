@@ -29,23 +29,28 @@ func Sign(id, path, keyFile, keyPassword, certFile, chainFile string) error {
 	}
 
 	// first pass: add the signed data with the dummy loader
-	sbBytes, err := generateSigningSuperBlob(id, m, keyFile, keyPassword, certFile)
+	log.Debugf("estimating signing material size")
+	sbBytes, err := generateSigningSuperBlob(id, m, keyFile, keyPassword, chainFile)
 	if err != nil {
 		return fmt.Errorf("failed to add signing data on pass=1: %w", err)
 	}
 
 	// (patch) make certain offset and size references to the superblob are finalized in the binary
+	log.Debugf("patching binary with superblob offsets")
 	if err = updateSuperBlobOffsetReferences(m, uint64(len(sbBytes))); err != nil {
 		return nil
 	}
 
 	// second pass: now that all of the sizing is right, let's do it again with the final contents (replacing the hashes and signature)
-	sbBytes, err = generateSigningSuperBlob(id, m, keyFile, keyPassword, certFile)
+	log.Debugf("signing")
+	sbBytes, err = generateSigningSuperBlob(id, m, keyFile, keyPassword, chainFile)
 	if err != nil {
 		return fmt.Errorf("failed to add signing data on pass=2: %w", err)
 	}
 
 	// (patch) append the superblob to the __LINKEDIT section
+	log.Debugf("patching binary with signature")
+
 	codeSigningCmd, _, err := m.CodeSigningCmd()
 	if err != nil {
 		return err

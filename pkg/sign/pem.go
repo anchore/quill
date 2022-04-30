@@ -10,15 +10,15 @@ import (
 	"os"
 )
 
-func loadCertFromFile(filename string) (*x509.Certificate, error) {
+func loadCertsFromFile(filename string) ([]*x509.Certificate, error) {
 	reader, err := os.Open(filename)
 	if err != nil {
 		return nil, fmt.Errorf("unable to open private key file: %w", err)
 	}
-	return loadCert(reader)
+	return loadCerts(reader)
 }
 
-func loadCert(reader io.Reader) (*x509.Certificate, error) {
+func loadCerts(reader io.Reader) ([]*x509.Certificate, error) {
 	b, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read certificate: %w", err)
@@ -28,7 +28,7 @@ func loadCert(reader io.Reader) (*x509.Certificate, error) {
 		return nil, fmt.Errorf("certificate is of the wrong type=%q", pemObj.Type)
 	}
 
-	cert, err := x509.ParseCertificate(pemObj.Bytes)
+	cert, err := x509.ParseCertificates(pemObj.Bytes)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse certificate: %w", err)
 	}

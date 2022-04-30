@@ -2,7 +2,6 @@ package sign
 
 import (
 	"crypto"
-	"crypto/x509"
 	"fmt"
 
 	"github.com/anchore/quill/pkg/macho"
@@ -28,12 +27,12 @@ func generateCMS(keyFile, keyPassword, certFile string, cdBlob *macho.Blob) (*ma
 		}
 
 		// TODO: add certificate chain
-		cert, err := loadCertFromFile(certFile)
+		certs, err := loadCertsFromFile(certFile)
 		if err != nil {
 			return nil, err
 		}
 
-		cmsBytes, err = cms.SignDetached(cdBlobBytes, []*x509.Certificate{cert}, signer)
+		cmsBytes, err = cms.SignDetached(cdBlobBytes, certs, signer)
 		if err != nil {
 			return nil, fmt.Errorf("unable to sign code directory: %w", err)
 		}

@@ -3,10 +3,12 @@ Package log contains the singleton object and helper functions for facilitating 
 */
 package log
 
-import "github.com/anchore/quill/pkg/logger"
+import (
+	"github.com/anchore/go-logger/adapter/discard"
+)
 
 // Log is the singleton used to facilitate logging internally within
-var Log logger.Logger = &nopLogger{}
+var Log = discard.New()
 
 // Errorf takes a formatted template string and template arguments for the error logging level.
 func Errorf(format string, args ...interface{}) {

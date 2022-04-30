@@ -23,7 +23,7 @@ func Test_loadCertFromFile(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.filename, func(t *testing.T) {
-			got, err := loadCertFromFile(tt.filename)
+			got, err := loadCertsFromFile(tt.filename)
 			require.NoError(t, err)
 
 			// note: we're not testing functionality in depth, just a sanity check.
