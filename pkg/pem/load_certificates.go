@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 )
 
-func LoadCertificates(pemFilePath string) ([]*x509.Certificate, error) {
+func loadCertificatesFromFile(pemFilePath string) ([]*x509.Certificate, error) {
 	certPEM, err := ioutil.ReadFile(pemFilePath)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read signing certificate: %w", err)

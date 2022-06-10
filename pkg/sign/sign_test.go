@@ -1,6 +1,7 @@
 package sign
 
 import (
+	"github.com/anchore/quill/pkg/pem"
 	"testing"
 
 	"github.com/anchore/quill/internal/test"
@@ -116,7 +117,9 @@ func TestSign(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			require.NoError(t, Sign(tt.args.id, tt.args.path, tt.args.keyFile, tt.args.keyPassword, tt.args.certFile))
+			signingMaterial, err := pem.NewSigningMaterial(tt.args.certFile, tt.args.keyFile, tt.args.keyPassword)
+			require.NoError(t, err)
+			require.NoError(t, Sign(tt.args.id, tt.args.path, signingMaterial))
 			test.AssertDebugOutput(t, tt.args.path, tt.assertions...)
 			test.AssertBinarySigned(t, tt.args.path)
 		})

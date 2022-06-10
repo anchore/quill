@@ -12,7 +12,7 @@ import (
 
 func generateSigningSuperBlob(id string, m *macho.File, signingMaterial *pem.SigningMaterial) ([]byte, error) {
 	var cdFlags macho.CdFlag
-	if signingMaterial == nil {
+	if signingMaterial != nil {
 		// TODO: add options to enable more strict rules (such as macho.Hard)
 		// note: we must at least support the runtime option for notarization (requirement introduced in macOS 10.14 / Mojave).
 		cdFlags = macho.Runtime

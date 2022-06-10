@@ -12,7 +12,10 @@ type SigningMaterial struct {
 }
 
 func NewSigningMaterial(certFile, privateKeyPath, password string) (*SigningMaterial, error) {
-	certs, err := LoadCertificates(certFile)
+	if certFile == "" || privateKeyPath == "" {
+		return nil, nil
+	}
+	certs, err := loadCertificatesFromFile(certFile)
 	if err != nil {
 		return nil, err
 	}
