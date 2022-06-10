@@ -9,12 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/github/smimesign/ietf-cms/oid"
-
-	"github.com/github/smimesign/ietf-cms/protocol"
-
 	"github.com/anchore/quill/pkg/macho"
 	cms "github.com/github/smimesign/ietf-cms"
+	"github.com/github/smimesign/ietf-cms/oid"
+	"github.com/github/smimesign/ietf-cms/protocol"
 )
 
 type SignatureDetails struct {
@@ -55,7 +53,7 @@ type AlgorithmWithValue struct {
 type CMSValidationDetails struct {
 	IsValid      bool   `json:"isValid"`
 	ErrorMessage string `json:"errorMessage"`
-	//Error                error                   `json:"error"`
+	// Error                error                   `json:"error"`
 	VerifiedCertificates [][][]*x509.Certificate `json:"verifiedCertificates"`
 }
 
@@ -224,7 +222,6 @@ Base64:    {{.Base64}}
 }
 
 func (s Signer) String() string {
-
 	var atts []string
 	for idx, a := range s.SignedAttributes {
 		atts = append(atts, fmt.Sprintf("Attribute %d:\n%s", idx+1, doIndent(a.String(), "  ")))

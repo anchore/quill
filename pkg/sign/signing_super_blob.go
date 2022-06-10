@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"fmt"
-	"github.com/anchore/quill/pkg/pem"
 
 	"github.com/anchore/quill/pkg/macho"
+	"github.com/anchore/quill/pkg/pem"
 	"github.com/go-restruct/restruct"
 )
 

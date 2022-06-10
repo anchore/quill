@@ -2,6 +2,7 @@ package sign
 
 import (
 	"fmt"
+
 	"github.com/anchore/quill/pkg/macho"
 	"github.com/anchore/quill/pkg/pem"
 	cms "github.com/github/smimesign/ietf-cms"

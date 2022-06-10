@@ -10,7 +10,7 @@ import (
 	"os"
 )
 
-//func loadCertsFromFile(filename string) ([]*x509.Certificate, error) {
+// func loadCertsFromFile(filename string) ([]*x509.Certificate, error) {
 //	reader, err := os.Open(filename)
 //	if err != nil {
 //		return nil, fmt.Errorf("unable to open private key file: %w", err)

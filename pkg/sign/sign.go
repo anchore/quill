@@ -2,10 +2,10 @@ package sign
 
 import (
 	"fmt"
-	"github.com/anchore/quill/pkg/pem"
 
 	"github.com/anchore/quill/internal/log"
 	"github.com/anchore/quill/pkg/macho"
+	"github.com/anchore/quill/pkg/pem"
 )
 
 // TODO: use chain and embed

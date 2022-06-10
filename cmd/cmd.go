@@ -2,10 +2,10 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/anchore/go-logger"
 	"os"
 	"strings"
 
+	"github.com/anchore/go-logger"
 	"github.com/anchore/go-logger/adapter/logrus"
 	"github.com/anchore/quill/internal"
 	"github.com/anchore/quill/internal/config"
@@ -95,7 +95,6 @@ func initAppConfig() {
 }
 
 func initLogging() {
-
 	var levelObj logger.Level = logger.DebugLevel
 	level := appConfig.Log.Level
 	switch strings.ToLower(level) {

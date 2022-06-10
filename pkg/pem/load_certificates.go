@@ -4,8 +4,9 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"github.com/anchore/quill/internal/log"
 	"io/ioutil"
+
+	"github.com/anchore/quill/internal/log"
 )
 
 func loadCertificatesFromFile(pemFilePath string) ([]*x509.Certificate, error) {

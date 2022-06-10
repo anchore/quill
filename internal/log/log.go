@@ -49,3 +49,13 @@ func Debugf(format string, args ...interface{}) {
 func Debug(args ...interface{}) {
 	Log.Debug(args...)
 }
+
+// Tracef takes a formatted template string and template arguments for the trace logging level.
+func Tracef(format string, args ...interface{}) {
+	Log.Tracef(format, args...)
+}
+
+// Trace logs the given arguments at the trace logging level.
+func Trace(args ...interface{}) {
+	Log.Trace(args...)
+}

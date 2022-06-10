@@ -79,8 +79,8 @@ bootstrap-tools: $(TEMPDIR)
 	GOBIN=$(shell realpath $(TEMPDIR)) go install github.com/square/certstrap@v1.2.0
 	GOBIN=$(shell realpath $(TEMPDIR)) go install github.com/smallstep/cli/cmd/step@v0.18.2
 	GOBIN=$(shell realpath $(TEMPDIR)) go install github.com/rinchsan/gosimports/cmd/gosimports@latest
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(TEMPDIR)/ v1.42.1
-	curl -sSfL https://raw.githubusercontent.com/wagoodman/go-bouncer/master/bouncer.sh | sh -s -- -b $(TEMPDIR)/ v0.2.0
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(TEMPDIR)/ v1.46.2
+	curl -sSfL https://raw.githubusercontent.com/wagoodman/go-bouncer/master/bouncer.sh | sh -s -- -b $(TEMPDIR)/ v0.3.0
 	curl -sSfL https://raw.githubusercontent.com/anchore/chronicle/main/install.sh | sh -s -- -b $(TEMPDIR)/ v0.3.0
 	.github/scripts/goreleaser-install.sh -b $(TEMPDIR)/ v0.177.0
 

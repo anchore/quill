@@ -3,13 +3,13 @@ package cmd
 import (
 	"debug/macho"
 	"fmt"
-	"github.com/anchore/quill/pkg/pem"
 	"os"
 	"path"
 
 	"github.com/anchore/quill/internal/bus"
 	"github.com/anchore/quill/internal/ui"
 	"github.com/anchore/quill/pkg/event"
+	"github.com/anchore/quill/pkg/pem"
 	"github.com/anchore/quill/pkg/sign"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -49,7 +49,7 @@ func setSignFlags(flags *pflag.FlagSet) {
 		"path to the signing certificate PEM file (or certificate chain)",
 	)
 
-	//flags.StringP(
+	// flags.StringP(
 	//	"chain", "", "",
 	//	"path to the certificate chain PEM file",
 	//)
@@ -68,7 +68,7 @@ func bindSignConfigOptions(v *viper.Viper, flags *pflag.FlagSet) error {
 		return err
 	}
 
-	//if err := v.BindPFlag("sign.chain", flags.Lookup("chain")); err != nil {
+	// if err := v.BindPFlag("sign.chain", flags.Lookup("chain")); err != nil {
 	//	return err
 	//}
 
@@ -140,7 +140,7 @@ func signExecWorker(p string, signingMaterial *pem.SigningMaterial) <-chan error
 
 func validateCertificateMaterial(signingMaterial *pem.SigningMaterial) error {
 	// verify chain of trust is already done on load
-	//if _, err := certificate.Load(appConfig.Sign.Certificates); err != nil {
+	// if _, err := certificate.Load(appConfig.Sign.Certificates); err != nil {
 	//	return err
 	//}
 

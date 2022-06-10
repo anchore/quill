@@ -1,10 +1,11 @@
 package pem
 
 import (
+	"testing"
+
 	"github.com/anchore/quill/internal/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func Test_loadCertFromFile(t *testing.T) {

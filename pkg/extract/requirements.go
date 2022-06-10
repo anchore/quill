@@ -22,7 +22,6 @@ func getRequirements(m file) []RequirementDetails {
 }
 
 func (r RequirementDetails) String() string {
-
 	var reqs []string
 	for idx, req := range r.Requirements {
 		reqs = append(reqs, fmt.Sprintf("Req %d (type=%s): %s", idx, req.Type, req.Detail))

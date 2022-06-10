@@ -1,10 +1,10 @@
 package sign
 
 import (
-	"github.com/anchore/quill/pkg/pem"
 	"testing"
 
 	"github.com/anchore/quill/internal/test"
+	"github.com/anchore/quill/pkg/pem"
 	"github.com/stretchr/testify/require"
 )
 
