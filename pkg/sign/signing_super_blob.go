@@ -6,12 +6,13 @@ import (
 	"fmt"
 
 	"github.com/anchore/quill/pkg/macho"
+	"github.com/anchore/quill/pkg/pem"
 	"github.com/go-restruct/restruct"
 )
 
-func generateSigningSuperBlob(id string, m *macho.File, keyFile, keyPassword, certFile string) ([]byte, error) {
+func generateSigningSuperBlob(id string, m *macho.File, signingMaterial *pem.SigningMaterial) ([]byte, error) {
 	var cdFlags macho.CdFlag
-	if certFile != "" {
+	if signingMaterial != nil {
 		// TODO: add options to enable more strict rules (such as macho.Hard)
 		// note: we must at least support the runtime option for notarization (requirement introduced in macOS 10.14 / Mojave).
 		cdFlags = macho.Runtime
@@ -32,7 +33,7 @@ func generateSigningSuperBlob(id string, m *macho.File, keyFile, keyPassword, ce
 		return nil, fmt.Errorf("unable to create code directory: %w", err)
 	}
 
-	cmsBlob, err := generateCMS(keyFile, keyPassword, certFile, cdBlob)
+	cmsBlob, err := generateCMS(signingMaterial, cdBlob)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create signature block: %w", err)
 	}

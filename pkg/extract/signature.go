@@ -7,13 +7,12 @@ import (
 	"encoding/hex"
 	"fmt"
 	"strings"
-
-	"github.com/github/smimesign/ietf-cms/oid"
-
-	"github.com/github/smimesign/ietf-cms/protocol"
+	"time"
 
 	"github.com/anchore/quill/pkg/macho"
 	cms "github.com/github/smimesign/ietf-cms"
+	"github.com/github/smimesign/ietf-cms/oid"
+	"github.com/github/smimesign/ietf-cms/protocol"
 )
 
 type SignatureDetails struct {
@@ -52,8 +51,9 @@ type AlgorithmWithValue struct {
 }
 
 type CMSValidationDetails struct {
-	IsValid              bool                    `json:"isValid"`
-	ErrorMessage         string                  `json:"errorMessage"`
+	IsValid      bool   `json:"isValid"`
+	ErrorMessage string `json:"errorMessage"`
+	// Error                error                   `json:"error"`
 	VerifiedCertificates [][][]*x509.Certificate `json:"verifiedCertificates"`
 }
 
@@ -96,10 +96,26 @@ func getSignatures(m file) []SignatureDetails {
 		panic(err)
 	}
 
-	// TODO: allow for specifying a root of trust
+	// it seems that the timestamp set is based on the sign time, not any certificate information
+	var earliestTime = time.Now()
+	for _, s := range psd.SignerInfos {
+		t, err := s.GetSigningTimeAttribute()
+		if err != nil {
+			panic(err)
+		}
+		if earliestTime.After(t) {
+			earliestTime = t
+		}
+	}
 
+	// TODO: allow for specifying a root of trust
 	// TODO: add verify options
-	verifiedCerts, cmsErr := sd.VerifyDetached(cdBytes, x509.VerifyOptions{})
+	verifiedCerts, cmsErr := sd.VerifyDetached(cdBytes,
+		x509.VerifyOptions{
+			CurrentTime: earliestTime,
+			KeyUsages:   []x509.ExtKeyUsage{x509.ExtKeyUsageCodeSigning},
+		},
+	)
 	cmsValid := cmsErr == nil
 	var cmsErrorStr string
 	if cmsErr != nil {
@@ -157,8 +173,9 @@ func getSignatures(m file) []SignatureDetails {
 			},
 			Base64: base64.StdEncoding.EncodeToString(superBlob.CMSSignature),
 			CMSValidation: CMSValidationDetails{
-				IsValid:              cmsValid,
-				ErrorMessage:         cmsErrorStr,
+				IsValid:      cmsValid,
+				ErrorMessage: cmsErrorStr,
+				//Error:                cmsErr,
 				VerifiedCertificates: verifiedCerts,
 			},
 			Certificates: certs,
@@ -205,7 +222,6 @@ Base64:    {{.Base64}}
 }
 
 func (s Signer) String() string {
-
 	var atts []string
 	for idx, a := range s.SignedAttributes {
 		atts = append(atts, fmt.Sprintf("Attribute %d:\n%s", idx+1, doIndent(a.String(), "  ")))
@@ -233,6 +249,8 @@ func addIfUsageSet(usageHints []string, val x509.KeyUsage, bit x509.KeyUsage, ti
 	}
 	return usageHints
 }
+
+// helpful for specific information on cert requirements https://images.apple.com/certificateauthority/pdf/Apple_Developer_ID_CPS_v3.3.pdf
 
 func (c Certificate) String() string {
 	var exts []string

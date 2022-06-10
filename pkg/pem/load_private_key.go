@@ -1,4 +1,4 @@
-package sign
+package pem
 
 import (
 	"crypto"
@@ -10,31 +10,31 @@ import (
 	"os"
 )
 
-func loadCertFromFile(filename string) (*x509.Certificate, error) {
-	reader, err := os.Open(filename)
-	if err != nil {
-		return nil, fmt.Errorf("unable to open private key file: %w", err)
-	}
-	return loadCert(reader)
-}
-
-func loadCert(reader io.Reader) (*x509.Certificate, error) {
-	b, err := io.ReadAll(reader)
-	if err != nil {
-		return nil, fmt.Errorf("unable to read certificate: %w", err)
-	}
-	pemObj, _ := pem.Decode(b)
-	if pemObj.Type != "CERTIFICATE" {
-		return nil, fmt.Errorf("certificate is of the wrong type=%q", pemObj.Type)
-	}
-
-	cert, err := x509.ParseCertificate(pemObj.Bytes)
-	if err != nil {
-		return nil, fmt.Errorf("unable to parse certificate: %w", err)
-	}
-
-	return cert, nil
-}
+// func loadCertsFromFile(filename string) ([]*x509.Certificate, error) {
+//	reader, err := os.Open(filename)
+//	if err != nil {
+//		return nil, fmt.Errorf("unable to open private key file: %w", err)
+//	}
+//	return loadCerts(reader)
+//}
+//
+//func loadCerts(reader io.Reader) ([]*x509.Certificate, error) {
+//	b, err := io.ReadAll(reader)
+//	if err != nil {
+//		return nil, fmt.Errorf("unable to read certificate: %w", err)
+//	}
+//	pemObj, _ := pem.Decode(b)
+//	if pemObj.Type != "CERTIFICATE" {
+//		return nil, fmt.Errorf("certificate is of the wrong type=%q", pemObj.Type)
+//	}
+//
+//	certs, err := x509.ParseCertificates(pemObj.Bytes)
+//	if err != nil {
+//		return nil, fmt.Errorf("unable to parse certificate: %w", err)
+//	}
+//
+//	return certs, nil
+//}
 
 func loadPrivateKeyFromFile(filename, password string) (crypto.PrivateKey, error) {
 	reader, err := os.Open(filename)

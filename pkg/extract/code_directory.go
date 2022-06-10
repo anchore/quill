@@ -108,7 +108,7 @@ func getCodeDirectories(m file) (cdObjs []CodeDirectoryDetails) {
 	return cdObjs
 }
 
-func (c CodeDirectoryDetails) String() string {
+func (c CodeDirectoryDetails) String(hideVerboseData bool) string {
 	var specialDigests []string
 	for _, d := range c.SpecialDigests {
 		specialDigests = append(specialDigests, d.String())
@@ -118,6 +118,21 @@ func (c CodeDirectoryDetails) String() string {
 	for _, d := range c.PageDigests {
 		pageDigests = append(pageDigests, d.String())
 	}
+
+	var pageDigestStr string
+	if hideVerboseData {
+		pageDigestStr = "  (hidden)"
+	} else {
+		pageDigestStr = doIndent(strings.Join(pageDigests, "\n"), "  ")
+	}
+
+	var specialDigestStr string
+	if hideVerboseData {
+		specialDigestStr = "  (hidden)"
+	} else {
+		specialDigestStr = doIndent(strings.Join(specialDigests, "\n"), "  ")
+	}
+
 	return tprintf(
 		`Version:  {{.Version.Description}}
 Flags:    {{.Flags.Description}}
@@ -139,8 +154,8 @@ PageDigests: count={{.PageDigestCount}}
 			CodeDirectoryDetails:    c,
 			SpecialDigestCount:      len(c.SpecialDigests),
 			PageDigestCount:         len(c.PageDigests),
-			FormattedSpecialDigests: doIndent(strings.Join(specialDigests, "\n"), "  "),
-			FormattedPageDigests:    doIndent(strings.Join(pageDigests, "\n"), "  "),
+			FormattedSpecialDigests: specialDigestStr,
+			FormattedPageDigests:    pageDigestStr,
 		},
 	)
 }

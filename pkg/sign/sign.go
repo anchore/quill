@@ -5,9 +5,11 @@ import (
 
 	"github.com/anchore/quill/internal/log"
 	"github.com/anchore/quill/pkg/macho"
+	"github.com/anchore/quill/pkg/pem"
 )
 
-func Sign(id, path, keyFile, keyPassword, certFile string) error {
+// TODO: use chain and embed
+func Sign(id, path string, signingMaterial *pem.SigningMaterial) error {
 	m, err := macho.NewFile(path)
 	if err != nil {
 		return err
@@ -18,7 +20,7 @@ func Sign(id, path, keyFile, keyPassword, certFile string) error {
 		return fmt.Errorf("already has code signing cmd")
 	}
 
-	if certFile == "" {
+	if signingMaterial == nil {
 		log.Warnf("only ad-hoc signing, which means that anyone can alter the binary contents without you knowing (there is no cryptographic signature)")
 	}
 
@@ -28,23 +30,28 @@ func Sign(id, path, keyFile, keyPassword, certFile string) error {
 	}
 
 	// first pass: add the signed data with the dummy loader
-	sbBytes, err := generateSigningSuperBlob(id, m, keyFile, keyPassword, certFile)
+	log.Debugf("estimating signing material size")
+	sbBytes, err := generateSigningSuperBlob(id, m, signingMaterial)
 	if err != nil {
 		return fmt.Errorf("failed to add signing data on pass=1: %w", err)
 	}
 
 	// (patch) make certain offset and size references to the superblob are finalized in the binary
+	log.Debugf("patching binary with superblob offsets")
 	if err = updateSuperBlobOffsetReferences(m, uint64(len(sbBytes))); err != nil {
 		return nil
 	}
 
 	// second pass: now that all of the sizing is right, let's do it again with the final contents (replacing the hashes and signature)
-	sbBytes, err = generateSigningSuperBlob(id, m, keyFile, keyPassword, certFile)
+	log.Debugf("signing")
+	sbBytes, err = generateSigningSuperBlob(id, m, signingMaterial)
 	if err != nil {
 		return fmt.Errorf("failed to add signing data on pass=2: %w", err)
 	}
 
 	// (patch) append the superblob to the __LINKEDIT section
+	log.Debugf("patching binary with signature")
+
 	codeSigningCmd, _, err := m.CodeSigningCmd()
 	if err != nil {
 		return err

@@ -9,6 +9,7 @@ import (
 	"github.com/anchore/quill/internal/bus"
 	"github.com/anchore/quill/internal/ui"
 	"github.com/anchore/quill/pkg/event"
+	"github.com/anchore/quill/pkg/pem"
 	"github.com/anchore/quill/pkg/sign"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -35,18 +36,23 @@ func newSignCmd() *cobra.Command {
 func setSignFlags(flags *pflag.FlagSet) {
 	flags.StringP(
 		"identity", "i", "",
-		"identifier to encode into the code directory of the code signing super bloc (default is derived from other input)",
+		"identifier to encode into the code directory of the code signing super block (default is derived from other input)",
 	)
 
 	flags.StringP(
 		"key", "k", "",
-		"path to the private key (PEM formatted only)",
+		"path to the private key PEM file",
 	)
 
 	flags.StringP(
 		"cert", "", "",
-		"path to the signing certificate (PEM formatted only)",
+		"path to the signing certificate PEM file (or certificate chain)",
 	)
+
+	// flags.StringP(
+	//	"chain", "", "",
+	//	"path to the certificate chain PEM file",
+	//)
 }
 
 func bindSignConfigOptions(v *viper.Viper, flags *pflag.FlagSet) error {
@@ -58,22 +64,39 @@ func bindSignConfigOptions(v *viper.Viper, flags *pflag.FlagSet) error {
 		return err
 	}
 
-	if err := v.BindPFlag("sign.cert", flags.Lookup("cert")); err != nil {
+	if err := v.BindPFlag("sign.certs", flags.Lookup("cert")); err != nil {
 		return err
 	}
+
+	// if err := v.BindPFlag("sign.chain", flags.Lookup("chain")); err != nil {
+	//	return err
+	//}
 
 	return nil
 }
 
 func signExec(_ *cobra.Command, args []string) error {
-	path := args[0]
+	p := args[0]
 
-	if err := validatePathIsDarwinBinary(path); err != nil {
+	err := validatePathIsDarwinBinary(p)
+	if err != nil {
 		return err
 	}
 
+	var signingMaterial *pem.SigningMaterial
+	if appConfig.Sign.Certificates != "" {
+		signingMaterial, err = pem.NewSigningMaterial(appConfig.Sign.Certificates, appConfig.Sign.PrivateKey, appConfig.Sign.Password)
+		if err != nil {
+			return err
+		}
+
+		if err := validateCertificateMaterial(signingMaterial); err != nil {
+			return err
+		}
+	}
+
 	return eventLoop(
-		signExecWorker(path),
+		signExecWorker(p, signingMaterial),
 		setupSignals(),
 		eventSubscription,
 		nil,
@@ -93,7 +116,7 @@ func validatePathIsDarwinBinary(path string) error {
 	return err
 }
 
-func signExecWorker(p string) <-chan error {
+func signExecWorker(p string, signingMaterial *pem.SigningMaterial) <-chan error {
 	errs := make(chan error)
 	go func() {
 		defer close(errs)
@@ -104,7 +127,7 @@ func signExecWorker(p string) <-chan error {
 			id = path.Base(p)
 		}
 
-		if err := sign.Sign(id, p, appConfig.Sign.PrivateKey, appConfig.Sign.Password, appConfig.Sign.Certificate); err != nil {
+		if err := sign.Sign(id, p, signingMaterial); err != nil {
 			errs <- err
 		}
 
@@ -113,4 +136,16 @@ func signExecWorker(p string) <-chan error {
 		})
 	}()
 	return errs
+}
+
+func validateCertificateMaterial(signingMaterial *pem.SigningMaterial) error {
+	// verify chain of trust is already done on load
+	// if _, err := certificate.Load(appConfig.Sign.Certificates); err != nil {
+	//	return err
+	//}
+
+	// verify leaf has x509 code signing extensions
+
+	// verify remaining requirements from  https://images.apple.com/certificateauthority/pdf/Apple_Developer_ID_CPS_v3.3.pdf
+	return nil
 }

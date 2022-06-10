@@ -1,9 +1,9 @@
 package pkg
 
 import (
+	"github.com/anchore/go-logger"
 	"github.com/anchore/quill/internal/bus"
 	"github.com/anchore/quill/internal/log"
-	"github.com/anchore/quill/pkg/logger"
 	"github.com/wagoodman/go-partybus"
 )
 

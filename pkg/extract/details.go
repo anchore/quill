@@ -26,10 +26,10 @@ type file struct {
 	internalFile *macho.File
 }
 
-func (d Details) String() (r string) {
+func (d Details) String(hideVerboseData bool) (r string) {
 	r += "File Details:\n" + doIndent(d.File.String(), "  ")
 	for idx, cd := range d.SuperBlob.CodeDirectories {
-		r += fmt.Sprintf("\nCode Directory (block %d):\n", idx+1) + doIndent(cd.String(), "  ")
+		r += fmt.Sprintf("\nCode Directory (block %d):\n", idx+1) + doIndent(cd.String(hideVerboseData), "  ")
 	}
 
 	for idx, cms := range d.SuperBlob.Signatures {

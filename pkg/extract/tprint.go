@@ -18,7 +18,7 @@ func tprintf(tmpl string, data interface{}) string {
 
 func doIndent(s string, indent string) string {
 	var lines []string
-	//for _, line := range strings.Split(strings.TrimRight(s, "\n"), "\n") {
+	// for _, line := range strings.Split(strings.TrimRight(s, "\n"), "\n") {
 	for _, line := range strings.Split(s, "\n") {
 		lines = append(lines, indent+line)
 	}

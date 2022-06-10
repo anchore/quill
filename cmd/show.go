@@ -48,7 +48,6 @@ func setShowFlags(flags *pflag.FlagSet) {
 		"output", "o", string(textFormat),
 		fmt.Sprintf("the format to show (available = %+v)", allFormatOptions),
 	)
-
 }
 
 func bindShowConfigOptions(v *viper.Viper, flags *pflag.FlagSet) error {
@@ -99,7 +98,7 @@ func showExecWorker(path string, option formatOption) <-chan error {
 func showFormat(path string, option formatOption) error {
 	switch option {
 	case textFormat:
-		return extract.ShowText(path, os.Stdout)
+		return extract.ShowText(path, os.Stdout, appConfig.CliOptions.Verbosity == 0)
 	case jsonFormat:
 		return extract.ShowJSON(path, os.Stdout)
 	}
