@@ -24,7 +24,7 @@ $ quill sign <path/to/binary> --key <path/to/PEM/key> --cert <path/to/PEM/cert>
 - [x] unit tests
 - [x] codesign comparison tests
 - [x] ad-hoc signing entrypoint
-- [ ] allow for cert chain to be provided and verified
+- [x] allow for cert chain to be provided and verified
 - [x] fix: code signature offset for larger binaries
 - [ ] add signing requirements derived from cert chain input
 - [ ] add signing requirements from user input
