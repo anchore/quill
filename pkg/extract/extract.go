@@ -22,7 +22,7 @@ func newFile(path string) (*file, error) {
 
 	internalFile, err := macho.NewFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("unable to parse macho formatted file with blacktop: %w", err)
+		return nil, fmt.Errorf("unable to parse macho formatted file: %w", err)
 	}
 
 	return &file{
@@ -43,14 +43,14 @@ func ShowJSON(path string, writer io.Writer) error {
 	return en.Encode(details)
 }
 
-func ShowText(path string, writer io.Writer) error {
+func ShowText(path string, writer io.Writer, hideVerboseData bool) error {
 	f, err := newFile(path)
 	if err != nil {
 		return err
 	}
 
 	details := getDetails(*f)
-	_, err = writer.Write([]byte(details.String()))
+	_, err = writer.Write([]byte(details.String(hideVerboseData)))
 
 	return err
 }
