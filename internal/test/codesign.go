@@ -53,6 +53,7 @@ func AssertDebugOutput(t *testing.T, path string, assertions ...OutputAssertion)
 }
 
 func runCodesignVerify(t testing.TB, path string) string {
+	assertCodesignExists(t)
 	cmd := exec.Command("codesign", "-d", "--verbose=4", "--verify", path)
 	output := runCommand(t, cmd, nil)
 	if cmd.ProcessState.ExitCode() != 0 {
@@ -63,6 +64,7 @@ func runCodesignVerify(t testing.TB, path string) string {
 }
 
 func runCodesignShow(t testing.TB, path string) string {
+	assertCodesignExists(t)
 	cmd := exec.Command("codesign", "-d", "--verbose=4", path)
 	output := runCommand(t, cmd, nil)
 	if cmd.ProcessState.ExitCode() != 0 {
@@ -91,4 +93,16 @@ func envMapToSlice(env map[string]string) (envList []string) {
 		envList = append(envList, fmt.Sprintf("%s=%s", key, val))
 	}
 	return
+}
+
+func assertCodesignExists(t testing.TB) {
+	if commandExists("codesign") {
+		return
+	}
+	t.Fatalf("codesign is not installed -- which is required for this test")
+}
+
+func commandExists(cmd string) bool {
+	_, err := exec.LookPath(cmd)
+	return err == nil
 }
