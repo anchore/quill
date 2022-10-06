@@ -2,6 +2,8 @@ name: "Validations"
 on:
   workflow_dispatch:
   push:
+    branches:
+      - main
   pull_request:
 
 env:
@@ -49,7 +51,7 @@ jobs:
   Unit-Test:
     # Note: changing this job name requires making the same update in the .github/workflows/release.yaml pipeline
     name: "Unit tests"
-    runs-on: ubuntu-20.04
+    runs-on: macos-latest
     steps:
       - uses: actions/setup-go@v2
         with:
