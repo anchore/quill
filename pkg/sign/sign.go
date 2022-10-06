@@ -37,7 +37,7 @@ func Sign(id, path string, signingMaterial *pem.SigningMaterial) error {
 	}
 
 	// (patch) make certain offset and size references to the superblob are finalized in the binary
-	log.Debugf("patching binary with superblob offsets")
+	log.Debugf("patching binary with updated superblob offsets")
 	if err = updateSuperBlobOffsetReferences(m, uint64(len(sbBytes))); err != nil {
 		return nil
 	}

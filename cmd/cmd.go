@@ -28,7 +28,7 @@ func NewCli() *cobra.Command {
 	v := viper.GetViper()
 
 	signCmd := newSignCmd()
-	rootCmd := must(newRootCmd(v, signCmd, setSignFlags)) // TODO: it would be nice to make a type to encapsulate the command and flag setup behavior
+	rootCmd := must(newRootCmd(v))
 	showCmd := must(newShowCmd(v))
 
 	rootCmd.AddCommand(signCmd)
