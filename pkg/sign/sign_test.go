@@ -11,11 +11,12 @@ import (
 func TestSign(t *testing.T) {
 
 	type args struct {
-		id          string
-		path        string
-		keyFile     string
-		keyPassword string
-		certFile    string
+		id                        string
+		path                      string
+		keyFile                   string
+		keyPassword               string
+		certFile                  string
+		skipAssertAgainstCodesign bool
 	}
 	tests := []struct {
 		name       string
@@ -66,7 +67,7 @@ func TestSign(t *testing.T) {
 			},
 		},
 		{
-			name: "sign the hello binary",
+			name: "sign the hello binary - single cert",
 			args: args{
 				id:       "my-id",
 				path:     test.AssetCopy(t, "hello"),
@@ -90,13 +91,40 @@ func TestSign(t *testing.T) {
 			},
 		},
 		{
+			name: "sign the syft binary - cert chain",
+			args: args{
+				id:       "syft-id",
+				path:     test.AssetCopy(t, "syft_unsigned"),
+				keyFile:  test.Asset(t, "chain-leaf-key.pem"),
+				certFile: test.Asset(t, "chain.pem"),
+			},
+			assertions: []test.OutputAssertion{
+				test.AssertContains("CodeDirectory v=20500 size=208904 flags=0x10000(runtime) hashes=6523+2 location=embedded"),
+				test.AssertContains("Hash type=sha256 size=32"),
+				test.AssertContains("CandidateCDHash sha256=95f62af3c8cdabd0f07c71df0637e7478956fab9"),
+				test.AssertContains("CandidateCDHashFull sha256=95f62af3c8cdabd0f07c71df0637e7478956fab9717aa4b28eabc37884114de5"),
+				test.AssertContains("CDHash=95f62af3c8cdabd0f07c71df0637e7478956fab9"),
+				test.AssertContains("CMSDigest=95f62af3c8cdabd0f07c71df0637e7478956fab9717aa4b28eabc37884114de5"),
+				test.AssertContains("CMSDigestType=2"),
+				test.AssertContains("Signature size="), // assert not adhoc
+				test.AssertContains("Authority=quill-test-leaf"),
+				test.AssertContains("Authority=quill-test-intermediate-ca"),
+				test.AssertContains("Authority=quill-test-root-ca"),
+				test.AssertContains("Info.plist=not bound"),
+				test.AssertContains("TeamIdentifier=not set"),
+				test.AssertContains("Sealed Resources=none"),
+				test.AssertContains("Internal requirements count=0 size=12"),
+			},
+		},
+		{
 			name: "sign the syft binary (with a password)",
 			args: args{
-				id:          "syft-id",
-				path:        test.AssetCopy(t, "syft_unsigned"),
-				keyFile:     test.Asset(t, "x509-key.pem"),
-				certFile:    test.Asset(t, "x509-cert.pem"),
-				keyPassword: "5w0rdf15h",
+				id:                        "syft-id",
+				path:                      test.AssetCopy(t, "syft_unsigned"),
+				keyFile:                   test.Asset(t, "x509-key.pem"),
+				certFile:                  test.Asset(t, "x509-cert.pem"),
+				keyPassword:               "5w0rdf15h",
+				skipAssertAgainstCodesign: true, // this test fixture isn't configured to be trusted (you'll get a cssmerr_tp_not_trusted)
 			},
 			assertions: []test.OutputAssertion{
 				test.AssertContains("CodeDirectory v=20500 size=208904 flags=0x10000(runtime) hashes=6523+2 location=embedded"),
@@ -106,8 +134,8 @@ func TestSign(t *testing.T) {
 				test.AssertContains("CDHash=6de57d1afedd91276e44f95814374f2f991aa504"),
 				test.AssertContains("CMSDigest=6de57d1afedd91276e44f95814374f2f991aa50469e3ec7c93ac456967091545"),
 				test.AssertContains("CMSDigestType=2"),
-				test.AssertContains("Signature size="), // assert not adhoc
-				test.AssertContains("Authority=quill-test-hello"),
+				test.AssertContains("Signature size="),         // assert not adhoc
+				test.AssertContains("Authority=(unavailable)"), // since the cert is not trusted by the system
 				test.AssertContains("Info.plist=not bound"),
 				test.AssertContains("TeamIdentifier=not set"),
 				test.AssertContains("Sealed Resources=none"),
@@ -121,7 +149,9 @@ func TestSign(t *testing.T) {
 			require.NoError(t, err)
 			require.NoError(t, Sign(tt.args.id, tt.args.path, signingMaterial))
 			test.AssertDebugOutput(t, tt.args.path, tt.assertions...)
-			test.AssertBinarySigned(t, tt.args.path)
+			if !tt.args.skipAssertAgainstCodesign {
+				test.AssertAgainstCodesignTool(t, tt.args.path)
+			}
 		})
 	}
 }

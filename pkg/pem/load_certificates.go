@@ -31,16 +31,19 @@ func loadCertificatesFromFile(pemFilePath string) ([]*x509.Certificate, error) {
 		if err != nil {
 			return nil, fmt.Errorf("unable to parse certificate %d of %d: %w", i+1, len(chainBlockBytes), err)
 		}
-		if i == 0 {
+
+		switch i {
+		case 0:
 			log.Debugf("signing cert: %s", c.Subject.String())
 			leaf = c
-		} else if i == len(chainBlockBytes)-1 {
+		case len(chainBlockBytes) - 1:
 			log.Debugf("root cert: %s", c.Subject.String())
 			roots.AddCert(c)
-		} else {
+		default:
 			log.Debugf("intermediate cert: %s", c.Subject.String())
 			intermediates.AddCert(c)
 		}
+
 		certs = append(certs, c)
 	}
 
@@ -50,6 +53,7 @@ func loadCertificatesFromFile(pemFilePath string) ([]*x509.Certificate, error) {
 
 	if len(certs) == 1 {
 		// no chain to verify with
+		log.Warnf("only found one certificate, no way to verify it (you need to provide a full certificate chain)")
 		return certs, nil
 	}
 

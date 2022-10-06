@@ -20,7 +20,7 @@ func newFile(path string) (*file, error) {
 		return nil, fmt.Errorf("unable to parse macho formatted file with blacktop: %w", err)
 	}
 
-	internalFile, err := macho.NewFile(path)
+	internalFile, err := macho.NewReadOnlyFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse macho formatted file: %w", err)
 	}

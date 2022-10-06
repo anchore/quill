@@ -32,7 +32,7 @@ func AssertSignedOutput(tb testing.TB, stdout string) {
 	}
 }
 
-func AssertBinarySigned(t *testing.T, path string) {
+func AssertAgainstCodesignTool(t *testing.T, path string) {
 	output := runCodesignVerify(t, path)
 	AssertSignedOutput(t, output)
 	if t.Failed() {
@@ -54,7 +54,7 @@ func AssertDebugOutput(t *testing.T, path string, assertions ...OutputAssertion)
 
 func runCodesignVerify(t testing.TB, path string) string {
 	assertCodesignExists(t)
-	cmd := exec.Command("codesign", "-d", "--verbose=4", "--verify", path)
+	cmd := exec.Command("codesign", "--verbose=4", "--verify", path)
 	output := runCommand(t, cmd, nil)
 	if cmd.ProcessState.ExitCode() != 0 {
 		t.Log(output)

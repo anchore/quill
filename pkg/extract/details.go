@@ -28,16 +28,20 @@ type file struct {
 
 func (d Details) String(hideVerboseData bool) (r string) {
 	r += "File Details:\n" + doIndent(d.File.String(), "  ")
-	for idx, cd := range d.SuperBlob.CodeDirectories {
-		r += fmt.Sprintf("\nCode Directory (block %d):\n", idx+1) + doIndent(cd.String(hideVerboseData), "  ")
-	}
+	if d.SuperBlob == nil {
+		r += "\nNo superblock found (this binary is not signed)\n"
+	} else {
+		for idx, cd := range d.SuperBlob.CodeDirectories {
+			r += fmt.Sprintf("\nCode Directory (block %d):\n", idx+1) + doIndent(cd.String(hideVerboseData), "  ")
+		}
 
-	for idx, cms := range d.SuperBlob.Signatures {
-		r += fmt.Sprintf("\nCMS (block %d):\n", idx+1) + doIndent(cms.String(), "  ")
-	}
+		for idx, cms := range d.SuperBlob.Signatures {
+			r += fmt.Sprintf("\nCMS (block %d):\n", idx+1) + doIndent(cms.String(), "  ")
+		}
 
-	for idx, req := range d.SuperBlob.Requirements {
-		r += fmt.Sprintf("\nRequirements (block %d):\n", idx+1) + doIndent(req.String(), "  ")
+		for idx, req := range d.SuperBlob.Requirements {
+			r += fmt.Sprintf("\nRequirements (block %d):\n", idx+1) + doIndent(req.String(), "  ")
+		}
 	}
 
 	// TODO: add entitlements

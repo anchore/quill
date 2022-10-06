@@ -36,17 +36,30 @@ func NewFile(path string) (*File, error) {
 		path: path,
 	}
 
-	return m, m.refresh()
+	return m, m.refresh(true)
 }
 
-func (m *File) refresh() error {
+func NewReadOnlyFile(path string) (*File, error) {
+	m := &File{
+		path: path,
+	}
+
+	return m, m.refresh(false)
+}
+
+func (m *File) refresh(withWrite bool) error {
 	if m.ReadSeekCloser != nil {
 		if err := m.ReadSeekCloser.Close(); err != nil {
 			return fmt.Errorf("unable to close macho file: %w", err)
 		}
 	}
 
-	f, err := os.OpenFile(m.path, os.O_RDWR, 0755)
+	flags := os.O_RDONLY
+	if withWrite {
+		flags = os.O_RDWR
+	}
+
+	f, err := os.OpenFile(m.path, flags, 0755)
 	if err != nil {
 		return fmt.Errorf("unable to open macho file: %w", err)
 	}
@@ -62,18 +75,23 @@ func (m *File) refresh() error {
 
 	m.ReadSeekCloser = f
 	m.ReaderAt = f
-	m.WriterAt = f
+	if withWrite {
+		m.WriterAt = f
+	}
 	m.File = o
 
 	return nil
 }
 
 func (m *File) Patch(content []byte, size int, offset uint64) (err error) {
+	if m.WriterAt == nil {
+		return fmt.Errorf("writes not allowed")
+	}
 	_, err = m.WriteAt(content[:size], int64(offset))
 	if err != nil {
 		return fmt.Errorf("unable to patch macho binary: %w", err)
 	}
-	return m.refresh()
+	return m.refresh(true)
 }
 
 func (m *File) firstCmdOffset() uint64 {
@@ -228,6 +246,7 @@ func (m *File) HashPages(hasher hash.Hash) (hashes [][]byte, err error) {
 	return hashChunks(hasher, PageSize, b)
 }
 
+//nolint:funlen
 func (m *File) CDBytes(order binary.ByteOrder, ith int) (cd []byte, err error) {
 	cmd, _, err := m.CodeSigningCmd()
 	if err != nil {
@@ -260,7 +279,7 @@ blobIndex:
 
 		switch index.Type {
 		case CsSlotCodedirectory, CsSlotAlternateCodedirectories:
-			found += 1
+			found++
 			if found <= ith {
 				continue blobIndex
 			}
@@ -324,7 +343,7 @@ func (m *File) CMSBlobBytes(order binary.ByteOrder) (cd []byte, err error) {
 			return nil, fmt.Errorf("unable to seek to code signing blob index=%d: %w", index.Offset, err)
 		}
 
-		switch index.Type {
+		switch index.Type { //nolint:gocritic
 		case CsSlotCmsSignature:
 
 			var blobHeader BlobHeader

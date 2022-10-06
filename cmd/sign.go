@@ -48,11 +48,6 @@ func setSignFlags(flags *pflag.FlagSet) {
 		"cert", "", "",
 		"path to the signing certificate PEM file (or certificate chain)",
 	)
-
-	// flags.StringP(
-	//	"chain", "", "",
-	//	"path to the certificate chain PEM file",
-	//)
 }
 
 func bindSignConfigOptions(v *viper.Viper, flags *pflag.FlagSet) error {
@@ -67,10 +62,6 @@ func bindSignConfigOptions(v *viper.Viper, flags *pflag.FlagSet) error {
 	if err := v.BindPFlag("sign.certs", flags.Lookup("cert")); err != nil {
 		return err
 	}
-
-	// if err := v.BindPFlag("sign.chain", flags.Lookup("chain")); err != nil {
-	//	return err
-	//}
 
 	return nil
 }

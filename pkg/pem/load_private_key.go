@@ -18,7 +18,7 @@ import (
 //	return loadCerts(reader)
 //}
 //
-//func loadCerts(reader io.Reader) ([]*x509.Certificate, error) {
+// func loadCerts(reader io.Reader) ([]*x509.Certificate, error) {
 //	b, err := io.ReadAll(reader)
 //	if err != nil {
 //		return nil, fmt.Errorf("unable to read certificate: %w", err)

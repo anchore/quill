@@ -57,6 +57,7 @@ type CMSValidationDetails struct {
 	VerifiedCertificates [][][]*x509.Certificate `json:"verifiedCertificates"`
 }
 
+//nolint:funlen
 func getSignatures(m file) []SignatureDetails {
 	b, err := m.internalFile.CMSBlobBytes(macho.SigningOrder)
 	if err != nil {
@@ -251,7 +252,7 @@ func addIfUsageSet(usageHints []string, val x509.KeyUsage, bit x509.KeyUsage, ti
 }
 
 // helpful for specific information on cert requirements https://images.apple.com/certificateauthority/pdf/Apple_Developer_ID_CPS_v3.3.pdf
-
+//nolint:funlen
 func (c Certificate) String() string {
 	var exts []string
 	for _, ext := range c.Parsed.Extensions {

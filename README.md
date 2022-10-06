@@ -34,5 +34,5 @@ $ quill sign <path/to/binary> --key <path/to/PEM/key> --cert <path/to/PEM/cert>
 - [ ] Support pkcs12 envelopes instead of key + cert + chain input
 
 *Future opportunities*
-- could this also perform notarization?
+- could this also perform notarization? yes https://developer.apple.com/documentation/notaryapi/submitting_software_for_notarization_over_the_web
 - could we add windows signing support?
