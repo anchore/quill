@@ -27,15 +27,14 @@ var (
 func NewCli() *cobra.Command {
 	v := viper.GetViper()
 
-	signCmd := newSignCmd()
 	rootCmd := must(newRootCmd(v))
-	showCmd := must(newShowCmd(v))
 
-	rootCmd.AddCommand(signCmd)
-	rootCmd.AddCommand(showCmd)
-	rootCmd.AddCommand(newVersionCmd())
-
-	initCmdAliasBindings(v, rootCmd, signCmd)
+	rootCmd.AddCommand(
+		must(newSignCmd(v)),
+		must(newShowCmd(v)),
+		must(newNotarizeCmd(v)),
+		newVersionCmd(),
+	)
 
 	cobra.OnInitialize(
 		initAppConfig, // note: app config uses singleton viper instance (TODO for later improvement)
@@ -53,35 +52,6 @@ func must(cmd *cobra.Command, err error) *cobra.Command {
 		os.Exit(1)
 	}
 	return cmd
-}
-
-// we must setup the config-cli bindings first before the application configuration is parsed. However, this cannot
-// be done without determining what the primary command that the config options should be bound to since there are
-// shared concerns (the root-sign alias).
-func initCmdAliasBindings(viperInstance *viper.Viper, rootCmd, signCmd *cobra.Command) {
-	activeCmd, _, err := rootCmd.Find(os.Args[1:])
-	if err != nil {
-		panic(err)
-	}
-
-	switch activeCmd {
-	case rootCmd:
-		// note: we need to lazily bind config options since they are shared between both the root command
-		// and the sign command. Otherwise there will be global viper state that is in contention.
-		// See for more details: https://github.com/spf13/viper/issues/233 . Additionally, the bindings must occur BEFORE
-		// reading the application configuration, which implies that it must be an initializer (or rewrite the command
-		// initialization structure against typical patterns used with cobra, which is somewhat extreme for a
-		// temporary alias)
-		if err = bindSignConfigOptions(viperInstance, activeCmd.Flags()); err != nil {
-			panic(err)
-		}
-	default:
-		// even though the root command or sign command is NOT being run, we still need default bindings
-		// such that application config parsing passes.
-		if err = bindSignConfigOptions(viperInstance, signCmd.Flags()); err != nil {
-			panic(err)
-		}
-	}
 }
 
 func initAppConfig() {

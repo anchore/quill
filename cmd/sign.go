@@ -17,7 +17,7 @@ import (
 	"github.com/wagoodman/go-partybus"
 )
 
-func newSignCmd() *cobra.Command {
+func newSignCmd(v *viper.Viper) (*cobra.Command, error) {
 	c := &cobra.Command{
 		Use:           "sign",
 		Short:         "sign a macho (darwin) executable binary",
@@ -30,7 +30,7 @@ func newSignCmd() *cobra.Command {
 
 	setSignFlags(c.Flags())
 
-	return c
+	return c, bindSignConfigOptions(v, c.Flags())
 }
 
 func setSignFlags(flags *pflag.FlagSet) {
@@ -41,7 +41,7 @@ func setSignFlags(flags *pflag.FlagSet) {
 
 	flags.StringP(
 		"key", "k", "",
-		"path to the private key PEM file",
+		"path to the private key PEM file (or 'env:ENV_VAR_NAME' to read base64 encoded key contents from environment variable)",
 	)
 
 	flags.StringP(

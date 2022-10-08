@@ -34,6 +34,7 @@ type Application struct {
 	Dev        development    `yaml:"dev" json:"dev" mapstructure:"dev"`
 	Log        logging        `yaml:"log" json:"log" mapstructure:"log"` // all logging-related options
 	Sign       sign           `yaml:"sign" json:"sign" mapstructure:"sign"`
+	Notarize   notarize       `yaml:"notarize" json:"notarize" mapstructure:"notarize"`
 }
 
 func newApplicationConfig(v *viper.Viper, cliOpts CliOnlyOptions) *Application {

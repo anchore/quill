@@ -54,7 +54,7 @@ func AssertDebugOutput(t *testing.T, path string, assertions ...OutputAssertion)
 
 func runCodesignVerify(t testing.TB, path string) string {
 	assertCodesignExists(t)
-	cmd := exec.Command("codesign", "--verbose=4", "--verify", path)
+	cmd := exec.Command("codesign", "-vvv", "--verify", "--deep", "--strict", path)
 	output := runCommand(t, cmd, nil)
 	if cmd.ProcessState.ExitCode() != 0 {
 		t.Log(output)

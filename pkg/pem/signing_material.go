@@ -20,7 +20,7 @@ func NewSigningMaterial(certFile, privateKeyPath, password string) (*SigningMate
 		return nil, err
 	}
 
-	privateKey, err := loadPrivateKeyFromFile(privateKeyPath, password)
+	privateKey, err := loadPrivateKey(privateKeyPath, password)
 	if err != nil {
 		return nil, err
 	}

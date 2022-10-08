@@ -83,6 +83,16 @@ func (m *File) refresh(withWrite bool) error {
 	return nil
 }
 
+func (m *File) Close() error {
+	if err := m.ReadSeekCloser.Close(); err != nil {
+		return err
+	}
+	if err := m.File.Close(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (m *File) Patch(content []byte, size int, offset uint64) (err error) {
 	if m.WriterAt == nil {
 		return fmt.Errorf("writes not allowed")

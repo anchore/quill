@@ -4,48 +4,48 @@ import (
 	"crypto"
 	"crypto/rsa"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/pem"
 	"fmt"
 	"io"
 	"os"
+	"strings"
 )
 
-// func loadCertsFromFile(filename string) ([]*x509.Certificate, error) {
-//	reader, err := os.Open(filename)
-//	if err != nil {
-//		return nil, fmt.Errorf("unable to open private key file: %w", err)
-//	}
-//	return loadCerts(reader)
-//}
-//
-// func loadCerts(reader io.Reader) ([]*x509.Certificate, error) {
-//	b, err := io.ReadAll(reader)
-//	if err != nil {
-//		return nil, fmt.Errorf("unable to read certificate: %w", err)
-//	}
-//	pemObj, _ := pem.Decode(b)
-//	if pemObj.Type != "CERTIFICATE" {
-//		return nil, fmt.Errorf("certificate is of the wrong type=%q", pemObj.Type)
-//	}
-//
-//	certs, err := x509.ParseCertificates(pemObj.Bytes)
-//	if err != nil {
-//		return nil, fmt.Errorf("unable to parse certificate: %w", err)
-//	}
-//
-//	return certs, nil
-//}
+func LoadKeyBytes(path string) ([]byte, error) {
+	if strings.HasPrefix(path, "env:") {
+		// comes from an env var...
+		fields := strings.Split(path, "env:")
+		if len(fields) < 2 {
+			return nil, fmt.Errorf("key path has 'env:' prefix, but cannot parse env variable: %q", path)
+		}
+		envVar := fields[1]
+		value := os.Getenv(envVar)
+		if value == "" {
+			return nil, fmt.Errorf("no key found in environment variable %q", envVar)
+		}
 
-func loadPrivateKeyFromFile(filename, password string) (crypto.PrivateKey, error) {
-	reader, err := os.Open(filename)
-	if err != nil {
-		return nil, fmt.Errorf("unable to open private key file: %w", err)
+		keyBytes, err := base64.StdEncoding.DecodeString(value)
+		if err != nil {
+			return nil, err
+		}
+		return keyBytes, nil
 	}
-	return loadPrivateKey(reader, password)
+
+	// comes from a file...
+
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+
+	defer f.Close()
+
+	return io.ReadAll(f)
 }
 
-func loadPrivateKey(reader io.Reader, password string) (crypto.PrivateKey, error) {
-	b, err := io.ReadAll(reader)
+func loadPrivateKey(filename string, password string) (crypto.PrivateKey, error) {
+	b, err := LoadKeyBytes(filename)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read private key: %w", err)
 	}
