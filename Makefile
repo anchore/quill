@@ -64,10 +64,6 @@ test: unit ## Run all tests (currently unit, integration, linux acceptance, and 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "$(BOLD)$(CYAN)%-25s$(RESET)%s\n", $$1, $$2}'
 
-.PHONY: ci-bootstrap
-ci-bootstrap:
-	DEBIAN_FRONTEND=noninteractive sudo apt update && sudo -E apt install -y bc
-
 $(RESULTSDIR):
 	mkdir -p $(RESULTSDIR)
 

@@ -42,9 +42,6 @@ jobs:
         if: steps.tool-cache.outputs.cache-hit != 'true' || steps.go-cache.outputs.cache-hit != 'true'
         run: make bootstrap
 
-      - name: Bootstrap CI environment dependencies
-        run: make ci-bootstrap
-
       - name: Run static analysis
         run: make static-analysis
 
@@ -78,9 +75,6 @@ jobs:
       - name: (cache-miss) Bootstrap all project dependencies
         if: steps.tool-cache.outputs.cache-hit != 'true' || steps.go-cache.outputs.cache-hit != 'true'
         run: make bootstrap
-
-      - name: Bootstrap CI environment dependencies
-        run: make ci-bootstrap
 
       - name: Run unit tests
         run: make unit
