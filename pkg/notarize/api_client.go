@@ -12,6 +12,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/anchore/quill/internal/log"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	awsSession "github.com/aws/aws-sdk-go/aws/session"
@@ -93,6 +94,8 @@ func (s apiClient) uploadBinary(ctx context.Context, response submissionResponse
 		},
 		ContentType: aws.String("application/zip"),
 	}
+
+	log.WithFields("bucket", attrs.Bucket, "object", attrs.Object).Trace("uploading binary to S3")
 
 	_, err = uploader.UploadWithContext(ctx, input)
 	if err != nil {

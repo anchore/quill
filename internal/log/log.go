@@ -4,6 +4,7 @@ Package log contains the singleton object and helper functions for facilitating 
 package log
 
 import (
+	"github.com/anchore/go-logger"
 	"github.com/anchore/go-logger/adapter/discard"
 )
 
@@ -58,4 +59,14 @@ func Tracef(format string, args ...interface{}) {
 // Trace logs the given arguments at the trace logging level.
 func Trace(args ...interface{}) {
 	Log.Trace(args...)
+}
+
+// WithFields returns a message logger with multiple key-value fields.
+func WithFields(fields ...interface{}) logger.MessageLogger {
+	return Log.WithFields(fields...)
+}
+
+// Nested returns a new logger with hard coded key-value pairs
+func Nested(fields ...interface{}) logger.Logger {
+	return Log.Nested(fields...)
 }

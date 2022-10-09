@@ -10,6 +10,7 @@ import (
 	"os"
 	"unsafe"
 
+	"github.com/anchore/quill/internal/log"
 	"github.com/go-restruct/restruct"
 )
 
@@ -133,6 +134,8 @@ func (m *File) hasRoomForNewCmd() bool {
 }
 
 func (m *File) AddEmptyCodeSigningCmd() (err error) {
+	log.Trace("adding empty code signing loader command")
+
 	if m.HasCodeSigningCmd() {
 		return fmt.Errorf("loader command already exists, cannot add another")
 	}
@@ -177,6 +180,8 @@ func (m *File) AddEmptyCodeSigningCmd() (err error) {
 }
 
 func (m *File) UpdateCodeSigningCmdDataSize(newSize int) (err error) {
+	log.WithFields("size", newSize).Trace("updating code signing loader command")
+
 	cmd, offset, err := m.CodeSigningCmd()
 	if err != nil {
 		return fmt.Errorf("unable to update existing signing loader command: %w", err)
@@ -253,7 +258,11 @@ func (m *File) HashPages(hasher hash.Hash) (hashes [][]byte, err error) {
 		return nil, fmt.Errorf("unable to read binary: %w", err)
 	}
 
-	return hashChunks(hasher, PageSize, b)
+	hashes, err = hashChunks(hasher, PageSize, b)
+
+	log.WithFields("pages", len(hashes), "offset", int64(cmd.DataOffset)).Trace("hashed pages")
+
+	return hashes, err
 }
 
 //nolint:funlen

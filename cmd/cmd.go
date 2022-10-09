@@ -3,9 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"strings"
 
-	"github.com/anchore/go-logger"
 	"github.com/anchore/go-logger/adapter/logrus"
 	"github.com/anchore/quill/internal"
 	"github.com/anchore/quill/internal/config"
@@ -65,25 +63,10 @@ func initAppConfig() {
 }
 
 func initLogging() {
-	var levelObj logger.Level = logger.DebugLevel
-	level := appConfig.Log.Level
-	switch strings.ToLower(level) {
-	case "info":
-		levelObj = logger.InfoLevel
-	case "debug":
-		levelObj = logger.DebugLevel
-	case "warn":
-		levelObj = logger.WarnLevel
-	case "trace":
-		levelObj = logger.TraceLevel
-	case "error":
-		levelObj = logger.ErrorLevel
-	}
-
 	lgr, err := logrus.New(logrus.Config{
 		EnableConsole: (appConfig.Log.FileLocation == "" || appConfig.CliOptions.Verbosity > 0) && !appConfig.Quiet,
 		FileLocation:  appConfig.Log.FileLocation,
-		Level:         levelObj,
+		Level:         appConfig.Log.Level,
 	})
 	if err != nil {
 		panic(err)

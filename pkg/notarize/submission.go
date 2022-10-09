@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"path/filepath"
 	"time"
+
+	"github.com/anchore/quill/internal/log"
 )
 
 type SubmissionStatus string
@@ -46,6 +48,7 @@ func newSubmission(a api, bin *payload) *submission {
 }
 
 func (s *submission) start(ctx context.Context) error {
+	log.WithFields("name", s.name).Debug("starting submission")
 	response, err := s.api.submissionRequest(
 		ctx,
 		submissionRequest{
@@ -59,6 +62,7 @@ func (s *submission) start(ctx context.Context) error {
 	}
 
 	s.id = response.Data.ID
+	log.WithFields("id", s.name).Trace("received submission id")
 
 	return s.api.uploadBinary(ctx, *response, s.binary)
 }
@@ -68,6 +72,8 @@ func (s submission) status(ctx context.Context) (SubmissionStatus, error) {
 	if err != nil {
 		return "", err
 	}
+
+	log.WithFields("status", response.Data.Attributes.Status).Debug("submission status")
 
 	switch response.Data.Attributes.Status {
 	case "In Progress":

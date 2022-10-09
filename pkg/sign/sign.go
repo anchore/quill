@@ -10,6 +10,8 @@ import (
 
 // TODO: use chain and embed
 func Sign(id, path string, signingMaterial *pem.SigningMaterial) error {
+	log.Infof("signing %q", path)
+
 	m, err := macho.NewFile(path)
 	if err != nil {
 		return err

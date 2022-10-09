@@ -17,10 +17,10 @@ func newRootCmd(v *viper.Viper) (*cobra.Command, error) {
 		Version: version.FromBuild().Version,
 	}
 
-	return rootCmd, setupRootCmd(v, rootCmd.Flags(), rootCmd.PersistentFlags())
+	return rootCmd, setupRootCmd(v, rootCmd.PersistentFlags())
 }
 
-func setupRootCmd(v *viper.Viper, flags, pFlags *pflag.FlagSet) error {
+func setupRootCmd(v *viper.Viper, pFlags *pflag.FlagSet) error {
 	pFlags.StringVarP(&persistentOpts.ConfigPath, "config", "c", "", "application config file")
 
 	flag := "quiet"

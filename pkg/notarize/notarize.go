@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
+	"github.com/anchore/quill/internal/log"
 )
 
 type Config struct {
@@ -67,6 +69,8 @@ Apple's notary service requires you to adopt the following protections:
 */
 
 func Notarize(path string, cfg Config) error {
+	log.Infof("notarizing %q", path)
+
 	token, err := newSignedToken(cfg.tokenConfig)
 	if err != nil {
 		return err
