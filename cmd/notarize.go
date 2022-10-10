@@ -3,14 +3,15 @@ package cmd
 import (
 	"os"
 
-	"github.com/anchore/quill/internal/bus"
-	"github.com/anchore/quill/internal/ui"
-	"github.com/anchore/quill/pkg/event"
-	"github.com/anchore/quill/pkg/notarize"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"github.com/wagoodman/go-partybus"
+
+	"github.com/anchore/quill/internal/bus"
+	"github.com/anchore/quill/internal/ui"
+	"github.com/anchore/quill/quill/event"
+	"github.com/anchore/quill/quill/notarize"
 )
 
 func newNotarizeCmd(v *viper.Viper) (*cobra.Command, error) {
@@ -42,7 +43,7 @@ func setNotarizeFlags(flags *pflag.FlagSet) {
 
 	flags.StringP(
 		"key", "", "",
-		"App Store Connect API key. File system path to the private key (or 'env:ENV_VAR_NAME' to read base64 encoded key contents from environment variable).",
+		"App Store Connect API key. File system path to the private key.",
 	)
 }
 
@@ -59,22 +60,20 @@ func bindNotarizeConfigOptions(v *viper.Viper, flags *pflag.FlagSet) error {
 		return err
 	}
 
+	if err := v.BindPFlag("notarize.wait", flags.Lookup("wait")); err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func notarizeExec(_ *cobra.Command, args []string) error {
 	p := args[0]
 
-	err := validatePathIsDarwinBinary(p)
-	if err != nil {
-		return err
-	}
-
 	return eventLoop(
 		notarizeExecWorker(p),
 		setupSignals(),
 		eventSubscription,
-		nil,
 		ui.Select(isVerbose(), appConfig.Quiet, os.Stdout)...,
 	)
 }
@@ -84,7 +83,7 @@ func notarizeExecWorker(p string) <-chan error {
 	go func() {
 		defer close(errs)
 
-		if err := notarize.Notarize(p, notarize.NewConfig(appConfig.Notarize.Issuer, appConfig.Notarize.PrivateKeyID, appConfig.Notarize.PrivateKey)); err != nil {
+		if err := notarize.Notarize(p, notarize.NewConfig(appConfig.Notarize.Issuer, appConfig.Notarize.PrivateKeyID, appConfig.Notarize.PrivateKey, appConfig.Notarize.Wait)); err != nil {
 			errs <- err
 		}
 

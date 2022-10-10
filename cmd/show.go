@@ -5,14 +5,15 @@ import (
 	"os"
 	"strings"
 
-	"github.com/anchore/quill/internal/bus"
-	"github.com/anchore/quill/internal/ui"
-	"github.com/anchore/quill/pkg/event"
-	"github.com/anchore/quill/pkg/extract"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"github.com/wagoodman/go-partybus"
+
+	"github.com/anchore/quill/internal/bus"
+	"github.com/anchore/quill/internal/ui"
+	"github.com/anchore/quill/quill/event"
+	"github.com/anchore/quill/quill/extract"
 )
 
 type formatOption string
@@ -73,7 +74,6 @@ func showExec(_ *cobra.Command, args []string) error {
 		showExecWorker(path, option),
 		setupSignals(),
 		eventSubscription,
-		nil,
 		ui.Select(isVerbose(), appConfig.Quiet, os.Stdout)...,
 	)
 }

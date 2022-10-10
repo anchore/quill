@@ -7,11 +7,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/anchore/quill/internal/ui"
-	"github.com/anchore/quill/pkg/event"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/wagoodman/go-partybus"
+
+	"github.com/anchore/quill/internal/ui"
+	"github.com/anchore/quill/quill/event"
 )
 
 var _ ui.UI = (*uiMock)(nil)
@@ -85,23 +86,16 @@ func Test_eventLoop_gracefulExit(t *testing.T) {
 		ux.On("Setup", mock.AnythingOfType("func() error")).Return(nil)
 		ux.On("Teardown").Return(nil)
 
-		var cleanupCalled bool
-		cleanupFn := func() {
-			t.Log("cleanup called")
-			cleanupCalled = true
-		}
-
 		assert.NoError(t,
 			eventLoop(
 				worker(),
 				signaler(),
 				subscription,
-				cleanupFn,
+
 				ux,
 			),
 		)
 
-		assert.True(t, cleanupCalled, "cleanup function not called")
 		ux.AssertExpectations(t)
 	}
 
@@ -147,26 +141,19 @@ func Test_eventLoop_workerError(t *testing.T) {
 		ux.On("Setup", mock.AnythingOfType("func() error")).Return(nil)
 		ux.On("Teardown").Return(nil)
 
-		var cleanupCalled bool
-		cleanupFn := func() {
-			t.Log("cleanup called")
-			cleanupCalled = true
-		}
-
 		// ensure we see an error returned
 		assert.ErrorIs(t,
 			eventLoop(
 				worker(),
 				signaler(),
 				subscription,
-				cleanupFn,
+
 				ux,
 			),
 			workerErr,
 			"should have seen a worker error, but did not",
 		)
 
-		assert.True(t, cleanupCalled, "cleanup function not called")
 		ux.AssertExpectations(t)
 	}
 
@@ -217,12 +204,6 @@ func Test_eventLoop_unsubscribeError(t *testing.T) {
 		ux.On("Setup", mock.AnythingOfType("func() error")).Return(nil)
 		ux.On("Teardown").Return(nil)
 
-		var cleanupCalled bool
-		cleanupFn := func() {
-			t.Log("cleanup called")
-			cleanupCalled = true
-		}
-
 		// unsubscribe errors should be handled and ignored, not propagated. We are additionally asserting that
 		// this case is handled as a controlled shutdown (this test should not timeout)
 		assert.NoError(t,
@@ -230,12 +211,11 @@ func Test_eventLoop_unsubscribeError(t *testing.T) {
 				worker(),
 				signaler(),
 				subscription,
-				cleanupFn,
+
 				ux,
 			),
 		)
 
-		assert.True(t, cleanupCalled, "cleanup function not called")
 		ux.AssertExpectations(t)
 	}
 
@@ -287,12 +267,6 @@ func Test_eventLoop_handlerError(t *testing.T) {
 		ux.On("Setup", mock.AnythingOfType("func() error")).Return(nil)
 		ux.On("Teardown").Return(nil)
 
-		var cleanupCalled bool
-		cleanupFn := func() {
-			t.Log("cleanup called")
-			cleanupCalled = true
-		}
-
 		// handle errors SHOULD propagate the event loop. We are additionally asserting that this case is
 		// handled as a controlled shutdown (this test should not timeout)
 		assert.ErrorIs(t,
@@ -300,14 +274,13 @@ func Test_eventLoop_handlerError(t *testing.T) {
 				worker(),
 				signaler(),
 				subscription,
-				cleanupFn,
+
 				ux,
 			),
 			finalEvent.Error,
 			"should have seen a event error, but did not",
 		)
 
-		assert.True(t, cleanupCalled, "cleanup function not called")
 		ux.AssertExpectations(t)
 	}
 
@@ -344,23 +317,16 @@ func Test_eventLoop_signalsStopExecution(t *testing.T) {
 		ux.On("Setup", mock.AnythingOfType("func() error")).Return(nil)
 		ux.On("Teardown").Return(nil)
 
-		var cleanupCalled bool
-		cleanupFn := func() {
-			t.Log("cleanup called")
-			cleanupCalled = true
-		}
-
 		assert.NoError(t,
 			eventLoop(
 				worker(),
 				signaler(),
 				subscription,
-				cleanupFn,
+
 				ux,
 			),
 		)
 
-		assert.True(t, cleanupCalled, "cleanup function not called")
 		ux.AssertExpectations(t)
 	}
 
@@ -413,26 +379,19 @@ func Test_eventLoop_uiTeardownError(t *testing.T) {
 		ux.On("Setup", mock.AnythingOfType("func() error")).Return(nil)
 		ux.On("Teardown").Return(teardownError)
 
-		var cleanupCalled bool
-		cleanupFn := func() {
-			t.Log("cleanup called")
-			cleanupCalled = true
-		}
-
 		// ensure we see an error returned
 		assert.ErrorIs(t,
 			eventLoop(
 				worker(),
 				signaler(),
 				subscription,
-				cleanupFn,
+
 				ux,
 			),
 			teardownError,
 			"should have seen a UI teardown error, but did not",
 		)
 
-		assert.True(t, cleanupCalled, "cleanup function not called")
 		ux.AssertExpectations(t)
 	}
 

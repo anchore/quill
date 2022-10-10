@@ -8,11 +8,12 @@ import (
 	"strings"
 
 	"github.com/adrg/xdg"
-	"github.com/anchore/go-logger"
-	"github.com/anchore/quill/internal"
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v2"
+
+	"github.com/anchore/go-logger"
+	"github.com/anchore/quill/internal"
 )
 
 var ErrApplicationConfigNotFound = fmt.Errorf("application config not found")
@@ -147,7 +148,8 @@ func (cfg Application) String() string {
 }
 
 // readConfig attempts to read the given config path from disk or discover an alternate store location
-// nolint:funlen
+//
+//nolint:funlen
 func readConfig(v *viper.Viper, configPath string) error {
 	var err error
 	v.AutomaticEnv()

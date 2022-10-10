@@ -3,17 +3,19 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 
-	"github.com/anchore/go-logger/adapter/logrus"
-	"github.com/anchore/quill/internal"
-	"github.com/anchore/quill/internal/config"
-	"github.com/anchore/quill/internal/log"
-	"github.com/anchore/quill/pkg"
 	"github.com/gookit/color"
 	"github.com/pkg/profile"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/wagoodman/go-partybus"
+
+	"github.com/anchore/go-logger/adapter/logrus"
+	"github.com/anchore/quill/internal"
+	"github.com/anchore/quill/internal/config"
+	"github.com/anchore/quill/internal/log"
+	"github.com/anchore/quill/quill"
 )
 
 var (
@@ -27,10 +29,18 @@ func NewCli() *cobra.Command {
 
 	rootCmd := must(newRootCmd(v))
 
+	notarizeCmd := must(newNotarizeCmd(v))
+
+	notarizeCmd.AddCommand(
+		must(newNotarizeStatusCmd(v)),
+		must(newNotarizeListCmd(v)),
+		must(newNotarizeLogsCmd(v)),
+	)
+
 	rootCmd.AddCommand(
 		must(newSignCmd(v)),
 		must(newShowCmd(v)),
-		must(newNotarizeCmd(v)),
+		notarizeCmd,
 		newVersionCmd(),
 	)
 
@@ -59,7 +69,34 @@ func initAppConfig() {
 		os.Exit(1)
 	}
 
+	if cfg.Notarize.PrivateKey != "" {
+		redactPotentialSecretValue(cfg.Notarize.PrivateKey)
+	}
+
+	if cfg.Sign.Password != "" {
+		log.Redact(cfg.Sign.Password)
+	}
+
+	if cfg.Notarize.PrivateKey != "" {
+		redactPotentialSecretValue(cfg.Sign.PrivateKey)
+	}
+
 	appConfig = cfg
+}
+
+func redactPotentialSecretValue(value string) {
+	if _, err := os.Stat(value); err == nil {
+		// looks to be a file path
+		return
+	}
+
+	if strings.HasPrefix(value, "env:") {
+		// looks to be an environment variable hint
+		return
+	}
+
+	// the user may have tried to specify the key in the config itself (not recommended)
+	log.Redact(value)
 }
 
 func initLogging() {
@@ -71,7 +108,7 @@ func initLogging() {
 	if err != nil {
 		panic(err)
 	}
-	pkg.SetLogger(lgr)
+	quill.SetLogger(lgr)
 }
 
 func logAppConfig() {
@@ -82,7 +119,7 @@ func initEventBus() {
 	eventBus = partybus.NewBus()
 	eventSubscription = eventBus.Subscribe()
 
-	pkg.SetBus(eventBus)
+	quill.SetBus(eventBus)
 }
 
 func isVerbose() (result bool) {

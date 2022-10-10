@@ -3,8 +3,9 @@ package ui
 import (
 	"io"
 
-	"github.com/anchore/quill/pkg/event"
 	"github.com/wagoodman/go-partybus"
+
+	"github.com/anchore/quill/quill/event"
 )
 
 type loggerUI struct {

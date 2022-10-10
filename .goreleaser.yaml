@@ -25,7 +25,7 @@ builds:
       -X github.com/anchore/quill/internal/version.version={{.Version}}
       -X github.com/anchore/quill/internal/version.gitCommit={{.Commit}}
       -X github.com/anchore/quill/internal/version.buildDate={{.Date}}
-      -X github.com/anchore/quill/internal/version.gitTreeState={{.Env.BUILD_GIT_TREE_STATE}}
+      -X github.com/anchore/quill/internal/version.gitDescription={{.Summary}}
 
 archives:
   - format: tar.gz

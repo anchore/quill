@@ -3,11 +3,12 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/anchore/quill/internal/config"
-	"github.com/anchore/quill/internal/version"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+
+	"github.com/anchore/quill/internal/config"
+	"github.com/anchore/quill/internal/version"
 )
 
 var persistentOpts = config.CliOnlyOptions{}

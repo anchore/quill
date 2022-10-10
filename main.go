@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/anchore/quill/cmd"
 	"github.com/gookit/color"
+
+	"github.com/anchore/quill/cmd"
 )
 
 func main() {

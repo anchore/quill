@@ -6,15 +6,16 @@ import (
 	"os"
 	"path"
 
-	"github.com/anchore/quill/internal/bus"
-	"github.com/anchore/quill/internal/ui"
-	"github.com/anchore/quill/pkg/event"
-	"github.com/anchore/quill/pkg/pem"
-	"github.com/anchore/quill/pkg/sign"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"github.com/wagoodman/go-partybus"
+
+	"github.com/anchore/quill/internal/bus"
+	"github.com/anchore/quill/internal/ui"
+	"github.com/anchore/quill/quill/event"
+	"github.com/anchore/quill/quill/pem"
+	"github.com/anchore/quill/quill/sign"
 )
 
 func newSignCmd(v *viper.Viper) (*cobra.Command, error) {
@@ -41,12 +42,12 @@ func setSignFlags(flags *pflag.FlagSet) {
 
 	flags.StringP(
 		"key", "k", "",
-		"path to the private key PEM file (or 'env:ENV_VAR_NAME' to read base64 encoded key contents from environment variable)",
+		"path to the private key PEM file",
 	)
 
 	flags.StringP(
 		"cert", "", "",
-		"path to the signing certificate PEM file (or certificate chain)",
+		"path to the signing certificate PEM file, certificate chain, or PK12 file",
 	)
 }
 
@@ -59,7 +60,7 @@ func bindSignConfigOptions(v *viper.Viper, flags *pflag.FlagSet) error {
 		return err
 	}
 
-	if err := v.BindPFlag("sign.certs", flags.Lookup("cert")); err != nil {
+	if err := v.BindPFlag("sign.cert", flags.Lookup("cert")); err != nil {
 		return err
 	}
 
@@ -90,7 +91,6 @@ func signExec(_ *cobra.Command, args []string) error {
 		signExecWorker(p, signingMaterial),
 		setupSignals(),
 		eventSubscription,
-		nil,
 		ui.Select(isVerbose(), appConfig.Quiet, os.Stdout)...,
 	)
 }
