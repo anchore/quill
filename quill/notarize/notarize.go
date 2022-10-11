@@ -9,18 +9,19 @@ import (
 )
 
 type Config struct {
-	Timeout     time.Duration
-	Poll        time.Duration
-	httpTimeout time.Duration
-	tokenConfig tokenConfig
-	wait        bool
+	statusConfig statusConfig
+	httpTimeout  time.Duration
+	tokenConfig  tokenConfig
 }
 
 func NewConfig(issuer, privateKeyID, privateKey string, wait bool) Config {
 	timeout := 15 * time.Minute
 	return Config{
-		Timeout:     timeout,
-		Poll:        10 * time.Second,
+		statusConfig: statusConfig{
+			timeout: timeout,
+			poll:    10 * time.Second,
+			wait:    wait,
+		},
 		httpTimeout: 30 * time.Second,
 		tokenConfig: tokenConfig{
 			issuer:        issuer,
@@ -28,7 +29,6 @@ func NewConfig(issuer, privateKeyID, privateKey string, wait bool) Config {
 			tokenLifetime: timeout + (2 * time.Minute),
 			privateKey:    privateKey,
 		},
-		wait: wait,
 	}
 }
 
@@ -90,10 +90,12 @@ func Notarize(path string, cfg Config) error {
 		return fmt.Errorf("unable to start submission: %+v", err)
 	}
 
-	if !cfg.wait {
-		log.WithFields("id", sub.name).Infof("submission started but configured to not wait for the results")
+	if !cfg.statusConfig.wait {
+		log.WithFields("id", sub.id).Infof("submission started but configured to not wait for the results")
 		return nil
 	}
 
-	return Status(sub.name, cfg)
+	status, err := pollStatus(context.Background(), sub, cfg.statusConfig)
+	fmt.Println(status)
+	return err
 }

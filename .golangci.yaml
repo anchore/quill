@@ -10,7 +10,6 @@ linters:
   enable:
     - asciicheck
     - bodyclose
-    - deadcode
     - depguard
     - dogsled
     - dupl
@@ -32,15 +31,12 @@ linters:
     - nakedret
     - nolintlint
     - revive
-    - rowserrcheck
     - staticcheck
-    - structcheck
     - stylecheck
     - typecheck
     - unconvert
     - unparam
     - unused
-    - varcheck
     - whitespace
 
 # do not enable...
@@ -49,13 +45,17 @@ linters:
 #    - godot
 #    - godox
 #    - goerr113
-#    - golint      # deprecated
-#    - gomnd       # this is too aggressive
-#    - interfacer  # this is a good idea, but is no longer supported and is prone to false positives
-#    - lll         # without a way to specify per-line exception cases, this is not usable
-#    - maligned    # this is an excellent linter, but tricky to optimize and we are not sensitive to memory layout optimizations
+#    - golint       # deprecated
+#    - gomnd        # this is too aggressive
+#    - interfacer   # this is a good idea, but is no longer supported and is prone to false positives
+#    - lll          # without a way to specify per-line exception cases, this is not usable
+#    - maligned     # this is an excellent linter, but tricky to optimize and we are not sensitive to memory layout optimizations
 #    - nestif
-#    - prealloc    # following this rule isn't consistently a good idea, as it sometimes forces unnecessary allocations that result in less idiomatic code
-#    - scopelint   # deprecated
+#    - prealloc     # following this rule isn't consistently a good idea, as it sometimes forces unnecessary allocations that result in less idiomatic code
+#    - scopelint    # deprecated
 #    - testpackage
-#    - wsl         # this doens't have an auto-fixer yet and is pretty noisy (https://github.com/bombsimon/wsl/issues/90)
+#    - wsl          # this doens't have an auto-fixer yet and is pretty noisy (https://github.com/bombsimon/wsl/issues/90)
+#    - varcheck     # deprecated (since v1.49.0) due to: The owner seems to have abandoned the linter.  Replaced by unused.
+#    - deadcode     # deprecated (since v1.49.0) due to: The owner seems to have abandoned the linter.  Replaced by unused.
+#    - structcheck  # deprecated (since v1.49.0) due to: The owner seems to have abandoned the linter.  Replaced by unused.
+#    - rowserrcheck # we're not using sql.Rows at all in the codebase

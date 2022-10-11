@@ -18,14 +18,18 @@ func loadPrivateKey(path string, password string) (crypto.PrivateKey, error) {
 		return nil, fmt.Errorf("unable to read private key: %w", err)
 	}
 	pemObj, _ := pem.Decode(b)
-	if pemObj.Type != "RSA PRIVATE KEY" {
-		return nil, fmt.Errorf("RSA private key is of the wrong type=%q", pemObj.Type)
+
+	switch pemObj.Type {
+	case "RSA PRIVATE KEY", "PRIVATE KEY", "ENCRYPTED PRIVATE KEY":
+		// pass
+	default:
+		return nil, fmt.Errorf("RSA private key is of the wrong type: %q", pemObj.Type)
 	}
 
 	var privPemBytes []byte
 
 	//nolint: staticcheck // we have no other alternatives
-	if password != "" && x509.IsEncryptedPEMBlock(pemObj) {
+	if x509.IsEncryptedPEMBlock(pemObj) {
 		// why is this deprecated?
 		//	> "Legacy PEM encryption as specified in RFC 1423 is insecure by
 		//  > design. Since it does not authenticate the ciphertext, it is vulnerable to
@@ -34,12 +38,15 @@ func loadPrivateKey(path string, password string) (crypto.PrivateKey, error) {
 		// This method of encrypting the key isn't recommended anymore.
 		// See https://github.com/golang/go/issues/8860 for more discussion
 
+		log.Trace("decrypting private key")
+
 		//nolint: staticcheck // we have no other alternatives
 		privPemBytes, err = x509.DecryptPEMBlock(pemObj, []byte(password))
 		if err != nil {
 			return nil, fmt.Errorf("unable to decrypt PEM block: %w", err)
 		}
 	} else {
+		log.Trace("using unencrypted private key")
 		privPemBytes = pemObj.Bytes
 	}
 

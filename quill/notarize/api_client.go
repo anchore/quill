@@ -86,7 +86,7 @@ func (s apiClient) uploadBinary(ctx context.Context, response submissionResponse
 		ContentType: aws.String("application/zip"),
 	}
 
-	log.WithFields("bucket", attrs.Bucket, "object", attrs.Object).Trace("uploading binary to S3")
+	log.WithFields("bucket", attrs.Bucket, "object", attrs.Object).Trace("binary destination in S3")
 
 	_, err = uploader.UploadWithContext(ctx, input)
 	if err != nil {

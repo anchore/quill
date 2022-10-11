@@ -39,7 +39,7 @@ func bindNotarizeStatusConfigOptions(v *viper.Viper, flags *pflag.FlagSet) error
 
 func setNotarizeStatusFlags(flags *pflag.FlagSet) {
 	flags.BoolP(
-		"wait", "w", false,
+		"wait", "w", true, // TODO: switch to false when we've fixed config binding
 		"Poll until there is a non.",
 	)
 }

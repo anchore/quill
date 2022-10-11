@@ -64,7 +64,8 @@ func loadCertificates(path string) ([]*x509.Certificate, error) {
 	}
 
 	if _, err := leaf.Verify(opts); err != nil {
-		return nil, fmt.Errorf("failed to verify certificate: %w", err)
+		log.Error(err.Error())
+		// return nil, fmt.Errorf("failed to verify certificate: %w", err)
 	}
 	return certs, nil
 }

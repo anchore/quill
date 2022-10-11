@@ -37,9 +37,11 @@ type submission struct {
 	api    api
 	binary *payload
 	name   string
+	id     string
 }
 
 type SubmissionList struct {
+	ID          string `json:"id"`
 	Name        string `json:"name"`
 	Status      string `json:"status"`
 	CreatedDate string `json:"createdDate"`
@@ -53,10 +55,10 @@ func newSubmission(a api, bin *payload) *submission {
 	}
 }
 
-func newSubmissionFromExisting(a api, name string) *submission {
+func newSubmissionFromExisting(a api, id string) *submission {
 	return &submission{
-		name: name,
-		api:  a,
+		id:  id,
+		api: a,
 	}
 }
 
@@ -79,19 +81,17 @@ func (s *submission) start(ctx context.Context) error {
 		return err
 	}
 
-	// if response.Data.ID != s.name {
-	//	return fmt.Errorf("submission name mismatch: %q != %q", response.Data.ID, s.name)
-	//}
+	s.id = response.Data.ID
 
-	log.WithFields("id", s.name).Trace("received submission id")
+	log.WithFields("id", s.id).Trace("received submission id")
 
 	return s.api.uploadBinary(ctx, *response, *s.binary)
 }
 
 func (s submission) status(ctx context.Context) (SubmissionStatus, error) {
-	log.WithFields("id", s.name).Trace("checking submission status")
+	log.WithFields("id", s.id).Trace("checking submission status")
 
-	response, err := s.api.submissionStatusRequest(ctx, s.name)
+	response, err := s.api.submissionStatusRequest(ctx, s.id)
 	if err != nil {
 		return "", err
 	}
@@ -113,7 +113,7 @@ func (s submission) status(ctx context.Context) (SubmissionStatus, error) {
 }
 
 func (s submission) logs(ctx context.Context) (string, error) {
-	return s.api.submissionLogs(ctx, s.name)
+	return s.api.submissionLogs(ctx, s.id)
 }
 
 func (s submission) list(ctx context.Context) ([]SubmissionList, error) {
@@ -125,9 +125,10 @@ func (s submission) list(ctx context.Context) ([]SubmissionList, error) {
 	var results []SubmissionList
 	for _, item := range resp.Data {
 		results = append(results, SubmissionList{
-			CreatedDate: item.Attributes.CreatedDate,
+			ID:          item.ID,
 			Name:        item.Attributes.Name,
 			Status:      item.Attributes.Status,
+			CreatedDate: item.Attributes.CreatedDate,
 		})
 	}
 	return results, nil

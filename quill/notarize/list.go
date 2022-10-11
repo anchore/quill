@@ -29,10 +29,10 @@ func List(cfg Config) error {
 	t := table.NewWriter()
 	t.SetStyle(table.StyleLight)
 
-	t.AppendHeader(table.Row{"Name", "Status", "Created"})
+	t.AppendHeader(table.Row{"ID", "Name", "Status", "Created"})
 
 	for _, item := range submissions {
-		t.AppendRow(table.Row{item.Name, item.Status, item.CreatedDate})
+		t.AppendRow(table.Row{item.ID, item.Name, item.Status, item.CreatedDate})
 	}
 
 	fmt.Println(t.Render())
