@@ -30,16 +30,20 @@ func NewCli() *cobra.Command {
 	rootCmd := must(newRootCmd(v))
 
 	notarizeCmd := must(newNotarizeCmd(v))
-
 	notarizeCmd.AddCommand(
 		must(newNotarizeStatusCmd(v)),
 		must(newNotarizeListCmd(v)),
 		must(newNotarizeLogsCmd(v)),
 	)
 
+	showCmd := must(newShowCmd(v))
+	showCmd.AddCommand(
+		must(newShowCertificatesCmd(v)),
+	)
+
 	rootCmd.AddCommand(
 		must(newSignCmd(v)),
-		must(newShowCmd(v)),
+		showCmd,
 		notarizeCmd,
 		newVersionCmd(),
 	)

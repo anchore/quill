@@ -63,6 +63,10 @@ func newSubmissionFromExisting(a api, id string) *submission {
 }
 
 func (s *submission) start(ctx context.Context) error {
+	if s.id != "" {
+		return fmt.Errorf("submission already started")
+	}
+
 	log.WithFields("name", s.name).Debug("starting submission")
 
 	if s.binary == nil {
@@ -83,7 +87,7 @@ func (s *submission) start(ctx context.Context) error {
 
 	s.id = response.Data.ID
 
-	log.WithFields("id", s.id).Trace("received submission id")
+	log.WithFields("id", s.id, "name", s.name).Trace("received submission id")
 
 	return s.api.uploadBinary(ctx, *response, *s.binary)
 }
@@ -96,7 +100,7 @@ func (s submission) status(ctx context.Context) (SubmissionStatus, error) {
 		return "", err
 	}
 
-	log.WithFields("status", response.Data.Attributes.Status).Debug("submission status")
+	log.WithFields("status", fmt.Sprintf("%q", response.Data.Attributes.Status), "id", s.id).Debug("submission status")
 
 	switch response.Data.Attributes.Status {
 	case "In Progress":

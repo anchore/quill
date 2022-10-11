@@ -33,14 +33,19 @@ func loadCertificates(path string) ([]*x509.Certificate, error) {
 		}
 
 		switch i {
-		case 0:
-			log.Debugf("signing cert: %s", c.Subject.String())
-			leaf = c
-		case len(chainBlockBytes) - 1:
-			log.Debugf("root cert: %s", c.Subject.String())
-			roots.AddCert(c)
+		case 0, len(chainBlockBytes) - 1:
+			if c.IsCA {
+				log.Debugf("root cert: %s", c.Subject.String())
+				log.Trace(c.KeyUsage, c.ExtKeyUsage)
+				roots.AddCert(c)
+			} else {
+				log.Debugf("signing cert: %s", c.Subject.String())
+				log.Trace(c.KeyUsage, c.ExtKeyUsage)
+				leaf = c
+			}
 		default:
 			log.Debugf("intermediate cert: %s", c.Subject.String())
+			log.Trace(c.KeyUsage, c.ExtKeyUsage)
 			intermediates.AddCert(c)
 		}
 
@@ -63,9 +68,25 @@ func loadCertificates(path string) ([]*x509.Certificate, error) {
 		Intermediates: intermediates,
 	}
 
+	// ignore "devid_execute" critical extension
+	temp := leaf.UnhandledCriticalExtensions[:0]
+	for _, ex := range leaf.UnhandledCriticalExtensions {
+		switch ex.String() {
+		case "1.2.840.113635.100.6.1.13":
+			continue
+		default:
+			temp = append(temp, ex)
+
+		}
+	}
+	leaf.UnhandledCriticalExtensions = temp
+
+	if len(leaf.UnhandledCriticalExtensions) > 0 {
+		log.Warnf("certificate has unhandled critical extensions: %v", leaf.UnhandledCriticalExtensions)
+	}
+
 	if _, err := leaf.Verify(opts); err != nil {
-		log.Error(err.Error())
-		// return nil, fmt.Errorf("failed to verify certificate: %w", err)
+		return nil, fmt.Errorf("failed to verify certificate: %w", err)
 	}
 	return certs, nil
 }

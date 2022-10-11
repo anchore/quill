@@ -42,7 +42,7 @@ func newAPIClient(token string, httpTimeout time.Duration) *apiClient {
 
 func (s apiClient) submissionRequest(ctx context.Context, request submissionRequest) (*submissionResponse, error) {
 	// TODO: tie into context
-	log.WithFields("id", request.SubmissionName).Trace("submitting binary to Apple for notarization")
+	log.WithFields("name", request.SubmissionName).Trace("submitting binary to Apple for notarization")
 
 	requestBytes, err := json.Marshal(request)
 	if err != nil {
@@ -63,9 +63,9 @@ func (s apiClient) submissionRequest(ctx context.Context, request submissionRequ
 }
 
 func (s apiClient) uploadBinary(ctx context.Context, response submissionResponse, bin payload) error {
-	log.WithFields("digest", bin.Digest).Trace("uploading binary to S3")
-
 	attrs := response.Data.Attributes
+	log.WithFields("bucket", attrs.Bucket, "object", attrs.Object).Trace("uploading binary to S3")
+
 	s3Config := &aws.Config{
 		Region:      aws.String("us-west-2"),
 		Credentials: credentials.NewStaticCredentials(attrs.AwsAccessKeyID, attrs.AwsSecretAccessKey, attrs.AwsSessionToken),
@@ -86,8 +86,6 @@ func (s apiClient) uploadBinary(ctx context.Context, response submissionResponse
 		ContentType: aws.String("application/zip"),
 	}
 
-	log.WithFields("bucket", attrs.Bucket, "object", attrs.Object).Trace("binary destination in S3")
-
 	_, err = uploader.UploadWithContext(ctx, input)
 	if err != nil {
 		return err
@@ -97,8 +95,6 @@ func (s apiClient) uploadBinary(ctx context.Context, response submissionResponse
 }
 
 func (s apiClient) submissionStatusRequest(ctx context.Context, id string) (*submissionStatusResponse, error) {
-	log.WithFields("id", id).Trace("requesting notarization status")
-
 	response, err := s.http.get(joinURL(s.api, id), nil)
 	body, err := s.handleResponse(response, err)
 	if err != nil {
@@ -113,8 +109,6 @@ func (s apiClient) submissionStatusRequest(ctx context.Context, id string) (*sub
 }
 
 func (s apiClient) submissionList(ctx context.Context) (*submissionListResponse, error) {
-	log.Trace("listing notarization submissions")
-
 	response, err := s.http.get(s.api, nil)
 	body, err := s.handleResponse(response, err)
 	if err != nil {
