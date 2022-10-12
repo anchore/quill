@@ -59,7 +59,7 @@ type CMSValidationDetails struct {
 }
 
 //nolint:funlen
-func getSignatures(m file) []SignatureDetails {
+func getSignatures(m File) []SignatureDetails {
 	b, err := m.internalFile.CMSBlobBytes(macho.SigningOrder)
 	if err != nil {
 		// TODO

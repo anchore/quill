@@ -38,7 +38,7 @@ func (d SectionDigest) String() string {
 }
 
 //nolint:funlen
-func getCodeDirectories(m file) (cdObjs []CodeDirectoryDetails) {
+func getCodeDirectories(m File) (cdObjs []CodeDirectoryDetails) {
 	for idx, cd := range m.blacktopFile.CodeSignature().CodeDirectories {
 		b, err := m.internalFile.CDBytes(macho.SigningOrder, idx)
 		if err != nil {

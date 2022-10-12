@@ -12,7 +12,7 @@ type RequirementDetails struct {
 	Requirements []types.Requirement `json:"requirements"`
 }
 
-func getRequirements(m file) []RequirementDetails {
+func getRequirements(m File) []RequirementDetails {
 	return []RequirementDetails{
 		{
 			// TODO: extract blob

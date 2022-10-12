@@ -15,14 +15,14 @@ type Details struct {
 	// TODO: helper output to show if the binary is signed or not?
 }
 
-func getDetails(m file) Details {
+func ParseDetails(m File) Details {
 	return Details{
 		File:      getMachoDetails(m),
 		SuperBlob: getSuperBlobDetails(m),
 	}
 }
 
-type file struct {
+type File struct {
 	blacktopFile *blacktopMacho.File
 	internalFile *macho.File
 }

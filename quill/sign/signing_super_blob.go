@@ -11,7 +11,7 @@ import (
 	"github.com/anchore/quill/quill/pem"
 )
 
-func generateSigningSuperBlob(id string, m *macho.File, signingMaterial *pem.SigningMaterial) ([]byte, error) {
+func GenerateSigningSuperBlob(id string, m *macho.File, signingMaterial *pem.SigningMaterial) ([]byte, error) {
 	var cdFlags macho.CdFlag
 	if signingMaterial != nil {
 		// TODO: add options to enable more strict rules (such as macho.Hard)
@@ -54,4 +54,23 @@ func generateSigningSuperBlob(id string, m *macho.File, signingMaterial *pem.Sig
 	}
 
 	return sbBytes, nil
+}
+
+func UpdateSuperBlobOffsetReferences(m *macho.File, numSbBytes uint64) error {
+	// (patch) patch  LcCodeSignature loader referencing the superblob offset
+	if err := m.UpdateCodeSigningCmdDataSize(int(numSbBytes)); err != nil {
+		return fmt.Errorf("unable to update code signature loader data size: %w", err)
+	}
+
+	// (patch) update the __LINKEDIT segment sizes to be "oldsize + newsuperblobsize"
+	linkEditSegment := m.Segment("__LINKEDIT")
+
+	linkEditSegment.Filesz += numSbBytes
+	for linkEditSegment.Filesz > linkEditSegment.Memsz {
+		linkEditSegment.Memsz *= 2
+	}
+	if err := m.UpdateSegmentHeader(linkEditSegment.SegmentHeader); err != nil {
+		return fmt.Errorf("failed to update linkedit segment size: %w", err)
+	}
+	return nil
 }

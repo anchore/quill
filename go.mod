@@ -8,41 +8,56 @@ require (
 	github.com/anchore/go-logger v0.0.0-20220728155337-03b66a5207d8
 	github.com/aws/aws-sdk-go v1.44.114
 	github.com/blacktop/go-macho v1.1.83
+	github.com/charmbracelet/bubbletea v0.22.1
+	github.com/charmbracelet/lipgloss v0.6.0
+	github.com/erikgeiser/promptkit v0.7.0
 	github.com/gabriel-vasile/mimetype v1.4.1
 	github.com/github/smimesign v0.2.0
 	github.com/go-restruct/restruct v1.2.0-alpha
 	github.com/golang-jwt/jwt/v4 v4.4.2
-	github.com/gookit/color v1.2.7
+	github.com/gookit/color v1.5.2
 	github.com/hashicorp/go-multierror v1.1.0
+	github.com/iancoleman/strcase v0.2.0
 	github.com/jedib0t/go-pretty v4.3.0+incompatible
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pkg/profile v1.6.0
 	github.com/scylladb/go-set v1.0.2
-	github.com/spf13/cobra v1.0.1-0.20200909172742-8a63648dd905
+	github.com/spf13/cobra v1.6.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.7.0
 	github.com/stretchr/testify v1.8.0
 	github.com/wagoodman/go-partybus v0.0.0-20210627031916-db1f5573bbc5
+	github.com/wagoodman/go-progress v0.0.0-20220614130704-4b1c25a33c7c
 	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d
 	gopkg.in/yaml.v2 v2.4.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
 	github.com/asaskevich/govalidator v0.0.0-20200907205600-7a23bdc65eef // indirect
+	github.com/atotto/clipboard v0.1.4 // indirect
+	github.com/charmbracelet/bubbles v0.11.0 // indirect
+	github.com/containerd/console v1.0.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/go-openapi/errors v0.20.2 // indirect
 	github.com/go-openapi/strfmt v0.21.3 // indirect
 	github.com/hashicorp/errwrap v1.0.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
-	github.com/inconshreveable/mousetrap v1.0.0 // indirect
+	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
+	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/magiconair/properties v1.8.1 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
-	github.com/mattn/go-isatty v0.0.14 // indirect
+	github.com/mattn/go-isatty v0.0.16 // indirect
+	github.com/mattn/go-localereader v0.0.1 // indirect
 	github.com/mattn/go-runewidth v0.0.14 // indirect
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
 	github.com/mitchellh/mapstructure v1.3.3 // indirect
+	github.com/muesli/ansi v0.0.0-20211031195517-c9f0611b6c70 // indirect
+	github.com/muesli/cancelreader v0.2.2 // indirect
+	github.com/muesli/reflow v0.3.0 // indirect
+	github.com/muesli/termenv v0.12.0 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/pelletier/go-toml v1.8.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
@@ -55,11 +70,11 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/stretchr/objx v0.4.0 // indirect
 	github.com/subosito/gotenv v1.2.0 // indirect
+	github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778 // indirect
 	go.mongodb.org/mongo-driver v1.10.0 // indirect
 	golang.org/x/net v0.0.0-20220624214902-1bab6f366d9e // indirect
-	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a // indirect
-	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
+	golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab // indirect
+	golang.org/x/term v0.0.0-20220526004731-065cf7ba2467 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	gopkg.in/ini.v1 v1.56.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

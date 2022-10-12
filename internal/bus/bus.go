@@ -13,7 +13,11 @@ consumers to augment or otherwise change execution.
 */
 package bus
 
-import "github.com/wagoodman/go-partybus"
+import (
+	"github.com/wagoodman/go-partybus"
+
+	"github.com/anchore/quill/quill/event"
+)
 
 var publisher partybus.Publisher
 var active bool
@@ -32,4 +36,17 @@ func Publish(event partybus.Event) {
 	if active {
 		publisher.Publish(event)
 	}
+}
+
+func Exit() {
+	Publish(partybus.Event{
+		Type: event.Exit,
+	})
+}
+
+func Report(report string) {
+	Publish(partybus.Event{
+		Type:  event.Report,
+		Value: report,
+	})
 }

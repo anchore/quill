@@ -17,7 +17,7 @@ type MachoDetails struct {
 	UUID             string   `json:"uuid"`
 }
 
-func getMachoDetails(m file) MachoDetails {
+func getMachoDetails(m File) MachoDetails {
 	var uuidStr string
 	uuidVal := m.blacktopFile.UUID()
 	if uuidVal != nil {

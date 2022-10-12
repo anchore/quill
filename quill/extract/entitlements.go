@@ -4,7 +4,7 @@ type EntitlementDetails struct {
 	Blob BlobDetails `json:"blob"`
 }
 
-func getEntitlements(m file) []EntitlementDetails {
+func getEntitlements(m File) []EntitlementDetails {
 	// TODO
 	return nil
 }

@@ -9,7 +9,7 @@ type SuperBlobDetails struct {
 	Signatures      []SignatureDetails     `json:"signatures"`
 }
 
-func getSuperBlobDetails(m file) *SuperBlobDetails {
+func getSuperBlobDetails(m File) *SuperBlobDetails {
 	signingLoadCmd := m.blacktopFile.CodeSignature()
 	if signingLoadCmd == nil {
 		return nil

@@ -11,6 +11,12 @@ import (
 )
 
 const (
+	prefix = internal.ApplicationName
+
 	// Exit is a partybus event indicating the main process is to exit
-	Exit partybus.EventType = internal.ApplicationName + "-exit-event"
+	Exit partybus.EventType = prefix + "-exit-event"
+
+	Report       partybus.EventType = prefix + "-report"
+	Notification partybus.EventType = prefix + "-notification"
+	InputPrompt  partybus.EventType = prefix + "-input-prompt"
 )
