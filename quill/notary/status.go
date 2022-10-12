@@ -24,7 +24,7 @@ func PollStatus(ctx context.Context, sub *Submission, cfg StatusConfig) (Submiss
 	for !status.isCompleted() {
 		select {
 		case <-ctx.Done():
-			return "", errors.New("timeout waiting for notarize Submission response")
+			return TimeoutStatus, errors.New("timeout waiting for notarize submission response")
 
 		default:
 			status, err = sub.Status(ctx)

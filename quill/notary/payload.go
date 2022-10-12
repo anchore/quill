@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/gabriel-vasile/mimetype"
 
+	"github.com/anchore/quill/internal/log"
 	"github.com/anchore/quill/quill/macho"
 )
 
@@ -37,6 +39,8 @@ func NewPayload(path string) (*Payload, error) {
 }
 
 func prepareZip(path string) (*Payload, error) {
+	log.Trace("using provided zip as payload")
+
 	f, err := os.Open(path)
 
 	if err != nil {
@@ -53,6 +57,10 @@ func prepareZip(path string) (*Payload, error) {
 		return nil, err
 	}
 
+	if buf.Len() == 0 {
+		return nil, fmt.Errorf("zip file is empty")
+	}
+
 	return &Payload{
 		Reader: bytes.NewReader(buf.Bytes()),
 		Path:   path,
@@ -61,6 +69,8 @@ func prepareZip(path string) (*Payload, error) {
 }
 
 func prepareBinary(path string) (*Payload, error) {
+	log.Trace("zipping up binary payload")
+
 	// verify that we're opening a macho file (not a zip of the binary or anything else)
 	f, err := macho.NewReadOnlyFile(path)
 	if err != nil {
@@ -75,8 +85,15 @@ func prepareBinary(path string) (*Payload, error) {
 
 	h := sha256.New()
 
-	if _, err := io.Copy(h, zippedBinary); err != nil {
+	n, err := io.Copy(h, bytes.NewReader(zippedBinary.Bytes()))
+	if err != nil {
 		return nil, err
+	}
+
+	log.WithFields("bytes", n, "digest", hex.EncodeToString(h.Sum(nil))).Trace("hashed zip")
+
+	if zippedBinary.Len() == 0 {
+		return nil, fmt.Errorf("zip file is empty")
 	}
 
 	return &Payload{
@@ -87,23 +104,28 @@ func prepareBinary(path string) (*Payload, error) {
 }
 
 func createZip(name string, reader io.Reader) (*bytes.Buffer, error) {
-	buf := new(bytes.Buffer)
+	buf := bytes.Buffer{}
 
-	w := zip.NewWriter(buf)
+	w := zip.NewWriter(&buf)
 
 	f, err := w.Create(name)
 	if err != nil {
 		return nil, err
 	}
-	if _, err := io.Copy(f, reader); err != nil {
+
+	n, err := io.Copy(f, reader)
+	if err != nil {
 		return nil, err
+	} else if n == 0 {
+		return nil, fmt.Errorf("binary file is empty")
 	}
+	log.WithFields("bytes", n, "name", name).Trace("wrote binary payload to zip")
 
 	if err := w.Close(); err != nil {
 		return nil, err
 	}
 
-	return buf, nil
+	return &buf, nil
 }
 
 func fileContentType(path string) (string, error) {

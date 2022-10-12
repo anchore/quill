@@ -13,11 +13,11 @@ import (
 type SubmissionStatus string
 
 const (
-	AcceptedStatus = "success"
-	PendingStatus  = "pending"
-	InvalidStatus  = "invalid"
-	RejectedStatus = "rejected"
-	TimeoutStatus  = "timeout"
+	AcceptedStatus = "Accepted"
+	PendingStatus  = "Pending"
+	InvalidStatus  = "Invalid"
+	RejectedStatus = "Rejected"
+	TimeoutStatus  = "Timeout"
 )
 
 func (s SubmissionStatus) isCompleted() bool {
