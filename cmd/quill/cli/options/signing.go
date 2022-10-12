@@ -3,7 +3,11 @@ package options
 import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+
+	"github.com/anchore/quill/internal/log"
 )
+
+var _ Interface = &Signing{}
 
 type Signing struct {
 	// bound options
@@ -14,6 +18,12 @@ type Signing struct {
 
 	// unbound options
 	Password string `yaml:"password" json:"password" mapstructure:"password"`
+}
+
+func (o *Signing) Redact() {
+	log.Redact(o.Password)
+	redactNonFileOrEnvHint(o.P12)
+	redactNonFileOrEnvHint(o.PrivateKey)
 }
 
 func (o *Signing) AddFlags(flags *pflag.FlagSet) {

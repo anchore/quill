@@ -14,10 +14,16 @@ import (
 	"github.com/anchore/quill/quill/extract"
 )
 
+var _ options.Interface = &describeConfig{}
+
 type describeConfig struct {
 	Path             string `yaml:"path" json:"path" mapstructure:"path"`
 	options.Format   `yaml:",inline" json:",inline" mapstructure:",squash"`
 	options.Describe `yaml:"describe" json:"describe" mapstructure:"describe"`
+}
+
+func (d *describeConfig) Redact() {
+	options.RedactAll(&d.Format, &d.Describe)
 }
 
 func (d *describeConfig) AddFlags(flags *pflag.FlagSet) {

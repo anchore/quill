@@ -15,6 +15,8 @@ import (
 	"github.com/anchore/quill/quill/pem"
 )
 
+var _ options.Interface = &p12DescribeConfig{}
+
 type p12DescribeConfig struct {
 	Path        string `yaml:"path" json:"path" mapstructure:"path"`
 	options.P12 `yaml:"p12" json:"p12" mapstructure:"p12"`

@@ -13,6 +13,8 @@ import (
 	"github.com/anchore/quill/quill/extract"
 )
 
+var _ options.Interface = &extractCertificatesConfig{}
+
 type extractCertificatesConfig struct {
 	Path                        string `yaml:"path" json:"path" mapstructure:"path"`
 	options.ExtractCertificates `yaml:"extract-certificates" json:"extract-certificates" mapstructure:"extract-certificates"`

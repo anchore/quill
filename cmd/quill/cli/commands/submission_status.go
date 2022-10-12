@@ -15,10 +15,16 @@ import (
 	"github.com/anchore/quill/quill/notary"
 )
 
+var _ options.Interface = &submissionStatusConfig{}
+
 type submissionStatusConfig struct {
 	ID             string `yaml:"id" json:"id" mapstructure:"id"`
 	options.Notary `yaml:"notary" json:"notary" mapstructure:"notary"`
 	options.Status `yaml:"status" json:"status" mapstructure:"status"`
+}
+
+func (o *submissionStatusConfig) Redact() {
+	options.RedactAll(&o.Notary, &o.Status)
 }
 
 func (o *submissionStatusConfig) AddFlags(flags *pflag.FlagSet) {

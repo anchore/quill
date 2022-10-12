@@ -7,6 +7,8 @@ import (
 	"github.com/spf13/viper"
 )
 
+var _ Interface = &Status{}
+
 type Status struct {
 	// bound options
 	Wait bool `yaml:"wait" json:"wait" mapstructure:"status.wait"`
@@ -14,6 +16,9 @@ type Status struct {
 	// unbound options
 	PollSeconds    int `yaml:"poll-seconds" json:"poll-seconds" mapstructure:"poll-seconds"`
 	TimeoutSeconds int `yaml:"timeout-seconds" json:"timeout-seconds" mapstructure:"timeout-seconds"`
+}
+
+func (o *Status) Redact() {
 }
 
 func (o *Status) AddFlags(flags *pflag.FlagSet) {

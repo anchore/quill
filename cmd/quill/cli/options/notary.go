@@ -16,6 +16,10 @@ type Notary struct {
 	// unbound options
 }
 
+func (o *Notary) Redact() {
+	redactNonFileOrEnvHint(o.PrivateKey)
+}
+
 func (o *Notary) AddFlags(flags *pflag.FlagSet) {
 	flags.StringVarP(
 		&o.Issuer,

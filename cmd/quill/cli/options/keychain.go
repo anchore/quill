@@ -5,8 +5,13 @@ import (
 	"github.com/spf13/viper"
 )
 
+var _ Interface = &Keychain{}
+
 type Keychain struct {
 	Path string `yaml:"path" json:"path" mapstructure:"path"`
+}
+
+func (o *Keychain) Redact() {
 }
 
 func (o *Keychain) AddFlags(flags *pflag.FlagSet) {

@@ -28,11 +28,15 @@ type p12AttachChainConfig struct {
 	options.P12      `yaml:"p12" json:"p12" mapstructure:"p12"`
 }
 
-func (p p12AttachChainConfig) AddFlags(set *pflag.FlagSet) {
+func (p *p12AttachChainConfig) Redact() {
+	options.RedactAll(&p.P12, &p.Keychain)
+}
+
+func (p *p12AttachChainConfig) AddFlags(set *pflag.FlagSet) {
 	options.AddAllFlags(set, &p.P12, &p.Keychain)
 }
 
-func (p p12AttachChainConfig) BindFlags(set *pflag.FlagSet, viper *viper.Viper) error {
+func (p *p12AttachChainConfig) BindFlags(set *pflag.FlagSet, viper *viper.Viper) error {
 	return options.BindAllFlags(set, viper, &p.P12, &p.Keychain)
 }
 

@@ -11,6 +11,8 @@ import (
 	"github.com/anchore/quill/quill/notary"
 )
 
+var _ options.Interface = &submissionLogsConfig{}
+
 type submissionLogsConfig struct {
 	ID             string `yaml:"id" json:"id" mapstructure:"id"`
 	options.Notary `yaml:"notary" json:"notary" mapstructure:"notary"`

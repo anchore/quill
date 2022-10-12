@@ -3,10 +3,18 @@ package options
 import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+
+	"github.com/anchore/quill/internal/log"
 )
+
+var _ Interface = &P12{}
 
 type P12 struct {
 	Password string `yaml:"password" json:"password" mapstructure:"password"`
+}
+
+func (o *P12) Redact() {
+	log.Redact(o.Password)
 }
 
 func (o *P12) AddFlags(flags *pflag.FlagSet) {

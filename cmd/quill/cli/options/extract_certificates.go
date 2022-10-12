@@ -5,8 +5,13 @@ import (
 	"github.com/spf13/viper"
 )
 
+var _ Interface = &ExtractCertificates{}
+
 type ExtractCertificates struct {
 	Leaf bool `yaml:"leaf" json:"leaf" mapstructure:"leaf"`
+}
+
+func (o *ExtractCertificates) Redact() {
 }
 
 func (o *ExtractCertificates) AddFlags(flags *pflag.FlagSet) {

@@ -7,9 +7,15 @@ import (
 	"github.com/spf13/viper"
 )
 
+var _ Interface = &Format{}
+
 type Format struct {
 	Output           string   `yaml:"output" json:"output" mapstructure:"output"`
 	AllowableFormats []string `yaml:"-" json:"-" mapstructure:"-"`
+}
+
+func (o *Format) Redact() {
+
 }
 
 func (o *Format) AddFlags(flags *pflag.FlagSet) {

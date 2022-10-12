@@ -13,10 +13,16 @@ import (
 	"github.com/anchore/quill/quill/notary"
 )
 
+var _ options.Interface = &notarizeConfig{}
+
 type notarizeConfig struct {
 	Path           string `yaml:"path" json:"path" mapstructure:"path"`
 	options.Notary `yaml:"notary" json:"notary" mapstructure:"notary"`
 	options.Status `yaml:"status" json:"status" mapstructure:"status"`
+}
+
+func (o *notarizeConfig) Redact() {
+	options.RedactAll(&o.Notary, &o.Status)
 }
 
 func (o *notarizeConfig) AddFlags(flags *pflag.FlagSet) {

@@ -7,6 +7,7 @@ import (
 )
 
 type Interface interface {
+	Redact()
 	AddFlags(*pflag.FlagSet)
 	BindFlags(*pflag.FlagSet, *viper.Viper) error
 }
@@ -25,4 +26,10 @@ func BindAllFlags(flags *pflag.FlagSet, v *viper.Viper, i ...Interface) error {
 		}
 	}
 	return errs
+}
+
+func RedactAll(i ...Interface) {
+	for _, o := range i {
+		o.Redact()
+	}
 }

@@ -65,6 +65,11 @@ func (a *Application) Setup(opts options.Interface) func(cmd *cobra.Command, arg
 			return err
 		}
 
+		// redact sensitive config values...
+		if opts != nil {
+			opts.Redact()
+		}
+
 		// show the app version and configuration...
 		logVersion()
 		logConfiguration(a.Config, opts)

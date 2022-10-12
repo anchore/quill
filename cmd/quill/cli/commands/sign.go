@@ -12,6 +12,8 @@ import (
 	"github.com/anchore/quill/quill"
 )
 
+var _ options.Interface = &signConfig{}
+
 type signConfig struct {
 	Path            string `yaml:"path" json:"path" mapstructure:"path"`
 	options.Signing `yaml:"signing" json:"signing" mapstructure:"signing"`
