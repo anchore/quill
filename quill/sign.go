@@ -16,11 +16,19 @@ type SigningConfig struct {
 	Path            string
 }
 
-func NewSigningConfig(binaryPath, certificate, privateKey, password string) (*SigningConfig, error) {
+func NewEmptySigningConfig(binaryPath string) (*SigningConfig, error) {
+	return &SigningConfig{
+		Path:            binaryPath,
+		Identity:        path.Base(binaryPath),
+		SigningMaterial: nil,
+	}, nil
+}
+
+func NewSigningConfigFromPEMs(binaryPath, certificate, privateKey, password string) (*SigningConfig, error) {
 	var err error
 	var signingMaterial *pem.SigningMaterial
 	if certificate != "" {
-		signingMaterial, err = pem.NewSigningMaterial(certificate, privateKey, password)
+		signingMaterial, err = pem.NewSigningMaterialFromPEMs(certificate, privateKey, password)
 		if err != nil {
 			return nil, err
 		}
@@ -28,6 +36,23 @@ func NewSigningConfig(binaryPath, certificate, privateKey, password string) (*Si
 		if err := validateCertificateMaterial(signingMaterial); err != nil {
 			return nil, err
 		}
+	}
+
+	return &SigningConfig{
+		Path:            binaryPath,
+		Identity:        path.Base(binaryPath),
+		SigningMaterial: signingMaterial,
+	}, nil
+}
+
+func NewSigningConfigFromP12(binaryPath, p12, password string) (*SigningConfig, error) {
+	signingMaterial, err := pem.NewSigningMaterialFromP12(p12, password)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := validateCertificateMaterial(signingMaterial); err != nil {
+		return nil, err
 	}
 
 	return &SigningConfig{

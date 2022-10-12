@@ -11,7 +11,7 @@ type SigningMaterial struct {
 	Certs  []*x509.Certificate
 }
 
-func NewSigningMaterial(certFile, privateKeyPath, password string) (*SigningMaterial, error) {
+func NewSigningMaterialFromPEMs(certFile, privateKeyPath, password string) (*SigningMaterial, error) {
 	var certs []*x509.Certificate
 	var privateKey crypto.PrivateKey
 	var err error
@@ -28,20 +28,25 @@ func NewSigningMaterial(certFile, privateKeyPath, password string) (*SigningMate
 			return nil, err
 		}
 
-	case certFile != "" && privateKeyPath == "":
-		privateKey, certs, err = loadP12(certFile, password)
-		if err != nil {
-			return nil, err
-		}
-
-	case certFile == "" && privateKeyPath != "":
-		privateKey, certs, err = loadP12(privateKeyPath, password)
-		if err != nil {
-			return nil, err
-		}
-
 	default:
 		return nil, nil
+	}
+
+	signer, ok := privateKey.(crypto.Signer)
+	if !ok {
+		return nil, fmt.Errorf("unable to derive signer from private key")
+	}
+
+	return &SigningMaterial{
+		Signer: signer,
+		Certs:  certs,
+	}, nil
+}
+
+func NewSigningMaterialFromP12(p12Path, password string) (*SigningMaterial, error) {
+	privateKey, certs, err := LoadP12(p12Path, password)
+	if err != nil {
+		return nil, err
 	}
 
 	signer, ok := privateKey.(crypto.Signer)

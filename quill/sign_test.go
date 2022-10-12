@@ -145,7 +145,7 @@ func TestSign(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cfg, err := NewSigningConfig(tt.args.path, tt.args.certFile, tt.args.keyFile, tt.args.keyPassword)
+			cfg, err := NewSigningConfigFromPEMs(tt.args.path, tt.args.certFile, tt.args.keyFile, tt.args.keyPassword)
 			require.NoError(t, err)
 			cfg.WithIdentity(tt.args.id)
 

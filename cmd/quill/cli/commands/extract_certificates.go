@@ -15,7 +15,7 @@ import (
 
 type extractCertificatesConfig struct {
 	Path                        string `yaml:"path" json:"path" mapstructure:"path"`
-	options.ExtractCertificates `yaml:"extract-certificates" json:"extract-certificates" mapstructure:",squash"`
+	options.ExtractCertificates `yaml:"extract-certificates" json:"extract-certificates" mapstructure:"extract-certificates"`
 }
 
 //nolint:funlen
@@ -74,6 +74,7 @@ func ExtractCertificates(app *application.Application) *cobra.Command {
 				}
 
 				bus.Report(buf.String())
+				bus.Notify("Try running 'openssl x509 -text -in <path-to-file-with-output>.pem' to view the certificate details")
 
 				return nil
 			}))

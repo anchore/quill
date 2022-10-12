@@ -43,10 +43,20 @@ func Sign(app *application.Application) *cobra.Command {
 					return err
 				}
 
-				cfg, err := quill.NewSigningConfig(opts.Path, opts.Certificates, opts.PrivateKey, opts.Password)
+				var cfg *quill.SigningConfig
+
+				switch {
+				case opts.Certificates != "" && opts.PrivateKey != "":
+					cfg, err = quill.NewSigningConfigFromPEMs(opts.Path, opts.Certificates, opts.PrivateKey, opts.Password)
+				case opts.P12 != "":
+					cfg, err = quill.NewSigningConfigFromP12(opts.Path, opts.P12, opts.Password)
+				default:
+					return fmt.Errorf("must provide either a p12 or certificate chain and private key")
+				}
 				if err != nil {
 					return err
 				}
+
 				cfg.WithIdentity(opts.Identity)
 
 				return quill.Sign(cfg)

@@ -37,6 +37,10 @@ func New(opts ...Option) *cobra.Command {
 	extract := commands.Extract(app)
 	extract.AddCommand(commands.ExtractCertificates(app))
 
+	p12 := commands.P12(app)
+	p12.AddCommand(commands.P12AttachChain(app))
+	p12.AddCommand(commands.P12Describe(app))
+
 	root := commands.Root(app)
 	root.AddCommand(commands.Version(app))
 	root.AddCommand(commands.Sign(app))
@@ -44,6 +48,7 @@ func New(opts ...Option) *cobra.Command {
 	root.AddCommand(commands.Describe(app))
 	root.AddCommand(submission)
 	root.AddCommand(extract)
+	root.AddCommand(p12)
 
 	return root
 }

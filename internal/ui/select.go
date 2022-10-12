@@ -12,13 +12,13 @@ func Select(cfg Config) (uis []UI) {
 	// isStderrATty := term.IsTerminal(int(os.Stderr.Fd()))
 	// notATerminal := !isStderrATty && !isStdoutATty
 	// switch {
-	//case cfg.Verbose || cfg.Quiet || notATerminal || !isStderrATty:
+	// case cfg.Verbose || cfg.Quiet || notATerminal || !isStderrATty:
 	//	uis = append(uis, loggerui.New(cfg.Debug, cfg.Quiet))
 	//default:
 	//	uis = append(uis, tui.New(cfg.Debug, cfg.Quiet), loggerui.New(cfg.Debug, cfg.Quiet))
 	//}
 	//
-	//return uis
+	// return uis
 
 	return []UI{loggerui.New(cfg.Debug, cfg.Quiet)}
 }
