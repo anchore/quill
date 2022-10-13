@@ -8,6 +8,7 @@ release:
 
 builds:
   - binary: quill
+    dir: ./cmd/quill
     env:
       - CGO_ENABLED=0
     goos:

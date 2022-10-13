@@ -19,6 +19,10 @@ func loadPrivateKey(path string, password string) (crypto.PrivateKey, error) {
 	}
 	pemObj, _ := pem.Decode(b)
 
+	if pemObj == nil {
+		return nil, fmt.Errorf("unable to decode PEM formatted private key")
+	}
+
 	switch pemObj.Type {
 	case "RSA PRIVATE KEY", "PRIVATE KEY", "ENCRYPTED PRIVATE KEY":
 		// pass
