@@ -11,10 +11,11 @@ var _ Interface = &Signing{}
 
 type Signing struct {
 	// bound options
-	Identity     string `yaml:"identity" json:"identity" mapstructure:"identity"`
-	PrivateKey   string `yaml:"key" json:"key" mapstructure:"key"`
-	Certificates string `yaml:"certs" json:"certs" mapstructure:"certs"`
-	P12          string `yaml:"p12" json:"p12" mapstructure:"p12"`
+	Identity        string `yaml:"identity" json:"identity" mapstructure:"identity"`
+	PrivateKey      string `yaml:"key" json:"key" mapstructure:"key"`
+	Certificates    string `yaml:"certs" json:"certs" mapstructure:"certs"`
+	P12             string `yaml:"p12" json:"p12" mapstructure:"p12"`
+	TimestampServer string `yaml:"timestamp-server" json:"timestamp-server" mapstructure:"timestamp-server"`
 
 	// unbound options
 	Password string `yaml:"password" json:"password" mapstructure:"password"`
@@ -29,26 +30,32 @@ func (o *Signing) Redact() {
 func (o *Signing) AddFlags(flags *pflag.FlagSet) {
 	flags.StringVarP(
 		&o.Identity,
-		"identity", "i", "",
+		"identity", "i", o.Identity,
 		"identifier to encode into the code directory of the code signing super block (default is derived from other input)",
 	)
 
 	flags.StringVarP(
 		&o.PrivateKey,
-		"key", "", "",
+		"key", "", o.PrivateKey,
 		"path to the private key PEM file",
 	)
 
 	flags.StringVarP(
 		&o.Certificates,
-		"certs", "", "",
+		"certs", "", o.Certificates,
 		"path to a PEM file containing the (leaf) signing certificate and remaining certificate chain",
 	)
 
 	flags.StringVarP(
 		&o.P12,
-		"p12", "", "",
+		"p12", "", o.P12,
 		"path to a PKCS12 file containing the private key, (leaf) signing certificate, remaining certificate chain",
+	)
+
+	flags.StringVarP(
+		&o.TimestampServer,
+		"timestamp-server", "", o.TimestampServer,
+		"URL to a timestamp server to use for timestamping the signature",
 	)
 }
 
@@ -63,6 +70,9 @@ func (o *Signing) BindFlags(flags *pflag.FlagSet, v *viper.Viper) error {
 		return err
 	}
 	if err := Bind(v, "signing.p12", flags.Lookup("p12")); err != nil {
+		return err
+	}
+	if err := Bind(v, "signing.timestamp-server", flags.Lookup("timestamp-server")); err != nil {
 		return err
 	}
 

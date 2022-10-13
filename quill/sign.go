@@ -11,31 +11,30 @@ import (
 )
 
 type SigningConfig struct {
-	SigningMaterial *pem.SigningMaterial
+	SigningMaterial pem.SigningMaterial
 	Identity        string
 	Path            string
 }
 
 func NewEmptySigningConfig(binaryPath string) (*SigningConfig, error) {
 	return &SigningConfig{
-		Path:            binaryPath,
-		Identity:        path.Base(binaryPath),
-		SigningMaterial: nil,
+		Path:     binaryPath,
+		Identity: path.Base(binaryPath),
 	}, nil
 }
 
 func NewSigningConfigFromPEMs(binaryPath, certificate, privateKey, password string) (*SigningConfig, error) {
-	var err error
-	var signingMaterial *pem.SigningMaterial
+	var signingMaterial pem.SigningMaterial
 	if certificate != "" {
-		signingMaterial, err = pem.NewSigningMaterialFromPEMs(certificate, privateKey, password)
+		sm, err := pem.NewSigningMaterialFromPEMs(certificate, privateKey, password)
 		if err != nil {
 			return nil, err
 		}
 
-		if err := validateCertificateMaterial(signingMaterial); err != nil {
+		if err := validateCertificateMaterial(sm); err != nil {
 			return nil, err
 		}
+		signingMaterial = *sm
 	}
 
 	return &SigningConfig{
@@ -58,7 +57,7 @@ func NewSigningConfigFromP12(binaryPath, p12, password string) (*SigningConfig, 
 	return &SigningConfig{
 		Path:            binaryPath,
 		Identity:        path.Base(binaryPath),
-		SigningMaterial: signingMaterial,
+		SigningMaterial: *signingMaterial,
 	}, nil
 }
 
@@ -66,6 +65,11 @@ func (c *SigningConfig) WithIdentity(id string) *SigningConfig {
 	if id != "" {
 		c.Identity = id
 	}
+	return c
+}
+
+func (c *SigningConfig) WithTimestampServer(url string) *SigningConfig {
+	c.SigningMaterial.TimestampServer = url
 	return c
 }
 
@@ -83,7 +87,7 @@ func Sign(cfg *SigningConfig) error {
 		return fmt.Errorf("binary is already signed")
 	}
 
-	if cfg.SigningMaterial == nil {
+	if cfg.SigningMaterial.Signer == nil {
 		log.Warnf("only ad-hoc signing, which means that anyone can alter the binary contents without you knowing (there is no cryptographic signature)")
 	}
 
@@ -94,7 +98,7 @@ func Sign(cfg *SigningConfig) error {
 
 	// first pass: add the signed data with the dummy loader
 	log.Debugf("estimating signing material size")
-	sbBytes, err := sign.GenerateSigningSuperBlob(cfg.Identity, m, cfg.SigningMaterial)
+	superBlobSize, sbBytes, err := sign.GenerateSigningSuperBlob(cfg.Identity, m, cfg.SigningMaterial, 0)
 	if err != nil {
 		return fmt.Errorf("failed to add signing data on pass=1: %w", err)
 	}
@@ -107,7 +111,7 @@ func Sign(cfg *SigningConfig) error {
 
 	// second pass: now that all of the sizing is right, let's do it again with the final contents (replacing the hashes and signature)
 	log.Debugf("signing")
-	sbBytes, err = sign.GenerateSigningSuperBlob(cfg.Identity, m, cfg.SigningMaterial)
+	_, sbBytes, err = sign.GenerateSigningSuperBlob(cfg.Identity, m, cfg.SigningMaterial, superBlobSize)
 	if err != nil {
 		return fmt.Errorf("failed to add signing data on pass=2: %w", err)
 	}

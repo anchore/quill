@@ -31,9 +31,11 @@ func PollStatus(ctx context.Context, sub *Submission, cfg StatusConfig) (Submiss
 			if err != nil {
 				return "", err
 			}
-		}
 
-		time.Sleep(cfg.Poll)
+			if !status.isCompleted() {
+				time.Sleep(cfg.Poll)
+			}
+		}
 	}
 
 	if !status.isSuccessful() {
@@ -41,7 +43,7 @@ func PollStatus(ctx context.Context, sub *Submission, cfg StatusConfig) (Submiss
 		if err != nil {
 			return "", err
 		}
-		return "", fmt.Errorf("submission result is %+v: %+v", status, logs)
+		return "", fmt.Errorf("submission result is %+v:\n%+v", status, logs)
 	}
 
 	return status, nil

@@ -7,8 +7,9 @@ import (
 )
 
 type SigningMaterial struct {
-	Signer crypto.Signer
-	Certs  []*x509.Certificate
+	Signer          crypto.Signer
+	Certs           []*x509.Certificate
+	TimestampServer string
 }
 
 func NewSigningMaterialFromPEMs(certFile, privateKeyPath, password string) (*SigningMaterial, error) {

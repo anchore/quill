@@ -1,7 +1,6 @@
 package notary
 
 import (
-	"archive/zip"
 	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
@@ -12,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/gabriel-vasile/mimetype"
+	"github.com/klauspost/compress/zip"
 
 	"github.com/anchore/quill/internal/log"
 	"github.com/anchore/quill/quill/macho"
@@ -49,9 +49,9 @@ func prepareZip(path string) (*Payload, error) {
 
 	defer f.Close()
 
-	var buf *bytes.Buffer
+	buf := bytes.Buffer{}
 	h := sha256.New()
-	w := io.MultiWriter(h, buf)
+	w := io.MultiWriter(h, &buf)
 
 	if _, err := io.Copy(w, f); err != nil {
 		return nil, err
@@ -106,6 +106,10 @@ func prepareBinary(path string) (*Payload, error) {
 func createZip(name string, reader io.Reader) (*bytes.Buffer, error) {
 	buf := bytes.Buffer{}
 
+	// note: the stdlib zip utility runs into the same problem as described here:
+	// - https://blog.frostwire.com/2019/08/27/apple-notarization-the-signature-of-the-binary-is-invalid-one-other-reason-not-explained-in-apple-developer-documentation/
+	// - https://github.com/electron-userland/electron-builder/issues/2125#issuecomment-333484323
+	// which is why we're using another library
 	w := zip.NewWriter(&buf)
 
 	f, err := w.Create(name)
@@ -119,11 +123,12 @@ func createZip(name string, reader io.Reader) (*bytes.Buffer, error) {
 	} else if n == 0 {
 		return nil, fmt.Errorf("binary file is empty")
 	}
-	log.WithFields("bytes", n, "name", name).Trace("wrote binary payload to zip")
 
 	if err := w.Close(); err != nil {
 		return nil, err
 	}
+
+	log.WithFields("bytes", buf.Len(), "name", name).Trace("wrote binary payload to zip")
 
 	return &buf, nil
 }

@@ -134,7 +134,8 @@ func (s APIClient) submissionLogs(ctx context.Context, id string) (string, error
 		return "", fmt.Errorf("unable to decode log metadata response with ID=%s: %w", id, err)
 	}
 
-	logsResp, err := s.http.get(ctx, resp.Data.Attributes.DeveloperLogURL, nil)
+	// note: we are not using the custom API client here since we don't need the token
+	logsResp, err := http.Get(resp.Data.Attributes.DeveloperLogURL)
 	contents, err := s.handleResponse(logsResp, err)
 	if err != nil {
 		return "", fmt.Errorf("unable to fetch log destination with ID=%s: %w", id, err)

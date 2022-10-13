@@ -9,15 +9,15 @@ import (
 	"github.com/anchore/quill/quill/pem"
 )
 
-func generateCMS(signingMaterial *pem.SigningMaterial, cdBlob *macho.Blob) (*macho.Blob, error) {
+func generateCMS(signingMaterial pem.SigningMaterial, cdBlob *macho.Blob) (*macho.Blob, error) {
 	cdBlobBytes, err := cdBlob.Pack()
 	if err != nil {
 		return nil, err
 	}
 
 	var cmsBytes []byte
-	if signingMaterial != nil {
-		cmsBytes, err = cms.SignDetached(cdBlobBytes, signingMaterial.Certs, signingMaterial.Signer)
+	if signingMaterial.Signer != nil {
+		cmsBytes, err = signDetached(cdBlobBytes, signingMaterial)
 		if err != nil {
 			return nil, fmt.Errorf("unable to sign code directory: %w", err)
 		}
@@ -26,4 +26,25 @@ func generateCMS(signingMaterial *pem.SigningMaterial, cdBlob *macho.Blob) (*mac
 	blob := macho.NewBlob(macho.MagicBlobwrapper, cmsBytes)
 
 	return &blob, nil
+}
+
+func signDetached(data []byte, signingMaterial pem.SigningMaterial) ([]byte, error) {
+	sd, err := cms.NewSignedData(data)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = sd.Sign(signingMaterial.Certs, signingMaterial.Signer); err != nil {
+		return nil, err
+	}
+
+	sd.Detached()
+
+	if signingMaterial.TimestampServer != "" {
+		if err = sd.AddTimestamps(signingMaterial.TimestampServer); err != nil {
+			return nil, fmt.Errorf("unable to add timestamps (RFC3161): %w", err)
+		}
+	}
+
+	return sd.ToDER()
 }

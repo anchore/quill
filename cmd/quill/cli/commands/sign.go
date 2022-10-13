@@ -20,7 +20,11 @@ type signConfig struct {
 }
 
 func Sign(app *application.Application) *cobra.Command {
-	opts := &signConfig{}
+	opts := &signConfig{
+		Signing: options.Signing{
+			TimestampServer: "http://timestamp.apple.com/ts01",
+		},
+	}
 
 	cmd := &cobra.Command{
 		Use:   "sign PATH",
@@ -60,6 +64,7 @@ func Sign(app *application.Application) *cobra.Command {
 				}
 
 				cfg.WithIdentity(opts.Identity)
+				cfg.WithTimestampServer(opts.TimestampServer)
 
 				return quill.Sign(cfg)
 			}))

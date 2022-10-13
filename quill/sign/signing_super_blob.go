@@ -11,9 +11,9 @@ import (
 	"github.com/anchore/quill/quill/pem"
 )
 
-func GenerateSigningSuperBlob(id string, m *macho.File, signingMaterial *pem.SigningMaterial) ([]byte, error) {
+func GenerateSigningSuperBlob(id string, m *macho.File, signingMaterial pem.SigningMaterial, paddingTarget int) (int, []byte, error) {
 	var cdFlags macho.CdFlag
-	if signingMaterial != nil {
+	if signingMaterial.Signer != nil {
 		// TODO: add options to enable more strict rules (such as macho.Hard)
 		// note: we must at least support the runtime option for notarization (requirement introduced in macOS 10.14 / Mojave).
 		// cdFlags = macho.Runtime | macho.Hard
@@ -24,7 +24,7 @@ func GenerateSigningSuperBlob(id string, m *macho.File, signingMaterial *pem.Sig
 
 	requirementsBlob, requirementsHashBytes, err := generateRequirements(sha256.New())
 	if err != nil {
-		return nil, fmt.Errorf("unable to create requirements: %w", err)
+		return 0, nil, fmt.Errorf("unable to create requirements: %w", err)
 	}
 
 	// TODO: add entitlements, for the meantime, don't include it
@@ -32,12 +32,12 @@ func GenerateSigningSuperBlob(id string, m *macho.File, signingMaterial *pem.Sig
 
 	cdBlob, err := generateCodeDirectory(id, sha256.New(), m, cdFlags, requirementsHashBytes, entitlementsHashBytes)
 	if err != nil {
-		return nil, fmt.Errorf("unable to create code directory: %w", err)
+		return 0, nil, fmt.Errorf("unable to create code directory: %w", err)
 	}
 
 	cmsBlob, err := generateCMS(signingMaterial, cdBlob)
 	if err != nil {
-		return nil, fmt.Errorf("unable to create signature block: %w", err)
+		return 0, nil, fmt.Errorf("unable to create signature block: %w", err)
 	}
 
 	sb := macho.NewSuperBlob(macho.MagicEmbeddedSignature)
@@ -46,14 +46,14 @@ func GenerateSigningSuperBlob(id string, m *macho.File, signingMaterial *pem.Sig
 	sb.Add(macho.CsSlotRequirements, requirementsBlob)
 	sb.Add(macho.CsSlotCmsSignature, cmsBlob)
 
-	sb.Finalize()
+	sb.Finalize(paddingTarget)
 
 	sbBytes, err := restruct.Pack(macho.SigningOrder, &sb)
 	if err != nil {
-		return nil, fmt.Errorf("unable to encode super blob: %w", err)
+		return 0, nil, fmt.Errorf("unable to encode super blob: %w", err)
 	}
 
-	return sbBytes, nil
+	return int(sb.Length), sbBytes, nil
 }
 
 func UpdateSuperBlobOffsetReferences(m *macho.File, numSbBytes uint64) error {

@@ -28,7 +28,7 @@ func newHTTPClient(token string, httpTimeout time.Duration) *httpClient {
 	}
 }
 
-func (s httpClient) get(ctx context.Context, endpoint string, body io.Reader) (*http.Response, error) { //nolint:unparam
+func (s httpClient) get(ctx context.Context, endpoint string, body io.Reader) (*http.Response, error) { 
 	request, err := http.NewRequest("get", endpoint, body)
 	if err != nil {
 		return nil, err

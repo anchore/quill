@@ -86,8 +86,9 @@ func TestSuperBlob_Finalize(t *testing.T) {
 		blob     Blob
 	}
 	tests := []struct {
-		name string
-		args []args
+		name   string
+		args   []args
+		target int
 		// the total length should be the header + size of all blobs + size of all indexes
 		wantLength       int
 		wantIndexOffsets []int
@@ -141,6 +142,54 @@ func TestSuperBlob_Finalize(t *testing.T) {
 				76,
 			},
 		},
+		{
+			name: "augment padding to meet target (+)",
+			args: []args{
+				{
+					slotType: CsSlotCodedirectory,
+					blob:     NewBlob(MagicCodedirectory, []byte("payload!")),
+				},
+				{
+					slotType: CsSlotRequirements,
+					blob:     NewBlob(MagicRequirements, []byte("another payload!")),
+				},
+				{
+					slotType: CsSlotEntitlements,
+					blob:     NewBlob(MagicRequirements, []byte("yet another payload!")),
+				},
+			},
+			target:     96 + PageSize*4,
+			wantLength: 96 + PageSize*4, // this would typically be 92 + PageSize*4
+			wantIndexOffsets: []int{
+				36,
+				52,
+				76,
+			},
+		},
+		{
+			name: "augment padding to meet target (-)",
+			args: []args{
+				{
+					slotType: CsSlotCodedirectory,
+					blob:     NewBlob(MagicCodedirectory, []byte("payload!")),
+				},
+				{
+					slotType: CsSlotRequirements,
+					blob:     NewBlob(MagicRequirements, []byte("another payload!")),
+				},
+				{
+					slotType: CsSlotEntitlements,
+					blob:     NewBlob(MagicRequirements, []byte("yet another payload!")),
+				},
+			},
+			target:     90 + PageSize*4,
+			wantLength: 90 + PageSize*4, // this would typically be 92 + PageSize*4
+			wantIndexOffsets: []int{
+				36,
+				52,
+				76,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -148,7 +197,7 @@ func TestSuperBlob_Finalize(t *testing.T) {
 			for _, a := range tt.args {
 				s.Add(a.slotType, &a.blob)
 			}
-			s.Finalize()
+			s.Finalize(tt.target)
 
 			var expectedBlobs []Blob
 			for _, a := range tt.args {
@@ -159,7 +208,10 @@ func TestSuperBlob_Finalize(t *testing.T) {
 			expectedBlobLength, expectedOffsets := assertSuperBlobs(t, expectedBlobs, s)
 
 			// the total length should be the header + size of all blobs + size of all indexes + 1 page of 0s
-			assert.Equal(t, int(s.Length), expectedBlobLength+PageSize*4, "bad super blob length")
+			if tt.target == 0 {
+				// don't do the semantic verification when there may be differential padding
+				assert.Equal(t, int(s.Length), expectedBlobLength+PageSize*4, "bad super blob length")
+			}
 			assert.Equal(t, int(s.Length), tt.wantLength, "bad super blob length (from hard coded value)")
 
 			// ensure we calculated all offsets correctly

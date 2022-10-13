@@ -148,6 +148,8 @@ func TestSign(t *testing.T) {
 			cfg, err := NewSigningConfigFromPEMs(tt.args.path, tt.args.certFile, tt.args.keyFile, tt.args.keyPassword)
 			require.NoError(t, err)
 			cfg.WithIdentity(tt.args.id)
+			// note: can't do this in snapshot testing
+			//cfg.WithTimestampServer("http://timestamp.apple.com/ts01")
 
 			require.NoError(t, Sign(cfg))
 			test.AssertDebugOutput(t, tt.args.path, tt.assertions...)

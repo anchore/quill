@@ -19,6 +19,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.0
 	github.com/iancoleman/strcase v0.2.0
 	github.com/jedib0t/go-pretty v4.3.0+incompatible
+	github.com/klauspost/compress v1.15.11
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pkg/profile v1.6.0
 	github.com/scylladb/go-set v1.0.2
@@ -42,6 +43,7 @@ require (
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/go-openapi/errors v0.20.2 // indirect
 	github.com/go-openapi/strfmt v0.21.3 // indirect
+	github.com/google/go-cmp v0.5.5 // indirect
 	github.com/hashicorp/errwrap v1.0.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
