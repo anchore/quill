@@ -222,6 +222,63 @@ func (m *File) HasCodeSigningCmd() bool {
 	return offset != 0
 }
 
+func (m *File) RemoveSigningContent() error {
+	if !m.HasCodeSigningCmd() {
+		return nil
+	}
+	cmd, existingOffset, err := m.CodeSigningCmd()
+	if err != nil {
+		return fmt.Errorf("unable to extract existing code signing cmd: %w", err)
+	}
+
+	if !m.isSigningCommandLastLoader() {
+		return fmt.Errorf("code signing command is not the last loader command, so cannot remove it (easily) without corrupting the binary")
+	}
+	// update the macho header to reflect the removed command
+	header := m.FileHeader
+	header.Ncmd--
+	header.Cmdsz -= cmd.Size
+
+	headerBytes, err := restruct.Pack(m.ByteOrder, &header)
+	if err != nil {
+		return fmt.Errorf("unable to pack modified macho header: %w", err)
+	}
+
+	log.Trace("updating the file header to remove references to the loader command")
+	if err = m.Patch(headerBytes, len(headerBytes), 0); err != nil {
+		return fmt.Errorf("unable to patch macho header: %w", err)
+	}
+
+	log.Trace("overwrite the signing loader command with zeros")
+	if err := m.Patch(make([]byte, cmd.Size), int(cmd.Size), existingOffset); err != nil {
+		return fmt.Errorf("unable to remove signing loader command: %w", err)
+	}
+
+	log.Trace("overwrite the signing superblob with zeros")
+	if err := m.Patch(make([]byte, cmd.DataSize), int(cmd.DataSize), uint64(cmd.DataOffset)); err != nil {
+		return fmt.Errorf("unable to remove superblob from binary: %w", err)
+	}
+
+	return nil
+}
+
+func (m *File) isSigningCommandLastLoader() bool {
+	var found bool
+	for _, l := range m.Loads {
+		data := l.Raw()
+		cmd := m.ByteOrder.Uint32(data)
+
+		if found {
+			return false
+		}
+
+		if LoadCommandType(cmd) == LcCodeSignature {
+			found = true
+		}
+	}
+	return true
+}
+
 func (m *File) CodeSigningCmd() (*CodeSigningCommand, uint64, error) {
 	var offset = m.firstCmdOffset()
 	for _, l := range m.Loads {

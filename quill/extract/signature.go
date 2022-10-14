@@ -13,6 +13,7 @@ import (
 	"github.com/github/smimesign/ietf-cms/oid"
 	"github.com/github/smimesign/ietf-cms/protocol"
 
+	"github.com/anchore/quill/internal/log"
 	"github.com/anchore/quill/quill/macho"
 )
 
@@ -62,8 +63,8 @@ type CMSValidationDetails struct {
 func getSignatures(m File) []SignatureDetails {
 	b, err := m.internalFile.CMSBlobBytes(macho.SigningOrder)
 	if err != nil {
-		// TODO
-		panic(err)
+		log.Warn("unable to find any signatures: %v", err)
+		return nil
 	}
 
 	hashObj := crypto.SHA256

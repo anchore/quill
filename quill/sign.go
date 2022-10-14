@@ -73,9 +73,8 @@ func (c *SigningConfig) WithTimestampServer(url string) *SigningConfig {
 	return c
 }
 
-// TODO: use chain and embed
-func Sign(cfg *SigningConfig) error {
-	log.Infof("signing %q", cfg.Path)
+func Sign(cfg SigningConfig) error {
+	log.WithFields("binary", cfg.Path).Info("signing binary")
 
 	m, err := macho.NewFile(cfg.Path)
 	if err != nil {
@@ -84,7 +83,10 @@ func Sign(cfg *SigningConfig) error {
 
 	// check there already isn't a LcCodeSignature loader already (if there is, bail)
 	if m.HasCodeSigningCmd() {
-		return fmt.Errorf("binary is already signed")
+		log.Debug("binary already signed, removing signature...")
+		if err := m.RemoveSigningContent(); err != nil {
+			return fmt.Errorf("unable to remove existing code signature: %+v", err)
+		}
 	}
 
 	if cfg.SigningMaterial.Signer == nil {
@@ -110,7 +112,7 @@ func Sign(cfg *SigningConfig) error {
 	}
 
 	// second pass: now that all of the sizing is right, let's do it again with the final contents (replacing the hashes and signature)
-	log.WithFields("path", cfg.Path).Debug("signing binary")
+	log.Debug("creating signature for binary")
 	_, sbBytes, err = sign.GenerateSigningSuperBlob(cfg.Identity, m, cfg.SigningMaterial, superBlobSize)
 	if err != nil {
 		return fmt.Errorf("failed to add signing data on pass=2: %w", err)

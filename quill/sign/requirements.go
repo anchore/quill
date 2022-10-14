@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-restruct/restruct"
 
+	"github.com/anchore/quill/internal/log"
 	"github.com/anchore/quill/quill/macho"
 	"github.com/anchore/quill/quill/pem"
 )
@@ -61,14 +62,20 @@ const (
 )
 
 func generateRequirements(id string, h hash.Hash, signingMaterial pem.SigningMaterial) (*macho.Blob, []byte, error) {
-	req, err := newRequirements(id, signingMaterial)
-	if err != nil {
-		return nil, nil, err
-	}
+	var reqBytes []byte
+	if signingMaterial.Signer == nil {
+		log.Trace("skipping adding designated requirement because no signer was found")
+		reqBytes = []byte{0, 0, 0, 0}
+	} else {
+		req, err := newRequirements(id, signingMaterial)
+		if err != nil {
+			return nil, nil, err
+		}
 
-	reqBytes, err := restruct.Pack(macho.SigningOrder, req)
-	if err != nil {
-		return nil, nil, fmt.Errorf("unable to encode requirement: %w", err)
+		reqBytes, err = restruct.Pack(macho.SigningOrder, req)
+		if err != nil {
+			return nil, nil, fmt.Errorf("unable to encode requirement: %w", err)
+		}
 	}
 
 	blob := macho.NewBlob(macho.MagicRequirements, reqBytes)

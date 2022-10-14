@@ -77,7 +77,7 @@ Apple's notary service requires you to adopt the following protections:
 */
 
 func Notarize(path string, cfg *NotarizeConfig) error {
-	log.Infof("notarizing %q", path)
+	log.WithFields("binary", path).Info("notarizing binary")
 
 	token, err := notary.NewSignedToken(cfg.TokenConfig)
 	if err != nil {

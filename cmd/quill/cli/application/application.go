@@ -89,7 +89,7 @@ func (a Application) Run(ctx context.Context, errs <-chan error) error {
 	} else if a.Config.Dev.ProfileMem {
 		defer profile.Start(profile.MemProfile).Stop()
 	}
-	return eventloop.Run(
+	err := eventloop.Run(
 		ctx,
 		errs,
 		a.subscription,
@@ -100,6 +100,11 @@ func (a Application) Run(ctx context.Context, errs <-chan error) error {
 			Debug:   false,
 		})...,
 	)
+
+	if err != nil {
+		log.Error(err.Error())
+	}
+	return err
 }
 
 func logConfiguration(app *Config, opts interface{}) {
@@ -130,8 +135,8 @@ func logVersion() {
 func setupLogger(app *Config) error {
 	cfg := logrus.Config{
 		//EnableConsole: (app.Log.FileLocation == "" || app.Log.Verbosity > 0) && !app.Log.Quiet,
-		//FileLocation:  app.Log.FileLocation,
 		EnableConsole: app.Log.Verbosity > 0 && !app.Log.Quiet,
+		FileLocation:  app.Log.FileLocation,
 		Level:         app.Log.Level,
 	}
 

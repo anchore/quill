@@ -9,6 +9,7 @@ import (
 
 	"github.com/anchore/quill/cmd/quill/cli/application"
 	"github.com/anchore/quill/cmd/quill/cli/options"
+	"github.com/anchore/quill/internal/log"
 	"github.com/anchore/quill/quill"
 )
 
@@ -59,12 +60,19 @@ func sign(binPath string, opts options.Signing) error {
 		return err
 	}
 
-	var cfg *quill.SigningConfig
+	cfg := quill.SigningConfig{
+		Path: binPath,
+	}
 
 	if opts.P12 != "" {
-		cfg, err = quill.NewSigningConfigFromP12(binPath, opts.P12, opts.Password)
-		if err != nil {
-			return fmt.Errorf("unable to read p12: %w", err)
+		if opts.AdHoc {
+			log.Warn("ad-hoc signing is enabled, but a p12 file was also provided. The p12 file will be ignored.")
+		} else {
+			replacement, err := quill.NewSigningConfigFromP12(binPath, opts.P12, opts.Password)
+			if err != nil {
+				return fmt.Errorf("unable to read p12: %w", err)
+			}
+			cfg = *replacement
 		}
 	}
 

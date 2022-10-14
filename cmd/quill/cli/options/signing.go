@@ -14,6 +14,7 @@ type Signing struct {
 	Identity        string `yaml:"override-identity" json:"override-identity" mapstructure:"override-identity"`
 	P12             string `yaml:"p12" json:"p12" mapstructure:"p12"`
 	TimestampServer string `yaml:"timestamp-server" json:"timestamp-server" mapstructure:"timestamp-server"`
+	AdHoc           bool   `yaml:"ad-hoc" json:"ad-hoc" mapstructure:"ad-hoc"`
 
 	// unbound options
 	Password string `yaml:"password" json:"password" mapstructure:"password"`
@@ -48,6 +49,12 @@ func (o *Signing) AddFlags(flags *pflag.FlagSet) {
 		"timestamp-server", "", o.TimestampServer,
 		"URL to a timestamp server to use for timestamping the signature",
 	)
+
+	flags.BoolVarP(
+		&o.AdHoc,
+		"ad-hoc", "", o.AdHoc,
+		"perform ad-hoc signing. No cryptographic signature is included and --p12 key and certificate input are not needed. Do NOT use this option for production builds.",
+	)
 }
 
 func (o *Signing) BindFlags(flags *pflag.FlagSet, v *viper.Viper) error {
@@ -58,6 +65,9 @@ func (o *Signing) BindFlags(flags *pflag.FlagSet, v *viper.Viper) error {
 		return err
 	}
 	if err := Bind(v, "signing.timestamp-server", flags.Lookup("timestamp-server")); err != nil {
+		return err
+	}
+	if err := Bind(v, "signing.ad-hoc", flags.Lookup("ad-hoc")); err != nil {
 		return err
 	}
 

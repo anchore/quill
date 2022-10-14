@@ -23,7 +23,27 @@ func TestSign(t *testing.T) {
 		args       args
 		assertions []test.OutputAssertion
 	}{
-		// TODO: add tests for multiple architectures
+		{
+			name: "ad-hoc sign syft arm64 binary",
+			args: args{
+				id:   "syft",
+				path: test.AssetCopy(t, "syft_unsigned_arm64"),
+			},
+			assertions: []test.OutputAssertion{
+				test.AssertContains("CodeDirectory v=20500 size=650917 flags=0x2(adhoc) hashes=20336+2 location=embedded"),
+				test.AssertContains("Hash type=sha256 size=32"),
+				test.AssertContains("CandidateCDHash sha256=ce9492daee16069dc188617132146738114576fc"),
+				test.AssertContains("CandidateCDHashFull sha256=ce9492daee16069dc188617132146738114576fc7737f57c977b0d2fe737f9cf"),
+				test.AssertContains("CDHash=ce9492daee16069dc188617132146738114576fc"),
+				test.AssertContains("CMSDigest=ce9492daee16069dc188617132146738114576fc7737f57c977b0d2fe737f9cf"),
+				test.AssertContains("CMSDigestType=2"),
+				test.AssertContains("Signature=adhoc"),
+				test.AssertContains("Info.plist=not bound"),
+				test.AssertContains("TeamIdentifier=not set"),
+				test.AssertContains("Sealed Resources=none"),
+				test.AssertContains("Internal requirements count=0 size=12"),
+			},
+		},
 		{
 			name: "ad-hoc sign the hello binary",
 			args: args{
@@ -33,20 +53,20 @@ func TestSign(t *testing.T) {
 			assertions: []test.OutputAssertion{
 				test.AssertContains("CodeDirectory v=20500 size=585 flags=0x2(adhoc) hashes=13+2 location=embedded"),
 				test.AssertContains("Hash type=sha256 size=32"),
-				test.AssertContains("CandidateCDHash sha256=564ecc61d055854d6b5a98c5559f91bb30f1e8c6"),
-				test.AssertContains("CandidateCDHashFull sha256=564ecc61d055854d6b5a98c5559f91bb30f1e8c6aa57bec5782d6d49c623b475"),
-				test.AssertContains("CDHash=564ecc61d055854d6b5a98c5559f91bb30f1e8c6"),
-				test.AssertContains("CMSDigest=564ecc61d055854d6b5a98c5559f91bb30f1e8c6aa57bec5782d6d49c623b475"),
+				test.AssertContains("CandidateCDHash sha256=75be1f393e6650da91bf4e78e1d5bb09c90b671f"),
+				test.AssertContains("CandidateCDHashFull sha256=75be1f393e6650da91bf4e78e1d5bb09c90b671f52865a2149c239040364fd66"),
+				test.AssertContains("CDHash=75be1f393e6650da91bf4e78e1d5bb09c90b671f"),
+				test.AssertContains("CMSDigest=75be1f393e6650da91bf4e78e1d5bb09c90b671f52865a2149c239040364fd66"),
 				test.AssertContains("CMSDigestType=2"),
 				test.AssertContains("Signature=adhoc"),
 				test.AssertContains("Info.plist=not bound"),
 				test.AssertContains("TeamIdentifier=not set"),
 				test.AssertContains("Sealed Resources=none"),
-				test.AssertContains("Internal requirements count=1 size=48"),
+				test.AssertContains("Internal requirements count=0 size=12"),
 			},
 		},
 		{
-			name: "ad-hoc sign the syft binary (with a password)",
+			name: "ad-hoc sign the syft binary",
 			args: args{
 				id:   "syft-id",
 				path: test.AssetCopy(t, "syft_unsigned"),
@@ -54,16 +74,16 @@ func TestSign(t *testing.T) {
 			assertions: []test.OutputAssertion{
 				test.AssertContains("CodeDirectory v=20500 size=208904 flags=0x2(adhoc) hashes=6523+2 location=embedded"),
 				test.AssertContains("Hash type=sha256 size=32"),
-				test.AssertContains("CandidateCDHash sha256=612acf7681e79dff0457551be60723b24d3ef576"),
-				test.AssertContains("CandidateCDHashFull sha256=612acf7681e79dff0457551be60723b24d3ef576992fd1f582f039dcb166eb09"),
-				test.AssertContains("CDHash=612acf7681e79dff0457551be60723b24d3ef576"),
-				test.AssertContains("CMSDigest=612acf7681e79dff0457551be60723b24d3ef576992fd1f582f039dcb166eb09"),
+				test.AssertContains("CandidateCDHash sha256=ba0302d64e12b56a26b88e42b008fffa078c7360"),
+				test.AssertContains("CandidateCDHashFull sha256=ba0302d64e12b56a26b88e42b008fffa078c7360ecbda378626815263b6a9d8f"),
+				test.AssertContains("CDHash=ba0302d64e12b56a26b88e42b008fffa078c7360"),
+				test.AssertContains("CMSDigest=ba0302d64e12b56a26b88e42b008fffa078c7360ecbda378626815263b6a9d8f"),
 				test.AssertContains("CMSDigestType=2"),
 				test.AssertContains("Signature=adhoc"),
 				test.AssertContains("Info.plist=not bound"),
 				test.AssertContains("TeamIdentifier=not set"),
 				test.AssertContains("Sealed Resources=none"),
-				test.AssertContains("Internal requirements count=1 size=48"),
+				test.AssertContains("Internal requirements count=0 size=12"),
 			},
 		},
 		{
@@ -151,7 +171,7 @@ func TestSign(t *testing.T) {
 			// note: can't do this in snapshot testing
 			//cfg.WithTimestampServer("http://timestamp.apple.com/ts01")
 
-			require.NoError(t, Sign(cfg))
+			require.NoError(t, Sign(*cfg))
 			test.AssertDebugOutput(t, tt.args.path, tt.assertions...)
 			if !tt.args.skipAssertAgainstCodesign {
 				test.AssertAgainstCodesignTool(t, tt.args.path)
