@@ -22,7 +22,7 @@ func GenerateSigningSuperBlob(id string, m *macho.File, signingMaterial pem.Sign
 		cdFlags = macho.Adhoc
 	}
 
-	requirementsBlob, requirementsHashBytes, err := generateRequirements(sha256.New())
+	requirementsBlob, requirementsHashBytes, err := generateRequirements(id, sha256.New(), signingMaterial)
 	if err != nil {
 		return 0, nil, fmt.Errorf("unable to create requirements: %w", err)
 	}

@@ -8,9 +8,8 @@ import (
 	"github.com/anchore/quill/internal/log"
 )
 
-//nolint:funlen
 func loadCertificates(path string) ([]*x509.Certificate, error) {
-	log.Debug("loading certificate(s)")
+	log.WithFields("path", path).Trace("reading certificate(s)")
 	certPEM, err := LoadBytesFromFileOrEnv(path)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read signing certificate: %w", err)
@@ -19,13 +18,10 @@ func loadCertificates(path string) ([]*x509.Certificate, error) {
 	chainBlockBytes := decodeChainFromPEM(certPEM)
 
 	if len(chainBlockBytes) == 0 {
-		return nil, fmt.Errorf("no certificates found in the chain")
+		return nil, fmt.Errorf("no certificates found")
 	}
 
-	var leaf *x509.Certificate
 	var certs []*x509.Certificate
-	roots := x509.NewCertPool()
-	intermediates := x509.NewCertPool()
 
 	for i, certBytes := range chainBlockBytes {
 		c, err := x509.ParseCertificate(certBytes)
@@ -33,60 +29,9 @@ func loadCertificates(path string) ([]*x509.Certificate, error) {
 			return nil, fmt.Errorf("unable to parse certificate %d of %d: %w", i+1, len(chainBlockBytes), err)
 		}
 
-		switch i {
-		case 0, len(chainBlockBytes) - 1:
-			if c.IsCA {
-				log.Debugf("root cert: %s", c.Subject.String())
-				roots.AddCert(c)
-			} else {
-				log.Debugf("signing cert: %s", c.Subject.String())
-				leaf = c
-			}
-		default:
-			log.Debugf("intermediate cert: %s", c.Subject.String())
-			intermediates.AddCert(c)
-		}
-
 		certs = append(certs, c)
 	}
 
-	if leaf == nil {
-		return nil, fmt.Errorf("no ceritificate found")
-	}
-
-	if len(certs) == 1 {
-		// no chain to verify with
-		log.Warnf("only found one certificate, no way to verify it (you need to provide a full certificate chain)")
-		return certs, nil
-	}
-
-	// verify with the chain
-	opts := x509.VerifyOptions{
-		Roots:         roots,
-		Intermediates: intermediates,
-	}
-
-	// ignore "devid_execute" critical extension
-	temp := leaf.UnhandledCriticalExtensions[:0]
-	for _, ex := range leaf.UnhandledCriticalExtensions {
-		switch ex.String() {
-		case "1.2.840.113635.100.6.1.13":
-			continue
-		default:
-			temp = append(temp, ex)
-		}
-	}
-	leaf.UnhandledCriticalExtensions = temp
-
-	if len(leaf.UnhandledCriticalExtensions) > 0 {
-		log.Warnf("certificate has unhandled critical extensions: %v", leaf.UnhandledCriticalExtensions)
-	}
-
-	if _, err := leaf.Verify(opts); err != nil {
-		log.Errorf("certificate verification failed: %v", err)
-		// TODO: why is this failing for certs pulled from an already signed/notarized binary?
-		// return nil, fmt.Errorf("failed to verify certificate: %w", err)
-	}
 	return certs, nil
 }
 

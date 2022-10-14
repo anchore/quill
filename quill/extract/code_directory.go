@@ -37,7 +37,6 @@ func (d SectionDigest) String() string {
 	return fmt.Sprintf("idx=%-3d @0x%-5x %s:%s", d.Index, d.Offset, d.Algorithm, d.Value)
 }
 
-//nolint:funlen
 func getCodeDirectories(m File) (cdObjs []CodeDirectoryDetails) {
 	for idx, cd := range m.blacktopFile.CodeSignature().CodeDirectories {
 		b, err := m.internalFile.CDBytes(macho.SigningOrder, idx)

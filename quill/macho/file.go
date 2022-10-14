@@ -266,7 +266,6 @@ func (m *File) HashPages(hasher hash.Hash) (hashes [][]byte, err error) {
 	return hashes, err
 }
 
-//nolint:funlen
 func (m *File) CDBytes(order binary.ByteOrder, ith int) (cd []byte, err error) {
 	cmd, _, err := m.CodeSigningCmd()
 	if err != nil {

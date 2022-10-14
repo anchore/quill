@@ -131,7 +131,7 @@ func (cfg Config) String() string {
 
 // readConfig attempts to read the given config path from disk or discover an alternate store location
 //
-//nolint:funlen
+
 func readFromDisk(v *viper.Viper, configPath string) error {
 	var err error
 	// use explicitly the given user config

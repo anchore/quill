@@ -20,7 +20,6 @@ type extractCertificatesConfig struct {
 	options.ExtractCertificates `yaml:"extract-certificates" json:"extract-certificates" mapstructure:"extract-certificates"`
 }
 
-//nolint:funlen
 func ExtractCertificates(app *application.Application) *cobra.Command {
 	opts := &extractCertificatesConfig{}
 

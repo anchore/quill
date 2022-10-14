@@ -35,7 +35,6 @@ func (o *submissionStatusConfig) BindFlags(flags *pflag.FlagSet, v *viper.Viper)
 	return options.BindAllFlags(flags, v, &o.Notary, &o.Status)
 }
 
-//nolint:funlen
 func SubmissionStatus(app *application.Application) *cobra.Command {
 	opts := &submissionStatusConfig{
 		Status: options.Status{

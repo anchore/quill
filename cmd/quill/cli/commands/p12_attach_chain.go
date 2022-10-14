@@ -3,11 +3,13 @@ package commands
 import (
 	"crypto/rand"
 	"crypto/x509"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"os/exec"
 	"strings"
 
+	"github.com/scylladb/go-set/strset"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -40,7 +42,6 @@ func (p *p12AttachChainConfig) BindFlags(set *pflag.FlagSet, viper *viper.Viper)
 	return options.BindAllFlags(set, viper, &p.P12, &p.Keychain)
 }
 
-//nolint:funlen
 func P12AttachChain(app *application.Application) *cobra.Command {
 	opts := &p12AttachChainConfig{
 		Keychain: options.Keychain{
@@ -73,49 +74,18 @@ func P12AttachChain(app *application.Application) *cobra.Command {
 		PreRunE: app.Setup(opts),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return app.Run(cmd.Context(), async(func() error {
-				by, err := pem.LoadBytesFromFileOrEnv(opts.Path)
+				newFilename, err := writeP12WithChain(opts.Path, opts.P12.Password)
 				if err != nil {
-					return fmt.Errorf("unable to read p12 file: %w", err)
+					return fmt.Errorf("unable to write new p12 with chain attached file=%q : %w", opts.Path, err)
 				}
 
-				key, cert, certs, err := pkcs12.DecodeChain(by, opts.P12.Password)
+				description, err := describeP12(newFilename, opts.P12.Password)
 				if err != nil {
-					return fmt.Errorf("unable to decode p12 file: %w", err)
+					return fmt.Errorf("unable to describe p12 file=%q : %w", newFilename, err)
 				}
 
-				if cert == nil {
-					return fmt.Errorf("unable to find signing certificate in p12")
-				}
-
-				if len(certs) > 0 {
-					return fmt.Errorf("p12 file already has the certificate chain embedded (chain length %d + 1 signing certificate)", len(certs))
-				}
-
-				appleRootCACerts, err := getCertificates("Apple Root CA", opts.Keychain.Path)
-				if err != nil {
-					return fmt.Errorf("unable to find Apple Root CA certificate in keychain: %+v", err)
-				}
-
-				appleDeveloperIDCACerts, err := getCertificates("Developer ID Certification Authority", opts.Keychain.Path)
-				if err != nil {
-					return fmt.Errorf("unable to find Developer ID Certification Authority certificate in keychain: %+v", err)
-				}
-
-				certs = append(certs, appleRootCACerts...)
-				certs = append(certs, appleDeveloperIDCACerts...)
-
-				p12Bytes, err := pkcs12.Encode(rand.Reader, key, cert, certs, opts.P12.Password)
-				if err != nil {
-					return fmt.Errorf("unable to encode p12 file: %w", err)
-				}
-
-				newFilename := strings.TrimSuffix(opts.Path, ".p12") + "-with-chain.p12"
-
-				if err := os.WriteFile(newFilename, p12Bytes, 0400); err != nil {
-					return err
-				}
-
-				bus.Notify(fmt.Sprintf("wrote p12 file with certificate chain to %q", newFilename))
+				bus.Report(description)
+				bus.Notify(fmt.Sprintf("Wrote new p12 file with certificate chain to %q", newFilename))
 
 				return nil
 			}))
@@ -126,6 +96,90 @@ func P12AttachChain(app *application.Application) *cobra.Command {
 	commonConfiguration(cmd)
 
 	return cmd
+}
+
+func writeP12WithChain(path, password string) (string, error) {
+	log.WithFields("file", path).Info("attaching certificate chain to p12 file")
+
+	by, err := pem.LoadBytesFromFileOrEnv(path)
+	if err != nil {
+		return "", fmt.Errorf("unable to read p12 file: %w", err)
+	}
+
+	key, cert, certs, err := pkcs12.DecodeChain(by, password)
+	if err != nil {
+		return "", fmt.Errorf("unable to decode p12 file: %w", err)
+	}
+
+	if cert == nil {
+		return "", fmt.Errorf("unable to find signing certificate in p12")
+	}
+
+	log.WithFields("chain-certs", len(certs), "signing-cert", fmt.Sprintf("%q", cert.Subject.CommonName)).Debug("existing p12 contents")
+
+	if len(certs) > 0 {
+		return "", fmt.Errorf("p12 file already has the certificate chain embedded (chain length %d + 1 signing certificate)", len(certs))
+	}
+
+	remainingCerts, err := findRemainingChainCerts(cert, path)
+	if err != nil {
+		return "", fmt.Errorf("unable to find remaining chain certificates: %w", err)
+	}
+	certs = append(certs, remainingCerts...)
+
+	p12Bytes, err := pkcs12.Encode(rand.Reader, key, cert, certs, password)
+	if err != nil {
+		return "", fmt.Errorf("unable to encode p12 file: %w", err)
+	}
+
+	newFilename := strings.TrimSuffix(path, ".p12") + "-with-chain.p12"
+
+	if err := os.WriteFile(newFilename, p12Bytes, 0400); err != nil {
+		return "", err
+	}
+
+	return newFilename, nil
+}
+
+func findRemainingChainCerts(cert *x509.Certificate, keychainPath string) ([]*x509.Certificate, error) {
+	var certs []*x509.Certificate
+
+	visitedKeyIDs := strset.New()
+	targetKeyIDs := strset.New(hex.EncodeToString(cert.AuthorityKeyId))
+	nextCNs := strset.New(cert.Issuer.CommonName)
+
+	for !nextCNs.IsEmpty() {
+		parentCN := nextCNs.Pop()
+
+		log.WithFields("cn", fmt.Sprintf("%q", parentCN)).Debug("querying keychain for certificate")
+
+		parentCerts, err := getCertificates(parentCN, keychainPath)
+		if err != nil {
+			return nil, fmt.Errorf("unable to get certificate chain cert CN=%q from keychain: %w", parentCN, err)
+		}
+
+		log.WithFields("cn", fmt.Sprintf("%q", parentCN), "count", len(parentCerts)).Trace("certificates found in keychain")
+
+		for _, c := range parentCerts {
+			currentKeyID := hex.EncodeToString(c.SubjectKeyId)
+			if !targetKeyIDs.Has(currentKeyID) {
+				continue
+			}
+
+			log.WithFields("cn", fmt.Sprintf("%q", c.Issuer.CommonName), "key-id", currentKeyID).Trace("capturing certificate in chain")
+			certs = append(certs, c)
+			visitedKeyIDs.Add(currentKeyID)
+
+			nextKeyID := hex.EncodeToString(c.AuthorityKeyId)
+			if nextKeyID == "" || visitedKeyIDs.Has(nextKeyID) {
+				continue
+			}
+
+			nextCNs.Add(c.Issuer.CommonName)
+			targetKeyIDs.Add(nextKeyID)
+		}
+	}
+	return certs, nil
 }
 
 func getCertificates(certCNSearch, keychainPath string) ([]*x509.Certificate, error) {
@@ -146,7 +200,7 @@ func getCertificates(certCNSearch, keychainPath string) ([]*x509.Certificate, er
 }
 
 func getCertificateContents(certCNSearch, keychainPath string) (string, error) {
-	contents, err := run("security", "find-certificate", "-c", certCNSearch, "-p", keychainPath)
+	contents, err := run("security", "find-certificate", "-a", "-c", certCNSearch, "-p", keychainPath)
 	if err != nil {
 		return "", err
 	}
@@ -157,7 +211,7 @@ func run(args ...string) (string, error) {
 	baseCmd := args[0]
 	cmdArgs := args[1:]
 
-	log.Trace("running command: %q", strings.Join(args, " "))
+	log.Tracef("running command: %q", strings.Join(args, " "))
 
 	cmd := exec.Command(baseCmd, cmdArgs...)
 	out, err := cmd.Output()

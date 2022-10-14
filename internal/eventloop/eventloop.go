@@ -26,7 +26,7 @@ func Run(ctx context.Context, workerErrs <-chan error, subscription *partybus.Su
 // signal interrupts. Is responsible for handling each event relative to a given UI an to coordinate eventing until
 // an eventual graceful exit.
 //
-//nolint:funlen
+
 func run(ctx context.Context, workerErrs <-chan error, subscription *partybus.Subscription, cleanupFn func(), uxs ...ui.UI) error {
 	if cleanupFn != nil {
 		defer cleanupFn()

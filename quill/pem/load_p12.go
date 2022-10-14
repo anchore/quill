@@ -27,5 +27,7 @@ func LoadP12(path, password string) (crypto.PrivateKey, []*x509.Certificate, err
 		return nil, nil, fmt.Errorf("no signing certificate found in the p12")
 	}
 
-	return key.(crypto.PrivateKey), append([]*x509.Certificate{cert}, certs...), nil
+	allCerts := append([]*x509.Certificate{cert}, certs...)
+
+	return key.(crypto.PrivateKey), allCerts, nil
 }

@@ -22,7 +22,6 @@ type p12DescribeConfig struct {
 	options.P12 `yaml:"p12" json:"p12" mapstructure:"p12"`
 }
 
-//nolint:funlen
 func P12Describe(app *application.Application) *cobra.Command {
 	opts := &p12DescribeConfig{}
 
@@ -44,44 +43,12 @@ func P12Describe(app *application.Application) *cobra.Command {
 		PreRunE: app.Setup(opts),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return app.Run(cmd.Context(), async(func() error {
-				by, err := pem.LoadBytesFromFileOrEnv(opts.Path)
+				description, err := describeP12(opts.Path, opts.Password)
 				if err != nil {
-					return fmt.Errorf("unable to read p12 file: %w", err)
+					return err
 				}
 
-				key, cert, certs, err := pkcs12.DecodeChain(by, opts.P12.Password)
-				if err != nil {
-					return fmt.Errorf("unable to decode p12 file: %w", err)
-				}
-
-				buf := strings.Builder{}
-				if key != nil {
-					buf.WriteString("Private Key:\n")
-
-					buf.WriteString(fmt.Sprintf("  - %+v exists\n", reflect.TypeOf(key).Elem().String()))
-				} else {
-					buf.WriteString("Private Key: (none)\n")
-				}
-
-				summarizeCert := func(c *x509.Certificate) {
-					buf.WriteString(fmt.Sprintf("  - Subject-CN:       %+v\n", c.Subject.CommonName))
-					buf.WriteString(fmt.Sprintf("    Subject-Key-ID:   %x\n", c.SubjectKeyId))
-					buf.WriteString(fmt.Sprintf("    Authority-Key-ID: %x\n", c.AuthorityKeyId))
-				}
-
-				if cert != nil {
-					buf.WriteString("Signing Certificate:\n")
-					summarizeCert(cert)
-				} else {
-					buf.WriteString("Signing Certificate: (none)\n")
-				}
-
-				buf.WriteString(fmt.Sprintf("Certificate Chain: (%d)\n", len(certs)))
-				for _, c := range certs {
-					summarizeCert(c)
-				}
-
-				bus.Report(buf.String())
+				bus.Report(description)
 
 				return nil
 			}))
@@ -92,4 +59,44 @@ func P12Describe(app *application.Application) *cobra.Command {
 	commonConfiguration(cmd)
 
 	return cmd
+}
+
+func describeP12(file, password string) (string, error) {
+	by, err := pem.LoadBytesFromFileOrEnv(file)
+	if err != nil {
+		return "", fmt.Errorf("unable to read p12 file: %w", err)
+	}
+
+	key, cert, certs, err := pkcs12.DecodeChain(by, password)
+	if err != nil {
+		return "", fmt.Errorf("unable to decode p12 file: %w", err)
+	}
+
+	buf := strings.Builder{}
+	if key != nil {
+		buf.WriteString("Private Key:\n")
+
+		buf.WriteString(fmt.Sprintf("  - %+v exists\n", reflect.TypeOf(key).Elem().String()))
+	} else {
+		buf.WriteString("Private Key: (none)\n")
+	}
+
+	summarizeCert := func(c *x509.Certificate) {
+		buf.WriteString(fmt.Sprintf("  - Subject:          CN=%q O=%q OU=%q\n", c.Subject.CommonName, strings.Join(c.Subject.Organization, ","), strings.Join(c.Subject.OrganizationalUnit, ",")))
+		buf.WriteString(fmt.Sprintf("    Subject-Key-ID:   %x\n", c.SubjectKeyId))
+		buf.WriteString(fmt.Sprintf("    Authority-Key-ID: %x\n", c.AuthorityKeyId))
+	}
+
+	if cert != nil {
+		buf.WriteString("Signing Certificate:\n")
+		summarizeCert(cert)
+	} else {
+		buf.WriteString("Signing Certificate: (none)\n")
+	}
+
+	buf.WriteString(fmt.Sprintf("Certificate Chain: (%d)\n", len(certs)))
+	for _, c := range certs {
+		summarizeCert(c)
+	}
+	return buf.String(), nil
 }
