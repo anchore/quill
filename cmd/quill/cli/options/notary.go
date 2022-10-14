@@ -23,31 +23,31 @@ func (o *Notary) Redact() {
 func (o *Notary) AddFlags(flags *pflag.FlagSet) {
 	flags.StringVarP(
 		&o.Issuer,
-		"issuer", "i", o.Issuer,
+		"notary-issuer", "", o.Issuer,
 		"App Store Connect API Issuer ID. The issuer ID is a UUID format string.",
 	)
 
 	flags.StringVarP(
 		&o.PrivateKeyID,
-		"key-id", "", o.PrivateKeyID,
+		"notary-key-id", "", o.PrivateKeyID,
 		"App Store Connect API Key ID. For most teams this will be a 10 character alphanumeric string (e.g. 23425865-85ea-2b62-f043-1082a2081d24).",
 	)
 
 	flags.StringVarP(
 		&o.PrivateKey,
-		"key", "k", o.PrivateKey,
+		"notary-key", "", o.PrivateKey,
 		"App Store Connect API key. File system path to the private key.",
 	)
 }
 
 func (o *Notary) BindFlags(flags *pflag.FlagSet, v *viper.Viper) error {
-	if err := Bind(v, "notary.issuer", flags.Lookup("issuer")); err != nil {
+	if err := Bind(v, "notary.issuer", flags.Lookup("notary-issuer")); err != nil {
 		return err
 	}
-	if err := Bind(v, "notary.key-id", flags.Lookup("key-id")); err != nil {
+	if err := Bind(v, "notary.key-id", flags.Lookup("notary-key-id")); err != nil {
 		return err
 	}
-	if err := Bind(v, "notary.key", flags.Lookup("key")); err != nil {
+	if err := Bind(v, "notary.key", flags.Lookup("notary-key")); err != nil {
 		return err
 	}
 

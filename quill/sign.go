@@ -110,7 +110,7 @@ func Sign(cfg *SigningConfig) error {
 	}
 
 	// second pass: now that all of the sizing is right, let's do it again with the final contents (replacing the hashes and signature)
-	log.Debugf("signing")
+	log.WithFields("path", cfg.Path).Debug("signing binary")
 	_, sbBytes, err = sign.GenerateSigningSuperBlob(cfg.Identity, m, cfg.SigningMaterial, superBlobSize)
 	if err != nil {
 		return fmt.Errorf("failed to add signing data on pass=2: %w", err)

@@ -35,9 +35,7 @@ func (o *notarizeConfig) BindFlags(flags *pflag.FlagSet, v *viper.Viper) error {
 
 func Notarize(app *application.Application) *cobra.Command {
 	opts := &notarizeConfig{
-		Status: options.Status{
-			Wait: true,
-		},
+		Status: options.DefaultStatus(),
 	}
 
 	cmd := &cobra.Command{
@@ -60,21 +58,7 @@ func Notarize(app *application.Application) *cobra.Command {
 			return app.Run(cmd.Context(), async(func() error {
 				// TODO: verify path is a signed darwin binary
 				// ... however, we may want to allow notarization of other kinds of assets (zip with darwin binary, etc)
-
-				return quill.Notarize(
-					opts.Path,
-					quill.NewNotarizeConfig(
-						opts.Notary.Issuer,
-						opts.Notary.PrivateKeyID,
-						opts.Notary.PrivateKey,
-					).WithStatusConfig(
-						notary.StatusConfig{
-							Timeout: time.Duration(int64(opts.TimeoutSeconds) * int64(time.Second)),
-							Poll:    time.Duration(int64(opts.PollSeconds) * int64(time.Second)),
-							Wait:    opts.Wait,
-						},
-					),
-				)
+				return notarize(opts.Path, opts.Notary, opts.Status)
 			}))
 		},
 	}
@@ -83,4 +67,21 @@ func Notarize(app *application.Application) *cobra.Command {
 	commonConfiguration(cmd)
 
 	return cmd
+}
+
+func notarize(binPath string, notaryCfg options.Notary, statusCfg options.Status) error {
+	return quill.Notarize(
+		binPath,
+		quill.NewNotarizeConfig(
+			notaryCfg.Issuer,
+			notaryCfg.PrivateKeyID,
+			notaryCfg.PrivateKey,
+		).WithStatusConfig(
+			notary.StatusConfig{
+				Timeout: time.Duration(int64(statusCfg.TimeoutSeconds) * int64(time.Second)),
+				Poll:    time.Duration(int64(statusCfg.PollSeconds) * int64(time.Second)),
+				Wait:    statusCfg.Wait,
+			},
+		),
+	)
 }

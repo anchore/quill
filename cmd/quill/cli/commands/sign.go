@@ -21,9 +21,7 @@ type signConfig struct {
 
 func Sign(app *application.Application) *cobra.Command {
 	opts := &signConfig{
-		Signing: options.Signing{
-			TimestampServer: "http://timestamp.apple.com/ts01",
-		},
+		Signing: options.DefaultSigning(),
 	}
 
 	cmd := &cobra.Command{
@@ -44,29 +42,7 @@ func Sign(app *application.Application) *cobra.Command {
 		PreRunE: app.Setup(opts),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return app.Run(cmd.Context(), async(func() error {
-				err := validatePathIsDarwinBinary(opts.Path)
-				if err != nil {
-					return err
-				}
-
-				var cfg *quill.SigningConfig
-
-				switch {
-				case opts.Certificates != "" && opts.PrivateKey != "":
-					cfg, err = quill.NewSigningConfigFromPEMs(opts.Path, opts.Certificates, opts.PrivateKey, opts.Password)
-				case opts.P12 != "":
-					cfg, err = quill.NewSigningConfigFromP12(opts.Path, opts.P12, opts.Password)
-				default:
-					return fmt.Errorf("must provide either a p12 or certificate chain and private key")
-				}
-				if err != nil {
-					return err
-				}
-
-				cfg.WithIdentity(opts.Identity)
-				cfg.WithTimestampServer(opts.TimestampServer)
-
-				return quill.Sign(cfg)
+				return sign(opts.Path, opts.Signing)
 			}))
 		},
 	}
@@ -75,6 +51,27 @@ func Sign(app *application.Application) *cobra.Command {
 	commonConfiguration(cmd)
 
 	return cmd
+}
+
+func sign(binPath string, opts options.Signing) error {
+	err := validatePathIsDarwinBinary(binPath)
+	if err != nil {
+		return err
+	}
+
+	var cfg *quill.SigningConfig
+
+	if opts.P12 != "" {
+		cfg, err = quill.NewSigningConfigFromP12(binPath, opts.P12, opts.Password)
+		if err != nil {
+			return fmt.Errorf("unable to read p12: %w", err)
+		}
+	}
+
+	cfg.WithIdentity(opts.Identity)
+	cfg.WithTimestampServer(opts.TimestampServer)
+
+	return quill.Sign(cfg)
 }
 
 func validatePathIsDarwinBinary(path string) error {

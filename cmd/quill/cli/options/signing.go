@@ -11,9 +11,7 @@ var _ Interface = &Signing{}
 
 type Signing struct {
 	// bound options
-	Identity        string `yaml:"identity" json:"identity" mapstructure:"identity"`
-	PrivateKey      string `yaml:"key" json:"key" mapstructure:"key"`
-	Certificates    string `yaml:"certs" json:"certs" mapstructure:"certs"`
+	Identity        string `yaml:"override-identity" json:"override-identity" mapstructure:"override-identity"`
 	P12             string `yaml:"p12" json:"p12" mapstructure:"p12"`
 	TimestampServer string `yaml:"timestamp-server" json:"timestamp-server" mapstructure:"timestamp-server"`
 
@@ -21,29 +19,22 @@ type Signing struct {
 	Password string `yaml:"password" json:"password" mapstructure:"password"`
 }
 
+func DefaultSigning() Signing {
+	return Signing{
+		TimestampServer: "http://timestamp.apple.com/ts01",
+	}
+}
+
 func (o *Signing) Redact() {
 	log.Redact(o.Password)
 	redactNonFileOrEnvHint(o.P12)
-	redactNonFileOrEnvHint(o.PrivateKey)
 }
 
 func (o *Signing) AddFlags(flags *pflag.FlagSet) {
 	flags.StringVarP(
 		&o.Identity,
-		"identity", "i", o.Identity,
-		"identifier to encode into the code directory of the code signing super block (default is derived from other input)",
-	)
-
-	flags.StringVarP(
-		&o.PrivateKey,
-		"key", "", o.PrivateKey,
-		"path to the private key PEM file",
-	)
-
-	flags.StringVarP(
-		&o.Certificates,
-		"certs", "", o.Certificates,
-		"path to a PEM file containing the (leaf) signing certificate and remaining certificate chain",
+		"identity", "", o.Identity,
+		"identifier to encode into the code directory of the code signing super block (default is derived from the name of the binary being solved)",
 	)
 
 	flags.StringVarP(
@@ -60,13 +51,7 @@ func (o *Signing) AddFlags(flags *pflag.FlagSet) {
 }
 
 func (o *Signing) BindFlags(flags *pflag.FlagSet, v *viper.Viper) error {
-	if err := Bind(v, "signing.identity", flags.Lookup("identity")); err != nil {
-		return err
-	}
-	if err := Bind(v, "signing.key", flags.Lookup("key")); err != nil {
-		return err
-	}
-	if err := Bind(v, "signing.certs", flags.Lookup("certs")); err != nil {
+	if err := Bind(v, "signing.override-identity", flags.Lookup("identity")); err != nil {
 		return err
 	}
 	if err := Bind(v, "signing.p12", flags.Lookup("p12")); err != nil {

@@ -18,6 +18,12 @@ type Status struct {
 	TimeoutSeconds int `yaml:"timeout-seconds" json:"timeout-seconds" mapstructure:"timeout-seconds"`
 }
 
+func DefaultStatus() Status {
+	return Status{
+		Wait: true,
+	}
+}
+
 func (o *Status) Redact() {
 }
 
