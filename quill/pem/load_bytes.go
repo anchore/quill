@@ -35,10 +35,15 @@ func LoadBytesFromFileOrEnv(path string) ([]byte, error) {
 
 	// comes from the config...
 
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+	if _, err := os.Stat(path); err != nil {
 		log.Trace("using bytes from config")
 
-		return []byte(path), nil
+		decodedKey, err := base64.StdEncoding.DecodeString(path)
+		if err != nil {
+			return nil, fmt.Errorf("unable to base64 decode key: %w", err)
+		}
+
+		return decodedKey, nil
 	}
 
 	// comes from a file...

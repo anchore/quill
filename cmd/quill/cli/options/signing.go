@@ -41,7 +41,7 @@ func (o *Signing) AddFlags(flags *pflag.FlagSet) {
 	flags.StringVarP(
 		&o.P12,
 		"p12", "", o.P12,
-		"path to a PKCS12 file containing the private key, (leaf) signing certificate, remaining certificate chain",
+		"path to a PKCS12 file containing the private key, (leaf) signing certificate, remaining certificate chain. This can also be the base64-encoded contents of the p12 file, or 'env:ENV_VAR_NAME' to read the p12 from a different environment variable",
 	)
 
 	flags.StringVarP(

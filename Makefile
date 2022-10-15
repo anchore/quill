@@ -5,7 +5,7 @@ COVER_TOTAL = $(RESULTS_DIR)/unit-coverage-summary.txt
 LINTCMD = $(TEMP_DIR)/golangci-lint run --tests=false --timeout=2m --config .golangci.yaml
 GOIMPORTS_CMD = $(TEMP_DIR)/gosimports -local github.com/anchore
 RELEASE_CMD = $(TEMP_DIR)/goreleaser release --rm-dist
-SNAPSHOT_CMD = $(RELEASE_CMD) --skip-publish --snapshot
+SNAPSHOT_CMD = $(RELEASE_CMD) --skip-publish --snapshot --skip-sign
 VERSION=$(shell git describe --dirty --always --tags)
 
 # formatting
@@ -23,6 +23,7 @@ COVERAGE_THRESHOLD := 30
 BOOTSTRAP_CACHE="c7afb99ad"
 
 # ci dependency versions
+QUILL_VERSION = latest
 GOLANG_CI_VERSION = v1.49.0
 GOBOUNCER_VERSION = v0.4.0
 GORELEASER_VERSION = v1.11.5
@@ -86,6 +87,8 @@ $(TEMP_DIR):
 
 .PHONY: bootstrap-tools
 bootstrap-tools: $(TEMP_DIR)
+	#GOBIN="$(realpath $(TEMP_DIR))" go install github.com/anchore/quill/cmd/quill@$(QUILL_VERSION)
+	GOBIN="$(realpath $(TEMP_DIR))" go install ./cmd/quill
 	curl -sSfL https://raw.githubusercontent.com/anchore/chronicle/main/install.sh | sh -s -- -b $(TEMP_DIR)/ $(CHRONICLE_VERSION)
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(TEMP_DIR)/ $(GOLANG_CI_VERSION)
 	curl -sSfL https://raw.githubusercontent.com/wagoodman/go-bouncer/master/bouncer.sh | sh -s -- -b $(TEMP_DIR)/ $(GOBOUNCER_VERSION)
@@ -154,14 +157,9 @@ $(SNAPSHOT_DIR): ## Build snapshot release binaries and packages
 
 	# build release snapshots
 	bash -c "\
-		SKIP_SIGNING=true \
 		VERSION=$(VERSION:v%=%) \
-		$(TEMP_DIR)/goreleaser release \
-			--skip-sign \
-			--skip-publish \
-			--rm-dist \
-			--snapshot \
-			--config $(TEMP_DIR)/goreleaser.yaml"
+		$(SNAPSHOT_CMD) --config $(TEMP_DIR)/goreleaser.yaml \
+	  "
 
 .PHONY: changelog
 changelog: clean-changelog CHANGELOG.md

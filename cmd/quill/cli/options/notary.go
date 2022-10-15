@@ -36,7 +36,7 @@ func (o *Notary) AddFlags(flags *pflag.FlagSet) {
 	flags.StringVarP(
 		&o.PrivateKey,
 		"notary-key", "", o.PrivateKey,
-		"App Store Connect API key. File system path to the private key.",
+		"App Store Connect API key. File system path to the private key. This can also be the base64-encoded contents of the key file, or 'env:ENV_VAR_NAME' to read the key from a different environment variable",
 	)
 }
 
