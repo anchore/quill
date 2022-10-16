@@ -17,6 +17,7 @@ import (
 	"github.com/wagoodman/go-partybus"
 
 	"github.com/anchore/quill/quill/event"
+	"github.com/anchore/quill/quill/event/monitor"
 )
 
 var publisher partybus.Publisher
@@ -56,4 +57,13 @@ func Notify(message string) {
 		Type:  event.Notification,
 		Value: message,
 	})
+}
+
+func PromptForInput(message string, sensitive bool, validators ...func(string) error) *monitor.Prompter {
+	p := monitor.NewPrompter(message, sensitive, validators...)
+	Publish(partybus.Event{
+		Type:  event.InputPrompt,
+		Value: monitor.PromptWriter(p),
+	})
+	return p
 }

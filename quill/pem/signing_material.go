@@ -52,25 +52,35 @@ func NewSigningMaterialFromPEMs(certFile, privateKeyPath, password string) (*Sig
 }
 
 func NewSigningMaterialFromP12(p12Path, password string) (*SigningMaterial, error) {
-	privateKey, certs, err := LoadP12(p12Path, password)
+	privateKey, cert, certs, err := LoadP12(p12Path, password)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to decode p12 file: %w", err)
 	}
+
+	if privateKey == nil {
+		return nil, fmt.Errorf("no private key found in the p12")
+	}
+
+	if cert == nil {
+		return nil, fmt.Errorf("no signing certificate found in the p12")
+	}
+
+	allCerts := append([]*x509.Certificate{cert}, certs...)
 
 	signer, ok := privateKey.(crypto.Signer)
 	if !ok {
 		return nil, fmt.Errorf("unable to derive signer from private key")
 	}
 
-	if len(certs) > 0 {
-		if err := verifyCertificateChain(certs); err != nil {
+	if len(allCerts) > 0 {
+		if err := verifyCertificateChain(allCerts); err != nil {
 			return nil, err
 		}
 	}
 
 	return &SigningMaterial{
 		Signer: signer,
-		Certs:  sortCertificates(certs),
+		Certs:  sortCertificates(allCerts),
 	}, nil
 }
 
