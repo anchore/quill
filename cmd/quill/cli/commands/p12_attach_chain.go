@@ -74,7 +74,7 @@ func P12AttachChain(app *application.Application) *cobra.Command {
 		PreRunE: app.Setup(opts),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return app.Run(cmd.Context(), async(func() error {
-				newFilename, err := writeP12WithChain(opts.Path, opts.P12.Password)
+				newFilename, err := writeP12WithChain(opts.Path, opts.P12.Password, opts.Keychain.Path)
 				if err != nil {
 					return fmt.Errorf("unable to write new p12 with chain attached file=%q : %w", opts.Path, err)
 				}
@@ -98,17 +98,12 @@ func P12AttachChain(app *application.Application) *cobra.Command {
 	return cmd
 }
 
-func writeP12WithChain(path, password string) (string, error) {
-	log.WithFields("file", path).Info("attaching certificate chain to p12 file")
+func writeP12WithChain(p12Path, password, keychainPath string) (string, error) {
+	log.WithFields("file", p12Path).Info("attaching certificate chain to p12 file")
 
-	by, err := pem.LoadBytesFromFileOrEnv(path)
+	key, cert, certs, err := pem.LoadP12(p12Path, password)
 	if err != nil {
-		return "", fmt.Errorf("unable to read p12 file: %w", err)
-	}
-
-	key, cert, certs, err := pkcs12.DecodeChain(by, password)
-	if err != nil {
-		return "", fmt.Errorf("unable to decode p12 file: %w", err)
+		return "", err
 	}
 
 	if cert == nil {
@@ -121,7 +116,7 @@ func writeP12WithChain(path, password string) (string, error) {
 		return "", fmt.Errorf("p12 file already has the certificate chain embedded (chain length %d + 1 signing certificate)", len(certs))
 	}
 
-	remainingCerts, err := findRemainingChainCerts(cert, path)
+	remainingCerts, err := findRemainingChainCerts(cert, keychainPath)
 	if err != nil {
 		return "", fmt.Errorf("unable to find remaining chain certificates: %w", err)
 	}
@@ -132,7 +127,13 @@ func writeP12WithChain(path, password string) (string, error) {
 		return "", fmt.Errorf("unable to encode p12 file: %w", err)
 	}
 
-	newFilename := strings.TrimSuffix(path, ".p12") + "-with-chain.p12"
+	// verify the cert chain before writing...
+	if err := pem.VerifyCodesigningCertificateChain(append(certs, cert)); err != nil {
+		return "", err
+	}
+
+	// write the new file...
+	newFilename := strings.TrimSuffix(p12Path, ".p12") + "-with-chain.p12"
 
 	if err := os.WriteFile(newFilename, p12Bytes, 0400); err != nil {
 		return "", err

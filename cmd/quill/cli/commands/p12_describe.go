@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"software.sslmate.com/src/go-pkcs12"
 
 	"github.com/anchore/quill/cmd/quill/cli/application"
 	"github.com/anchore/quill/cmd/quill/cli/options"
@@ -62,14 +61,9 @@ func P12Describe(app *application.Application) *cobra.Command {
 }
 
 func describeP12(file, password string) (string, error) {
-	by, err := pem.LoadBytesFromFileOrEnv(file)
+	key, cert, certs, err := pem.LoadP12(file, password)
 	if err != nil {
-		return "", fmt.Errorf("unable to read p12 file: %w", err)
-	}
-
-	key, cert, certs, err := pkcs12.DecodeChain(by, password)
-	if err != nil {
-		return "", fmt.Errorf("unable to decode p12 file: %w", err)
+		return "", err
 	}
 
 	buf := strings.Builder{}

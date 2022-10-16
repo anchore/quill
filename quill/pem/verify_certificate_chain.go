@@ -7,8 +7,8 @@ import (
 	"github.com/anchore/quill/internal/log"
 )
 
-func verifyCertificateChain(certs []*x509.Certificate) error {
-	log.Trace("verifying certificate chain")
+func VerifyCodesigningCertificateChain(certs []*x509.Certificate) error {
+	log.WithFields("chain-size", len(certs)).Trace("verifying certificate chain")
 
 	var leaf *x509.Certificate
 	roots := x509.NewCertPool()

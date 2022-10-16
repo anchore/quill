@@ -16,7 +16,7 @@ import (
 func LoadP12(path, password string) (crypto.PrivateKey, *x509.Certificate, []*x509.Certificate, error) {
 	by, err := LoadBytesFromFileOrEnv(path)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("unable to read p12 file: %w", err)
+		return nil, nil, nil, fmt.Errorf("unable to read p12 bytes: %w", err)
 	}
 
 	key, cert, certs, err := pkcs12.DecodeChain(by, password)
