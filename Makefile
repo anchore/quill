@@ -69,7 +69,7 @@ endef
 ## Tasks
 
 .PHONY: all
-all: clean bootstrap static-analysis test ## Run all linux-based checks (linting, license check, unit, integration, and linux acceptance tests)
+all: clean static-analysis test ## Run all linux-based checks (linting, license check, unit, integration, and linux acceptance tests)
 	@printf '$(SUCCESS)All checks pass!$(RESET)\n'
 
 .PHONY: test
