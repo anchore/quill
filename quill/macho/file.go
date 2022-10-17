@@ -12,6 +12,7 @@ import (
 
 	"github.com/go-restruct/restruct"
 
+	macholibre "github.com/anchore/go-macholibre"
 	"github.com/anchore/quill/internal/log"
 )
 
@@ -47,6 +48,21 @@ func NewReadOnlyFile(path string) (*File, error) {
 	}
 
 	return m, m.refresh(false)
+}
+
+func IsMachoFile(path string) (bool, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return false, err
+	}
+	defer f.Close()
+
+	if macholibre.IsUniversalMachoBinary(f) {
+		return true, nil
+	}
+
+	mf, err := macho.NewFile(f)
+	return mf != nil && err == nil, err
 }
 
 func (m *File) refresh(withWrite bool) error {

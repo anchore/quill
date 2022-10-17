@@ -1,0 +1,28 @@
+
+[TestModel_View/in_progress_without_progress_bar - 1]
+ ⠋ Doing work                                [working]                                     at home
+---
+
+[TestModel_View/in_progress_with_progress_bar - 1]
+ ⠋ Doing work                                --------------------  [working]               at home
+---
+
+[TestModel_View/successfully_finished_hides_progress_bar - 1]
+ ✔ Did work                                  [done!]                                       at home
+---
+
+[TestModel_View/successfully_finished_keeps_progress_bar_shown - 1]
+ ✔ Did work                                  --------------------  [done!]                 at home
+---
+
+[TestModel_View/no_context - 1]
+ ⠋ Doing work                                [working]  
+---
+
+[TestModel_View/multiple_hints - 1]
+ ⠋ Doing work                                [working] [info++] [info!++]                  at home
+---
+
+[TestModel_View/error - 1]
+ ✘ Failed at work :(                         [working]                                     at home
+---

@@ -7,7 +7,9 @@ import (
 	"path"
 
 	macholibre "github.com/anchore/go-macholibre"
+	"github.com/anchore/quill/internal/bus"
 	"github.com/anchore/quill/internal/log"
+	"github.com/anchore/quill/quill/event/monitor"
 	"github.com/anchore/quill/quill/macho"
 	"github.com/anchore/quill/quill/pem"
 	"github.com/anchore/quill/quill/sign"
@@ -72,11 +74,30 @@ func Sign(cfg SigningConfig) error {
 	if macholibre.IsUniversalMachoBinary(f) {
 		return signMultiarchBinary(cfg)
 	}
-	return signSingleBinary(cfg)
+
+	mon := bus.PublishTask(
+		monitor.Title{
+			Default:      "Sign binary",
+			WhileRunning: "Signing binary",
+			OnSuccess:    "Signed binary",
+		},
+		cfg.Path,
+		-1,
+	)
+
+	err = signSingleBinary(cfg)
+	if err != nil {
+		mon.Err = err
+	} else {
+		mon.SetCompleted()
+	}
+	return err
 }
 
+//nolint:funlen
 func signMultiarchBinary(cfg SigningConfig) error {
 	log.WithFields("binary", cfg.Path).Info("signing multi-arch binary")
+
 	f, err := os.Open(cfg.Path)
 	if err != nil {
 		return err
@@ -89,10 +110,25 @@ func signMultiarchBinary(cfg SigningConfig) error {
 	}
 	defer os.RemoveAll(dir)
 
+	extractMon := bus.PublishTask(
+		monitor.Title{
+			Default:      "Extract nested binaries",
+			WhileRunning: "Extracting nested binaries",
+			OnSuccess:    "Extracted nested binaries",
+		},
+		cfg.Path,
+		-1,
+	)
+
 	extractedFiles, err := macholibre.Extract(f, dir)
 	if err != nil {
+		extractMon.Err = err
 		return fmt.Errorf("unable to extract multi-arch binary: %w", err)
 	}
+
+	extractMon.Stage.Current = fmt.Sprintf("%d nested binaries", len(extractedFiles))
+
+	extractMon.SetCompleted()
 
 	log.WithFields("binary", cfg.Path, "arches", len(extractedFiles)).Trace("discovered nested binaries within multi-arch binary")
 
@@ -103,11 +139,38 @@ func signMultiarchBinary(cfg SigningConfig) error {
 		cfgs = append(cfgs, c)
 	}
 
+	signMon := bus.PublishTask(
+		monitor.Title{
+			Default:      "Sign binaries",
+			WhileRunning: "Signing binaries",
+			OnSuccess:    "Signed binaries",
+		},
+		cfg.Path,
+		len(cfgs),
+	)
+
+	packMon := bus.PublishTask(
+		monitor.Title{
+			Default:      "Pack binary",
+			WhileRunning: "Packing binary",
+			OnSuccess:    "Packed binary",
+		},
+		cfg.Path,
+		-1,
+	)
+
+	defer signMon.SetCompleted()
+
 	for _, c := range cfgs {
+		signMon.Stage.Current = path.Base(c.Path)
 		if err := signSingleBinary(c); err != nil {
+			signMon.Err = err
 			return err
 		}
+		signMon.N++
 	}
+
+	signMon.Stage.Current = ""
 
 	var paths []string
 	for _, c := range cfgs {
@@ -115,7 +178,15 @@ func signMultiarchBinary(cfg SigningConfig) error {
 	}
 
 	log.WithFields("binary", cfg.Path, "arches", len(cfgs)).Debug("packaging signed binaries into single multi-arch binary")
-	return macholibre.Package(cfg.Path, paths...)
+
+	defer packMon.SetCompleted()
+
+	if err := macholibre.Package(cfg.Path, paths...); err != nil {
+		packMon.Err = err
+		return err
+	}
+
+	return nil
 }
 
 func signSingleBinary(cfg SigningConfig) error {

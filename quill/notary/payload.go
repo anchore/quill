@@ -72,11 +72,18 @@ func prepareBinary(path string) (*Payload, error) {
 	log.Trace("zipping up binary payload")
 
 	// verify that we're opening a macho file (not a zip of the binary or anything else)
-	f, err := macho.NewReadOnlyFile(path)
+	isMacho, err := macho.IsMachoFile(path)
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	if !isMacho {
+		return nil, fmt.Errorf("binary file is not a darwin macho executable file")
+	}
+
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
 
 	zippedBinary, err := createZip(filepath.Base(path), f)
 	if err != nil {

@@ -19,4 +19,5 @@ const (
 	Report       partybus.EventType = prefix + "-report"
 	Notification partybus.EventType = prefix + "-notification"
 	InputPrompt  partybus.EventType = prefix + "-input-prompt"
+	Task         partybus.EventType = prefix + "-task"
 )

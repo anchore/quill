@@ -72,7 +72,7 @@ func SignAndNotarize(app *application.Application) *cobra.Command {
 					return nil
 				}
 
-				err = notarize(opts.Path, opts.Notary, opts.Status)
+				_, err = notarize(opts.Path, opts.Notary, opts.Status)
 				if err != nil {
 					return fmt.Errorf("notarization failed: %w", err)
 				}

@@ -17,7 +17,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	cmd.SetContext(ctx)
 
-	// note: it is important to always do signal handling from the main package. In this way if anchorectl is used
+	// note: it is important to always do signal handling from the main package. In this way if quill is used
 	// as a lib a refactor would not need to be done (since anything from the main package cannot be imported this
 	// nicely enforces this constraint)
 	signals := make(chan os.Signal, 10) // Note: A buffered channel is recommended for this; see https://golang.org/pkg/os/signal/#Notify

@@ -15,6 +15,7 @@ package bus
 
 import (
 	"github.com/wagoodman/go-partybus"
+	"github.com/wagoodman/go-progress"
 
 	"github.com/anchore/quill/quill/event"
 	"github.com/anchore/quill/quill/event/monitor"
@@ -66,4 +67,39 @@ func PromptForInput(message string, sensitive bool, validators ...func(string) e
 		Value: monitor.PromptWriter(p),
 	})
 	return p
+}
+
+func PublishTask(titles monitor.Title, context string, total int) *monitor.ManualStagedProgress {
+	prog := monitor.ManualStagedProgress{
+		Manual: progress.Manual{
+			Total: int64(total),
+		},
+	}
+
+	Publish(partybus.Event{
+		Type: event.Task,
+		Source: monitor.Task{
+			Title:   titles,
+			Context: context,
+		},
+		Value: progress.StagedProgressable(&struct {
+			progress.Stager
+			progress.Progressable
+		}{
+			Stager:       &prog.Stage,
+			Progressable: &prog.Manual,
+		}),
+	})
+	return &prog
+}
+
+func PublishTaskWithProgress(titles monitor.Title, context string, prog progress.StagedProgressable) {
+	Publish(partybus.Event{
+		Type: event.Task,
+		Source: monitor.Task{
+			Title:   titles,
+			Context: context,
+		},
+		Value: prog,
+	})
 }

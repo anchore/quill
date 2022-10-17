@@ -3,9 +3,12 @@ package quill
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
+	"github.com/anchore/quill/internal/bus"
 	"github.com/anchore/quill/internal/log"
+	"github.com/anchore/quill/quill/event/monitor"
 	"github.com/anchore/quill/quill/notary"
 )
 
@@ -76,33 +79,55 @@ Apple's notary service requires you to adopt the following protections:
 
 */
 
-func Notarize(path string, cfg *NotarizeConfig) error {
+func Notarize(path string, cfg NotarizeConfig) (notary.SubmissionStatus, error) {
 	log.WithFields("binary", path).Info("notarizing binary")
+
+	mon := bus.PublishTask(
+		monitor.Title{
+			Default:      "Notarize binary",
+			WhileRunning: "Notarizing binary",
+			OnSuccess:    "Notarized binary",
+		},
+		path,
+		-1,
+	)
+
+	defer mon.SetCompleted()
+
+	mon.Stage.Current = "initializing client"
 
 	token, err := notary.NewSignedToken(cfg.TokenConfig)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	a := notary.NewAPIClient(token, cfg.HTTPTimeout)
 
+	mon.Stage.Current = "processing payload"
+
 	bin, err := notary.NewPayload(path)
 	if err != nil {
-		return err
+		return "", err
 	}
+
+	mon.Stage.Current = "submitting"
 
 	sub := notary.NewSubmission(a, bin)
 
 	if err := sub.Start(context.Background()); err != nil {
-		return fmt.Errorf("unable to start Submission: %+v", err)
+		return "", fmt.Errorf("unable to start Submission: %+v", err)
 	}
 
 	if !cfg.StatusConfig.Wait {
 		log.WithFields("id", sub.ID()).Infof("Submission started but configured to not wait for the results")
-		return nil
+		return "", nil
 	}
 
-	status, err := notary.PollStatus(context.Background(), sub, cfg.StatusConfig)
-	fmt.Println(status)
-	return err
+	statusCfg := cfg.StatusConfig.WithProgress(&mon.Stage)
+
+	status, err := notary.PollStatus(context.Background(), sub, *statusCfg)
+
+	mon.Stage.Current = strings.ToLower(string(status))
+
+	return status, err
 }

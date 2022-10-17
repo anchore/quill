@@ -18,7 +18,7 @@ type Logging struct {
 }
 
 func (cfg Logging) loadDefaultValues(v *viper.Viper) {
-	v.SetDefault("log.level", string(logger.InfoLevel)) // TODO: set to warn in the future
+	v.SetDefault("log.level", string(logger.WarnLevel))
 	v.SetDefault("log.file", cfg.FileLocation)
 }
 

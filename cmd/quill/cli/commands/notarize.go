@@ -68,7 +68,8 @@ func Notarize(app *application.Application) *cobra.Command {
 					log.Warn("[DRY RUN] skipping notarization...")
 					return nil
 				}
-				return notarize(opts.Path, opts.Notary, opts.Status)
+				_, err := notarize(opts.Path, opts.Notary, opts.Status)
+				return err
 			}))
 		},
 	}
@@ -79,19 +80,17 @@ func Notarize(app *application.Application) *cobra.Command {
 	return cmd
 }
 
-func notarize(binPath string, notaryCfg options.Notary, statusCfg options.Status) error {
-	return quill.Notarize(
-		binPath,
-		quill.NewNotarizeConfig(
-			notaryCfg.Issuer,
-			notaryCfg.PrivateKeyID,
-			notaryCfg.PrivateKey,
-		).WithStatusConfig(
-			notary.StatusConfig{
-				Timeout: time.Duration(int64(statusCfg.TimeoutSeconds) * int64(time.Second)),
-				Poll:    time.Duration(int64(statusCfg.PollSeconds) * int64(time.Second)),
-				Wait:    statusCfg.Wait,
-			},
-		),
+func notarize(binPath string, notaryCfg options.Notary, statusCfg options.Status) (notary.SubmissionStatus, error) {
+	cfg := quill.NewNotarizeConfig(
+		notaryCfg.Issuer,
+		notaryCfg.PrivateKeyID,
+		notaryCfg.PrivateKey,
+	).WithStatusConfig(
+		notary.StatusConfig{
+			Timeout: time.Duration(int64(statusCfg.TimeoutSeconds) * int64(time.Second)),
+			Poll:    time.Duration(int64(statusCfg.PollSeconds) * int64(time.Second)),
+			Wait:    statusCfg.Wait,
+		},
 	)
+	return quill.Notarize(binPath, *cfg)
 }
