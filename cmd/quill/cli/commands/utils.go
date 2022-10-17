@@ -3,6 +3,8 @@ package commands
 import (
 	"github.com/spf13/cobra"
 
+	"github.com/anchore/quill/cmd/quill/cli/application"
+	"github.com/anchore/quill/cmd/quill/cli/options"
 	"github.com/anchore/quill/internal/bus"
 )
 
@@ -30,7 +32,19 @@ func chainArgs(processors ...func(cmd *cobra.Command, args []string) error) func
 	}
 }
 
-func commonConfiguration(cmd *cobra.Command) {
+func commonConfiguration(app *application.Application, cmd *cobra.Command, opts options.Interface) {
+	if opts != nil {
+		opts.AddFlags(cmd.Flags())
+
+		if app != nil {
+			// we want to be able to attach config binding information to the help output
+			cmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
+				_ = app.Setup(opts)(cmd, args)
+				cmd.Parent().HelpFunc()(cmd, args)
+			})
+		}
+	}
+
 	cmd.SilenceUsage = true
 	cmd.SilenceErrors = true
 	cmd.SetHelpTemplate(`{{if (or .Long .Short)}}{{.Long}}{{if not .Long}}{{.Short}}{{end}}

@@ -25,6 +25,10 @@ func Bind(v *viper.Viper, configKey string, flag *pflag.Flag) error {
 		return fmt.Errorf("unable to bind config-key=%q to CLI flag=%q: %w", configKey, flag.Name, err)
 	}
 
+	envVar := strings.ToUpper(strings.NewReplacer(".", "_", "-", "_").Replace(internal.ApplicationName + "_" + configKey))
+
+	flag.Usage += fmt.Sprintf(" (env var: %q)", envVar)
+
 	return nil
 }
 

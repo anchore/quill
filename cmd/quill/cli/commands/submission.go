@@ -13,6 +13,6 @@ func Submission(_ *application.Application) *cobra.Command {
 		Args:  cobra.NoArgs,
 	}
 
-	commonConfiguration(cmd)
+	commonConfiguration(nil, cmd, nil)
 	return cmd
 }

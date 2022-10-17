@@ -16,7 +16,7 @@ var _ options.Interface = &signConfig{}
 
 type signAndNotarizeConfig struct {
 	Path            string `yaml:"path" json:"path" mapstructure:"path"`
-	options.Signing `yaml:"signing" json:"signing" mapstructure:"signing"`
+	options.Signing `yaml:"sign" json:"sign" mapstructure:"sign"`
 	options.Notary  `yaml:"notary" json:"notary" mapstructure:"notary"`
 	options.Status  `yaml:"status" json:"status" mapstructure:"status"`
 	DryRun          bool `yaml:"dry-run" json:"dry-run" mapstructure:"dry-run"`
@@ -82,8 +82,7 @@ func SignAndNotarize(app *application.Application) *cobra.Command {
 		},
 	}
 
-	opts.AddFlags(cmd.Flags())
-	commonConfiguration(cmd)
+	commonConfiguration(app, cmd, opts)
 
 	return cmd
 }
