@@ -4,6 +4,7 @@ import (
 	"encoding/pem"
 	"strings"
 
+	"github.com/scylladb/go-set/strset"
 	"github.com/spf13/cobra"
 
 	"github.com/anchore/quill/cmd/quill/cli/application"
@@ -41,40 +42,12 @@ func ExtractCertificates(app *application.Application) *cobra.Command {
 		PreRunE: app.Setup(opts),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return app.Run(cmd.Context(), async(func() error {
-				f, err := extract.NewFile(opts.Path)
+				certs, err := extractCertificates(opts.Path, opts.Leaf)
 				if err != nil {
 					return err
 				}
 
-				details := extract.ParseDetails(*f)
-
-				var decodedCerts []pem.Block
-
-				for i, s := range details.SuperBlob.Signatures {
-					for j, c := range s.Certificates {
-						if opts.Leaf && c.Parsed.IsCA {
-							log.WithFields("signer", i+1, "certificate", j+1, "cn", c.Parsed.Subject.CommonName).Tracef("skipping certificate")
-							continue
-						} else {
-							log.WithFields("signer", i+1, "certificate", j+1, "cn", c.Parsed.Subject.CommonName).Tracef("parsed certificate")
-						}
-
-						decodedCerts = append(decodedCerts, pem.Block{
-							Type:  "CERTIFICATE",
-							Bytes: c.Parsed.Raw,
-						})
-					}
-				}
-
-				buf := strings.Builder{}
-				for _, b := range decodedCerts {
-					b := b
-					if err := pem.Encode(&buf, &b); err != nil {
-						return err
-					}
-				}
-
-				bus.Report(buf.String())
+				bus.Report(certs)
 				bus.Notify("Try running 'openssl x509 -text -in <path-to-file-with-output>.pem' to view the certificate details")
 
 				return nil
@@ -86,4 +59,52 @@ func ExtractCertificates(app *application.Application) *cobra.Command {
 	commonConfiguration(cmd)
 
 	return cmd
+}
+
+func extractCertificates(binPath string, leaf bool) (string, error) {
+	fs, err := extract.NewFile(binPath)
+	if err != nil {
+		return "", err
+	}
+
+	var decodedCerts []pem.Block
+	for _, f := range fs {
+		details := extract.ParseDetails(*f)
+
+		for i, s := range details.SuperBlob.Signatures {
+			for j, c := range s.Certificates {
+				if leaf && c.Parsed.IsCA {
+					log.WithFields("signer", i+1, "certificate", j+1, "cn", c.Parsed.Subject.CommonName).Tracef("skipping certificate")
+					continue
+				} else {
+					log.WithFields("signer", i+1, "certificate", j+1, "cn", c.Parsed.Subject.CommonName).Tracef("parsed certificate")
+				}
+
+				decodedCerts = append(decodedCerts, pem.Block{
+					Type:  "CERTIFICATE",
+					Bytes: c.Parsed.Raw,
+				})
+			}
+		}
+	}
+
+	buf := strings.Builder{}
+	certSet := strset.New()
+	for _, b := range decodedCerts {
+		b := b
+		singleBuf := strings.Builder{}
+		if err := pem.Encode(&singleBuf, &b); err != nil {
+			return "", err
+		}
+		render := singleBuf.String()
+		if !certSet.Has(render) {
+			_, err := buf.WriteString(render)
+			if err != nil {
+				return "", err
+			}
+		}
+		certSet.Add(render)
+	}
+
+	return buf.String(), nil
 }

@@ -2,8 +2,11 @@ package quill
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
 	"path"
 
+	macholibre "github.com/anchore/go-macholibre"
 	"github.com/anchore/quill/internal/log"
 	"github.com/anchore/quill/quill/macho"
 	"github.com/anchore/quill/quill/pem"
@@ -16,13 +19,6 @@ type SigningConfig struct {
 	Path            string
 }
 
-func NewEmptySigningConfig(binaryPath string) (*SigningConfig, error) {
-	return &SigningConfig{
-		Path:     binaryPath,
-		Identity: path.Base(binaryPath),
-	}, nil
-}
-
 func NewSigningConfigFromPEMs(binaryPath, certificate, privateKey, password string) (*SigningConfig, error) {
 	var signingMaterial pem.SigningMaterial
 	if certificate != "" {
@@ -31,9 +27,6 @@ func NewSigningConfigFromPEMs(binaryPath, certificate, privateKey, password stri
 			return nil, err
 		}
 
-		if err := validateCertificateMaterial(sm); err != nil {
-			return nil, err
-		}
 		signingMaterial = *sm
 	}
 
@@ -47,10 +40,6 @@ func NewSigningConfigFromPEMs(binaryPath, certificate, privateKey, password stri
 func NewSigningConfigFromP12(binaryPath, p12, password string) (*SigningConfig, error) {
 	signingMaterial, err := pem.NewSigningMaterialFromP12(p12, password)
 	if err != nil {
-		return nil, err
-	}
-
-	if err := validateCertificateMaterial(signingMaterial); err != nil {
 		return nil, err
 	}
 
@@ -74,6 +63,62 @@ func (c *SigningConfig) WithTimestampServer(url string) *SigningConfig {
 }
 
 func Sign(cfg SigningConfig) error {
+	f, err := os.Open(cfg.Path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	if macholibre.IsUniversalMachoBinary(f) {
+		return signMultiarchBinary(cfg)
+	}
+	return signSingleBinary(cfg)
+}
+
+func signMultiarchBinary(cfg SigningConfig) error {
+	log.WithFields("binary", cfg.Path).Info("signing multi-arch binary")
+	f, err := os.Open(cfg.Path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	dir, err := ioutil.TempDir("", "quill-extract-"+path.Base(cfg.Path))
+	if err != nil {
+		return fmt.Errorf("unable to create temp directory to extract multi-arch binary: %w", err)
+	}
+	defer os.RemoveAll(dir)
+
+	extractedFiles, err := macholibre.Extract(f, dir)
+	if err != nil {
+		return fmt.Errorf("unable to extract multi-arch binary: %w", err)
+	}
+
+	log.WithFields("binary", cfg.Path, "arches", len(extractedFiles)).Trace("discovered nested binaries within multi-arch binary")
+
+	var cfgs []SigningConfig
+	for _, ef := range extractedFiles {
+		c := cfg
+		c.Path = ef.Path
+		cfgs = append(cfgs, c)
+	}
+
+	for _, c := range cfgs {
+		if err := signSingleBinary(c); err != nil {
+			return err
+		}
+	}
+
+	var paths []string
+	for _, c := range cfgs {
+		paths = append(paths, c.Path)
+	}
+
+	log.WithFields("binary", cfg.Path, "arches", len(cfgs)).Debug("packaging signed binaries into single multi-arch binary")
+	return macholibre.Package(cfg.Path, paths...)
+}
+
+func signSingleBinary(cfg SigningConfig) error {
 	log.WithFields("binary", cfg.Path).Info("signing binary")
 
 	m, err := macho.NewFile(cfg.Path)
@@ -130,17 +175,5 @@ func Sign(cfg SigningConfig) error {
 		return fmt.Errorf("failed to patch super blob onto macho binary: %w", err)
 	}
 
-	return nil
-}
-
-func validateCertificateMaterial(signingMaterial *pem.SigningMaterial) error {
-	// verify chainArgs of trust is already done on load
-	// if _, err := certificate.Load(appConfig.Sign.Certificates); err != nil {
-	//	return err
-	//}
-
-	// verify leaf has x509 code signing extensions
-
-	// verify remaining requirements from  https://images.apple.com/certificateauthority/pdf/Apple_Developer_ID_CPS_v3.3.pdf
 	return nil
 }
