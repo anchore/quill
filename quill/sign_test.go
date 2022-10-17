@@ -162,6 +162,34 @@ func TestSign(t *testing.T) {
 				test.AssertContains("Internal requirements count=1 size=48"),
 			},
 		},
+		{
+			// note: this test will fail with other architectures (e.g. arm64) since the output assertions are for x86_64
+			// but codesign will dynamically select the architecture based on the current host architecture
+			name: "sign multi arch binary - cert chain",
+			args: args{
+				id:       "ls",
+				path:     test.AssetCopy(t, "ls_universal_signed"),
+				keyFile:  test.Asset(t, "chain-leaf-key.pem"),
+				certFile: test.Asset(t, "chain.pem"),
+			},
+			assertions: []test.OutputAssertion{
+				test.AssertContains("CodeDirectory v=20500 size=643 flags=0x10000(runtime) hashes=15+2 location=embedded"),
+				test.AssertContains("Hash type=sha256 size=32"),
+				test.AssertContains("CandidateCDHash sha256=a4cd4a5f49f232086ba698ec3bba3f086f432dea"),
+				test.AssertContains("CandidateCDHashFull sha256=a4cd4a5f49f232086ba698ec3bba3f086f432deae7d6ba648895e935b5098307"),
+				test.AssertContains("CDHash=a4cd4a5f49f232086ba698ec3bba3f086f432dea"),
+				test.AssertContains("CMSDigest=a4cd4a5f49f232086ba698ec3bba3f086f432deae7d6ba648895e935b5098307"),
+				test.AssertContains("CMSDigestType=2"),
+				test.AssertContains("Signature size="), // assert not adhoc
+				test.AssertContains("Authority=quill-test-leaf"),
+				test.AssertContains("Authority=quill-test-intermediate-ca"),
+				test.AssertContains("Authority=quill-test-root-ca"),
+				test.AssertContains("Info.plist=not bound"),
+				test.AssertContains("TeamIdentifier=not set"),
+				test.AssertContains("Sealed Resources=none"),
+				test.AssertContains("Internal requirements count=1 size=44"),
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

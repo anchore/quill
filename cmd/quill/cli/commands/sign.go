@@ -1,9 +1,7 @@
 package commands
 
 import (
-	"debug/macho"
 	"fmt"
-	"os"
 
 	"github.com/spf13/cobra"
 
@@ -55,11 +53,6 @@ func Sign(app *application.Application) *cobra.Command {
 }
 
 func sign(binPath string, opts options.Signing) error {
-	err := validatePathIsDarwinBinary(binPath)
-	if err != nil {
-		return err
-	}
-
 	cfg := quill.SigningConfig{
 		Path: binPath,
 	}
@@ -80,16 +73,4 @@ func sign(binPath string, opts options.Signing) error {
 	cfg.WithTimestampServer(opts.TimestampServer)
 
 	return quill.Sign(cfg)
-}
-
-func validatePathIsDarwinBinary(path string) error {
-	fi, err := os.Open(path)
-	if err != nil {
-		return err
-	}
-
-	if _, err := macho.NewFile(fi); err != nil {
-		return fmt.Errorf("given path=%q may not be a macho formatted binary: %w", path, err)
-	}
-	return err
 }
