@@ -2,6 +2,8 @@
 
 Simple mac binary signing and notarization from any platform (replacing the `codesign` utility for simple use cases).
 
+![quill-demo](https://user-images.githubusercontent.com/590471/196287753-35f3de6c-cd37-4ec1-a67c-05be5f4ed95b.gif)
+
 ```bash
 $ quill sign-and-notarize --p12 <path-to-p12> <path-to-unsigned-binary>
 ```

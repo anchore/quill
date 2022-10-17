@@ -44,7 +44,7 @@ func PollStatus(ctx context.Context, sub *Submission, cfg StatusConfig) (Submiss
 			}
 
 			if cfg.stage != nil {
-				cfg.stage.Current = fmt.Sprintf("current status %q (poll %d)", strings.ToLower(string(status)), count)
+				cfg.stage.Current = fmt.Sprintf("status %q, poll %d", strings.ToLower(string(status)), count)
 			}
 
 			if !status.isCompleted() {

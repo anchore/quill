@@ -112,9 +112,9 @@ func signMultiarchBinary(cfg SigningConfig) error {
 
 	extractMon := bus.PublishTask(
 		monitor.Title{
-			Default:      "Extract nested binaries",
-			WhileRunning: "Extracting nested binaries",
-			OnSuccess:    "Extracted nested binaries",
+			Default:      "Extract universal binary",
+			WhileRunning: "Extracting universal binary",
+			OnSuccess:    "Extracted universal binary",
 		},
 		cfg.Path,
 		-1,
@@ -151,9 +151,9 @@ func signMultiarchBinary(cfg SigningConfig) error {
 
 	packMon := bus.PublishTask(
 		monitor.Title{
-			Default:      "Pack binary",
-			WhileRunning: "Packing binary",
-			OnSuccess:    "Packed binary",
+			Default:      "Repack universal binary",
+			WhileRunning: "Repacking universal binary",
+			OnSuccess:    "Repacked universal binary",
 		},
 		cfg.Path,
 		-1,

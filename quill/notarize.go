@@ -115,7 +115,7 @@ func Notarize(path string, cfg NotarizeConfig) (notary.SubmissionStatus, error) 
 	sub := notary.NewSubmission(a, bin)
 
 	if err := sub.Start(context.Background()); err != nil {
-		return "", fmt.Errorf("unable to start Submission: %+v", err)
+		return "", fmt.Errorf("unable to start submission: %+v", err)
 	}
 
 	if !cfg.StatusConfig.Wait {
@@ -127,7 +127,7 @@ func Notarize(path string, cfg NotarizeConfig) (notary.SubmissionStatus, error) 
 
 	status, err := notary.PollStatus(context.Background(), sub, *statusCfg)
 
-	mon.Stage.Current = strings.ToLower(string(status))
+	mon.Stage.Current = strings.ToLower(fmt.Sprintf("status %q", string(status)))
 
 	return status, err
 }
