@@ -206,6 +206,7 @@ func signSingleBinary(cfg SigningConfig) error {
 	}
 
 	if cfg.SigningMaterial.Signer == nil {
+		bus.Notify("Warning: performed ad-hoc sign, which means that anyone can alter the binary contents without you knowing (there is no cryptographic signature)")
 		log.Warnf("only ad-hoc signing, which means that anyone can alter the binary contents without you knowing (there is no cryptographic signature)")
 	}
 

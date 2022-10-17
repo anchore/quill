@@ -15,7 +15,7 @@ var _ options.Interface = &signConfig{}
 
 type signConfig struct {
 	Path            string `yaml:"path" json:"path" mapstructure:"path"`
-	options.Signing `yaml:"signing" json:"signing" mapstructure:"signing"`
+	options.Signing `yaml:"sign" json:"sign" mapstructure:"sign"`
 }
 
 func Sign(app *application.Application) *cobra.Command {
@@ -46,8 +46,7 @@ func Sign(app *application.Application) *cobra.Command {
 		},
 	}
 
-	opts.AddFlags(cmd.Flags())
-	commonConfiguration(cmd)
+	commonConfiguration(app, cmd, opts)
 
 	return cmd
 }

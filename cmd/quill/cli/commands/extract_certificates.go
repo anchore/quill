@@ -55,8 +55,7 @@ func ExtractCertificates(app *application.Application) *cobra.Command {
 		},
 	}
 
-	opts.AddFlags(cmd.Flags())
-	commonConfiguration(cmd)
+	commonConfiguration(app, cmd, opts)
 
 	return cmd
 }

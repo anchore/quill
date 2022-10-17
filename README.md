@@ -20,12 +20,12 @@ $ quill p12 attach-chain <path-to-p12-from-apple>
 # a new P12 file was created with the same name as the original but with the suffix `-with-chain.p12`
 ```
 
-This new P12 file (with the full certificate chain) is used as many times as you need to sign binaries:
+Note: this step only needs to be done once. This new P12 file (with the full certificate chain) can be used on any platform as many times as you need to sign binaries.
 
 ```bash
 # run on **any platform** to sign the binary
-$ export QUILL_SIGNING_P12=<path-to-p12-with-chain>    # can also be base64 encoded contents instead of a file path
-$ export QUILL_SIGNING_PASSWORD=<p12-password>
+$ export QUILL_SIGN_P12=<path-to-p12-with-chain>    # can also be base64 encoded contents instead of a file path
+$ export QUILL_SIGN_PASSWORD=<p12-password>
 
 $ quill sign <path/to/binary>
 ```
@@ -63,7 +63,7 @@ builds:
         # skipped and only ad-hoc signing is performed (not cryptographic material is needed).
         #
         # note: environment variables required for signing and notarization (set in CI) but are not needed for snapshot builds
-        #    QUILL_SIGNING_P12, QUILL_SIGNING_PASSWORD, QUILL_NOTARY_KEY, QUILL_NOTARY_KEY_ID, QUILL_NOTARY_ISSUER
+        #    QUILL_SIGN_P12, QUILL_SIGN_PASSWORD, QUILL_NOTARY_KEY, QUILL_NOTARY_KEY_ID, QUILL_NOTARY_ISSUER
         - cmd: quill sign-and-notarize "{{ .Path }}" --dry-run={{ .IsSnapshot }} --ad-hoc={{ .IsSnapshot }} -vv
           env:
             - QUILL_LOG_FILE=/tmp/quill-{{ .Target }}.log
