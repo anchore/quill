@@ -1,3 +1,4 @@
+BIN = quill
 TEMP_DIR = ./.tmp
 RESULTS_DIR = test/results
 COVER_REPORT = $(RESULTS_DIR)/unit-coverage-details.txt
@@ -31,10 +32,10 @@ GOSIMPORTS_VERSION = v0.3.2
 CHRONICLE_VERSION = v0.4.1
 
 ## Build variables
-DIST_DIR = ./dist
-SNAPSHOT_DIR = ./snapshot
-OS = $(shell uname | tr '[:upper:]' '[:lower:]')
-SNAPSHOT_BIN = $(realpath $(shell pwd)/$(SNAPSHOT_DIR)/$(OS)-build_$(OS)_amd64/$(BIN))
+DIST_DIR = dist
+SNAPSHOT_DIR = snapshot
+OS=$(shell uname | tr '[:upper:]' '[:lower:]')
+SNAPSHOT_BIN=$(realpath $(shell pwd)/$(SNAPSHOT_DIR)/$(OS)-build_$(OS)_amd64_v1/$(BIN))
 
 ifeq "$(strip $(VERSION))" ""
  override VERSION = $(shell git describe --always --tags --dirty)
@@ -73,11 +74,7 @@ all: clean static-analysis test ## Run all linux-based checks (linting, license 
 	@printf '$(SUCCESS)All checks pass!$(RESET)\n'
 
 .PHONY: test
-test: unit ## Run all tests (currently unit, integration, linux acceptance, and cli tests)
-
-.PHONY: help
-help:
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "$(BOLD)$(CYAN)%-25s$(RESET)%s\n", $$1, $$2}'
+test: unit cli ## Run all tests (currently unit and cli tests)
 
 $(RESULTS_DIR):
 	mkdir -p $(RESULTS_DIR)
@@ -140,7 +137,7 @@ check-go-mod-tidy:
 unit: $(RESULTS_DIR)  ## Run unit tests (with coverage)
 	$(call title,Running unit tests)
 	# we don't do tests in parallel due to test fixture creation collisions
-	go test -p 1 -coverprofile $(COVER_REPORT) $(shell go list ./... )
+	go test -p 1 -coverprofile $(COVER_REPORT) $(shell go list ./... | grep -v anchore/quill/test)
 	@go tool cover -func $(COVER_REPORT) | grep total |  awk '{print substr($$3, 1, length($$3)-1)}' > $(COVER_TOTAL)
 	@echo "Coverage: $$(cat $(COVER_TOTAL))"
 	@if [ $$(echo "$$(cat $(COVER_TOTAL)) >= $(COVERAGE_THRESHOLD)" | bc -l) -ne 1 ]; then echo "$(RED)$(BOLD)Failed coverage quality gate (> $(COVERAGE_THRESHOLD)%)$(RESET)" && false; fi
@@ -160,6 +157,12 @@ $(SNAPSHOT_DIR): ## Build snapshot release binaries and packages
 		VERSION=$(VERSION:v%=%) \
 		$(SNAPSHOT_CMD) --config $(TEMP_DIR)/goreleaser.yaml \
 	  "
+
+.PHONY: cli
+cli: $(SNAPSHOT_DIR) ## Run CLI tests
+	chmod 755 "$(SNAPSHOT_BIN)"
+	$(SNAPSHOT_BIN) version
+	go test -count=1 -timeout=15m -v ./test/cli
 
 .PHONY: changelog
 changelog: clean-changelog CHANGELOG.md
@@ -197,3 +200,7 @@ clean-dist: clean-changelog
 .PHONY: clean-changelog
 clean-changelog:
 	rm -f CHANGELOG.md
+
+.PHONY: help
+help:
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "$(BOLD)$(CYAN)%-25s$(RESET)%s\n", $$1, $$2}'

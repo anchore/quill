@@ -7,16 +7,16 @@ release:
   draft: true
 
 builds:
-  - binary: &name quill
+  - id: linux-build
+    binary: &name quill
     dir: &dir ./cmd/quill
     env: &build-env
       - CGO_ENABLED=0
     goos:
       - linux
-      - windows
-      - darwin
     goarch:
       - amd64
+      - arm64
     mod_timestamp: &build-timestamp '{{ .CommitTimestamp }}'
     ldflags: &build-ldflags |
       -w

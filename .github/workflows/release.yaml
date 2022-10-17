@@ -15,7 +15,7 @@ env:
 jobs:
   quality-gate:
     environment: release
-    runs-on: ubuntu-latest # This OS choice is arbitrary. None of the steps in this job are specific to either Linux or macOS.
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
 
@@ -31,7 +31,7 @@ jobs:
         id: static-analysis
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          # This check name is defined as the github action job name (in .github/workflows/testing.yaml)
+          # This check name is defined as the github action job name (in .github/workflows/validations.yaml)
           checkName: "Static analysis"
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
@@ -40,15 +40,25 @@ jobs:
         id: unit
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          # This check name is defined as the github action job name (in .github/workflows/testing.yaml)
+          # This check name is defined as the github action job name (in .github/workflows/validations.yaml)
           checkName: "Unit tests"
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
+      - name: Check unit test results
+        uses: fountainhead/action-wait-for-check@v1.1.0
+        id: cli
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          # This check name is defined as the github action job name (in .github/workflows/validations.yaml)
+          checkName: "CLI tests"
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
       - name: Quality gate
-        if: steps.static-analysis.outputs.conclusion != 'success' || steps.unit.outputs.conclusion != 'success'
+        if: steps.static-analysis.outputs.conclusion != 'success' || steps.unit.outputs.conclusion != 'success' || steps.cli.outputs.conclusion != 'success'
         run: |
           echo "Static Analysis Status: ${{ steps.static-analysis.conclusion }}"
           echo "Unit Test Status: ${{ steps.unit.outputs.conclusion }}"
+          echo "CLI test Status: ${{ steps.cli.conclusion }}"
           false
 
   release:

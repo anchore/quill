@@ -26,7 +26,7 @@ func NewSigningMaterialFromPEMs(certFile, privateKeyPath, password string) (*Sig
 		}
 
 		if len(certs) > 0 {
-			if err := verifyCertificateChain(certs); err != nil {
+			if err := VerifyCodesigningCertificateChain(certs); err != nil {
 				return nil, err
 			}
 		}
@@ -73,7 +73,7 @@ func NewSigningMaterialFromP12(p12Path, password string) (*SigningMaterial, erro
 	}
 
 	if len(allCerts) > 0 {
-		if err := verifyCertificateChain(allCerts); err != nil {
+		if err := VerifyCodesigningCertificateChain(allCerts); err != nil {
 			return nil, err
 		}
 	}
