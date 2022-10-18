@@ -36,7 +36,6 @@ func Test_DescribeCommand(t *testing.T) {
 				trait.AssertSuccessfulReturnCode,
 			},
 		},
-
 		{
 			name:  "can describe signed binary",
 			asset: test.Asset(t, "hello_signed"),
