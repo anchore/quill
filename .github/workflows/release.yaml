@@ -100,8 +100,8 @@ jobs:
       - name: Build & publish release artifacts
         run: make release
         env:
-          QUILL_SIGNING_P12: ${{ secrets.APPLE_SIGNING_P12 }}
-          QUILL_SIGNING_PASSWORD: ${{ secrets.APPLE_SIGNING_P12_PASSWORD }}
+          QUILL_SIGN_P12: ${{ secrets.APPLE_SIGNING_P12 }}
+          QUILL_SIGN_PASSWORD: ${{ secrets.APPLE_SIGNING_P12_PASSWORD }}
           QUILL_NOTARY_ISSUER: ${{ secrets.APPLE_NOTARY_ISSUER }}
           QUILL_NOTARY_KEY_ID: ${{ secrets.APPLE_NOTARY_KEY_ID }}
           QUILL_NOTARY_KEY: ${{ secrets.APPLE_NOTARY_KEY }}
