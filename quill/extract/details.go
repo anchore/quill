@@ -68,7 +68,7 @@ func getSignatures(m File) []SignatureDetails {
 		log.Warn("unable to get code directory: %v", err)
 	}
 
-	sd := parseCodeSignature(superBlob, &cdBytes)
+	sd := buildSignatureDetails(superBlob, cdBytes)
 	sd.Blob = bd
 
 	return []SignatureDetails{sd}

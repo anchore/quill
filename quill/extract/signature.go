@@ -57,7 +57,7 @@ type CMSValidationDetails struct {
 	VerifiedCertificates [][][]*x509.Certificate `json:"verifiedCertificates"`
 }
 
-func parseCodeSignature(cs *macho2.CodeSignature, cdBytes *[]byte) (sd SignatureDetails) {
+func buildSignatureDetails(cs *macho2.CodeSignature, cdBytes []byte) (sd SignatureDetails) {
 	ci, err := protocol.ParseContentInfo(cs.CMSSignature)
 	if err != nil {
 		log.Warnf("unable to parse content info from signature: %v", err)
@@ -99,12 +99,12 @@ func parseCodeSignature(cs *macho2.CodeSignature, cdBytes *[]byte) (sd Signature
 	}
 }
 
-func buildVerifiedCerts(signedData *cms.SignedData, cdBytes *[]byte, earliestSignatureTime time.Time) ([][][]*x509.Certificate, bool, error) {
+func buildVerifiedCerts(signedData *cms.SignedData, cdBytes []byte, earliestSignatureTime time.Time) ([][][]*x509.Certificate, bool, error) {
 	if signedData == nil {
 		return nil, false, fmt.Errorf("signed data is nil")
 	}
 
-	verifiedCerts, cmsErr := signedData.VerifyDetached(*cdBytes,
+	verifiedCerts, cmsErr := signedData.VerifyDetached(cdBytes,
 		x509.VerifyOptions{
 			CurrentTime: earliestSignatureTime,
 			KeyUsages:   []x509.ExtKeyUsage{x509.ExtKeyUsageCodeSigning},
