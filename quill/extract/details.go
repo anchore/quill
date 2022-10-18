@@ -19,13 +19,6 @@ type Details struct {
 	// TODO: helper output to show if the binary is signed or not?
 }
 
-func ParseDetails(m File) Details {
-	return Details{
-		File:      getMachoDetails(m),
-		SuperBlob: getSuperBlobDetails(m),
-	}
-}
-
 func (d Details) String(hideVerboseData bool) (r string) {
 	r += "File Details:\n" + doIndent(d.File.String(), "  ")
 	if d.SuperBlob == nil {
@@ -52,6 +45,13 @@ func (d Details) String(hideVerboseData bool) (r string) {
 type File struct {
 	blacktopFile *blacktopMacho.File
 	internalFile *macho.File
+}
+
+func ParseDetails(m File) Details {
+	return Details{
+		File:      getMachoDetails(m),
+		SuperBlob: getSuperBlobDetails(m),
+	}
 }
 
 func getSignatures(m File) []SignatureDetails {
