@@ -38,8 +38,6 @@ $ quill sign [path/to/binary]
 After signing you can notarize the binary against Apple's notary service:
 
 ```bash
-
-```bash
 # run on **any platform** to notarize a signed binary
 
 $ export QUILL_NOTARY_KEY=[path-to-private-key-file-from-apple]   # can also be base64 encoded contents instead of a file path
