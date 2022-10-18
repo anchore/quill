@@ -2,7 +2,6 @@ package quill
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 
@@ -104,7 +103,7 @@ func signMultiarchBinary(cfg SigningConfig) error {
 	}
 	defer f.Close()
 
-	dir, err := ioutil.TempDir("", "quill-extract-"+path.Base(cfg.Path))
+	dir, err := os.MkdirTemp("", "quill-extract-"+path.Base(cfg.Path))
 	if err != nil {
 		return fmt.Errorf("unable to create temp directory to extract multi-arch binary: %w", err)
 	}

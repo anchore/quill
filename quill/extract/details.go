@@ -1,10 +1,14 @@
 package extract
 
 import (
+	"crypto"
+	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 
 	blacktopMacho "github.com/blacktop/go-macho"
 
+	"github.com/anchore/quill/internal/log"
 	"github.com/anchore/quill/quill/macho"
 )
 
@@ -20,11 +24,6 @@ func ParseDetails(m File) Details {
 		File:      getMachoDetails(m),
 		SuperBlob: getSuperBlobDetails(m),
 	}
-}
-
-type File struct {
-	blacktopFile *blacktopMacho.File
-	internalFile *macho.File
 }
 
 func (d Details) String(hideVerboseData bool) (r string) {
@@ -48,4 +47,49 @@ func (d Details) String(hideVerboseData bool) (r string) {
 	// TODO: add entitlements
 
 	return r
+}
+
+type File struct {
+	blacktopFile *blacktopMacho.File
+	internalFile *macho.File
+}
+
+func getSignatureDetails(m File) []SignatureDetails {
+	bd, err := getBlobDetails(m)
+	if err != nil {
+		log.Warn("unable to get blob details for file: %v", err)
+	}
+
+	superBlob := m.blacktopFile.CodeSignature()
+
+	// TODO: support multiple CDs
+	cdBytes, err := m.internalFile.CDBytes(macho.SigningOrder, 0)
+	if err != nil {
+		log.Warn("unable to get code directory: %v", err)
+	}
+
+	sd := parseCodeSignature(superBlob, &cdBytes)
+	sd.Blob = bd
+
+	return []SignatureDetails{sd}
+}
+
+func getBlobDetails(m File) (BlobDetails, error) {
+	b, err := m.internalFile.CMSBlobBytes(macho.SigningOrder)
+	if err != nil {
+		log.Warn("unable to find any signatures: %v", err)
+		return BlobDetails{}, err
+	}
+
+	hashObj := crypto.SHA256
+	hasher := hashObj.New()
+	hasher.Write(b)
+	hash := hasher.Sum(nil)
+	return BlobDetails{
+		Base64: base64.StdEncoding.EncodeToString(b),
+		Digest: Digest{
+			Algorithm: algorithmName(hashObj),
+			Value:     hex.EncodeToString(hash),
+		},
+	}, nil
 }

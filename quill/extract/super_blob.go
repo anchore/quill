@@ -20,6 +20,6 @@ func getSuperBlobDetails(m File) *SuperBlobDetails {
 		CodeDirectories: getCodeDirectories(m),
 		Requirements:    getRequirements(m),
 		Entitlements:    getEntitlements(m),
-		Signatures:      getSignatures(m),
+		Signatures:      getSignatureDetails(m),
 	}
 }

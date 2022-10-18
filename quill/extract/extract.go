@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 
@@ -25,7 +24,7 @@ func NewFile(binPath string) ([]*File, error) {
 	if macholibre.IsUniversalMachoBinary(f) {
 		var mfs []*File
 
-		dir, err := ioutil.TempDir("", "quill-extract-"+path.Base(binPath))
+		dir, err := os.MkdirTemp("", "quill-extract-"+path.Base(binPath))
 		if err != nil {
 			return nil, fmt.Errorf("unable to create temp directory to extract multi-arch binary: %w", err)
 		}
