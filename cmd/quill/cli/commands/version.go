@@ -67,7 +67,7 @@ func Version(app *application.Application) *cobra.Command {
 	flags := cmd.Flags()
 	flags.StringVarP(&format, "output", "o", "text", "the format to show the results (allowable: [text json])")
 
-	commonConfiguration(cmd)
+	commonConfiguration(nil, cmd, nil)
 
 	return cmd
 }

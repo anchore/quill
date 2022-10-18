@@ -24,7 +24,7 @@ func Root(app *application.Application) *cobra.Command {
 		Example: formatRootExamples(),
 	}
 
-	commonConfiguration(cmd)
+	commonConfiguration(nil, cmd, nil)
 
 	cmd.SetVersionTemplate(fmt.Sprintf("%s {{.Version}}\n", internal.ApplicationName))
 

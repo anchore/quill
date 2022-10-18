@@ -11,7 +11,7 @@ var _ Interface = &Signing{}
 
 type Signing struct {
 	// bound options
-	Identity        string `yaml:"override-identity" json:"override-identity" mapstructure:"override-identity"`
+	Identity        string `yaml:"identity" json:"identity" mapstructure:"identity"`
 	P12             string `yaml:"p12" json:"p12" mapstructure:"p12"`
 	TimestampServer string `yaml:"timestamp-server" json:"timestamp-server" mapstructure:"timestamp-server"`
 	AdHoc           bool   `yaml:"ad-hoc" json:"ad-hoc" mapstructure:"ad-hoc"`
@@ -58,21 +58,21 @@ func (o *Signing) AddFlags(flags *pflag.FlagSet) {
 }
 
 func (o *Signing) BindFlags(flags *pflag.FlagSet, v *viper.Viper) error {
-	if err := Bind(v, "signing.override-identity", flags.Lookup("identity")); err != nil {
+	if err := Bind(v, "sign.override-identity", flags.Lookup("identity")); err != nil {
 		return err
 	}
-	if err := Bind(v, "signing.p12", flags.Lookup("p12")); err != nil {
+	if err := Bind(v, "sign.p12", flags.Lookup("p12")); err != nil {
 		return err
 	}
-	if err := Bind(v, "signing.timestamp-server", flags.Lookup("timestamp-server")); err != nil {
+	if err := Bind(v, "sign.timestamp-server", flags.Lookup("timestamp-server")); err != nil {
 		return err
 	}
-	if err := Bind(v, "signing.ad-hoc", flags.Lookup("ad-hoc")); err != nil {
+	if err := Bind(v, "sign.ad-hoc", flags.Lookup("ad-hoc")); err != nil {
 		return err
 	}
 
 	// set default values for non-bound struct items
-	v.SetDefault("signing.password", o.Password)
+	v.SetDefault("sign.password", o.Password)
 
 	return nil
 }
