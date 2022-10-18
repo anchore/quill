@@ -27,6 +27,17 @@ func Test_DescribeCommand(t *testing.T) {
 			},
 		},
 		{
+			name:  "can describe ad-hoc signed binary",
+			asset: test.Asset(t, "hello_adhoc_signed"),
+			assertions: []trait.Assertion{
+				trait.AssertInStdout("64-bit MachO"),       // the file section shows basic info
+				trait.AssertInStdout("0x10002"),            // the Code Directory shows the Adhoc flag
+				trait.AssertInStdout("signed data is nil"), // there is no signed data for ad-hoc signed binaries
+				trait.AssertSuccessfulReturnCode,
+			},
+		},
+
+		{
 			name:  "can describe signed binary",
 			asset: test.Asset(t, "hello_signed"),
 			assertions: []trait.Assertion{
