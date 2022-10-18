@@ -54,7 +54,7 @@ type File struct {
 	internalFile *macho.File
 }
 
-func getSignatureDetails(m File) []SignatureDetails {
+func getSignatures(m File) []SignatureDetails {
 	bd, err := getBlobDetails(m)
 	if err != nil {
 		log.Warn("unable to get blob details for file: %v", err)
