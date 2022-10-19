@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	macho2 "github.com/blacktop/go-macho"
+	blacktopMacho "github.com/blacktop/go-macho"
 	cms "github.com/github/smimesign/ietf-cms"
 	"github.com/github/smimesign/ietf-cms/oid"
 	"github.com/github/smimesign/ietf-cms/protocol"
@@ -57,28 +57,28 @@ type CMSValidationDetails struct {
 	VerifiedCertificates [][][]*x509.Certificate `json:"verifiedCertificates"`
 }
 
-func buildSignatureDetails(cs *macho2.CodeSignature, cdBytes []byte) (sd SignatureDetails) {
+func buildSignatureDetails(cs *blacktopMacho.CodeSignature, cdBytes []byte) (sd SignatureDetails) {
 	ci, err := protocol.ParseContentInfo(cs.CMSSignature)
 	if err != nil {
-		log.Warnf("unable to parse content info from signature: %v", err)
+		log.Debugf("unable to parse content info from signature: %v", err)
 	}
 
 	// CI is never nil, but the SignedData may be nil
 	psd, err := ci.SignedDataContent()
 	if err != nil {
-		log.Warnf("unable to parse signed data from content: %v", err)
+		log.Debugf("unable to parse signed data from content: %v", err)
 	}
 
 	signers := buildSigners(psd)
 	et := findEarliestSigningTime(psd)
 	certs, err := buildCerts(psd)
 	if err != nil {
-		log.Warnf("unable to build certificates: %v", err)
+		log.Debugf("unable to build certificates: %v", err)
 	}
 
 	signedData, err := cms.ParseSignedData(cs.CMSSignature)
 	if err != nil {
-		log.Warnf("unable to parse signed data: %v", err)
+		log.Debugf("unable to parse signed data: %v", err)
 	}
 
 	verifiedCerts, cmsValid, err := buildVerifiedCerts(signedData, cdBytes, et)
@@ -101,7 +101,7 @@ func buildSignatureDetails(cs *macho2.CodeSignature, cdBytes []byte) (sd Signatu
 
 func buildVerifiedCerts(signedData *cms.SignedData, cdBytes []byte, earliestSignatureTime time.Time) ([][][]*x509.Certificate, bool, error) {
 	if signedData == nil {
-		return nil, false, fmt.Errorf("signed data is nil")
+		return nil, false, fmt.Errorf("there is no cryptographic signature")
 	}
 
 	verifiedCerts, cmsErr := signedData.VerifyDetached(cdBytes,
@@ -117,7 +117,7 @@ func buildVerifiedCerts(signedData *cms.SignedData, cdBytes []byte, earliestSign
 
 func buildSigners(psd *protocol.SignedData) []Signer {
 	if psd == nil {
-		log.Warn("signed data is nil cannot build signers")
+		log.Debug("signed data is nil cannot build signers")
 		return []Signer{}
 	}
 	var signers []Signer
@@ -151,7 +151,7 @@ func buildSigners(psd *protocol.SignedData) []Signer {
 
 func buildCerts(psd *protocol.SignedData) ([]Certificate, error) {
 	if psd == nil {
-		log.Warn("signed data is nil cannot build certificates")
+		log.Debug("signed data is nil cannot build certificates")
 		return []Certificate{}, nil
 	}
 	parsedCerts, err := psd.X509Certificates()
@@ -175,7 +175,7 @@ func findEarliestSigningTime(psd *protocol.SignedData) time.Time {
 	// it seems that the timestamp set is based on the sign time, not any certificate information
 	var earliestTime = time.Now()
 	if psd == nil {
-		log.Warn("signed data is nil cannot find earliest signing time")
+		log.Debug("signed data is nil cannot find earliest signing time")
 		return earliestTime
 	}
 	for _, s := range psd.SignerInfos {
