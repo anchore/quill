@@ -1,7 +1,6 @@
 package test
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -26,7 +25,7 @@ func Asset(t *testing.T, assetName string) string {
 }
 
 func copyFile(t *testing.T, src, dest string) {
-	input, err := ioutil.ReadFile(src)
+	input, err := os.ReadFile(src)
 	if err != nil {
 		t.Fatalf("unable to read source: %+v", err)
 	}

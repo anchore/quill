@@ -1,20 +1,18 @@
 package extract
 
 import (
-	"crypto"
 	"crypto/x509"
 	"encoding/base64"
-	"encoding/hex"
 	"fmt"
 	"strings"
 	"time"
 
+	blacktopMacho "github.com/blacktop/go-macho"
 	cms "github.com/github/smimesign/ietf-cms"
 	"github.com/github/smimesign/ietf-cms/oid"
 	"github.com/github/smimesign/ietf-cms/protocol"
 
 	"github.com/anchore/quill/internal/log"
-	"github.com/anchore/quill/quill/macho"
 )
 
 type SignatureDetails struct {
@@ -59,86 +57,69 @@ type CMSValidationDetails struct {
 	VerifiedCertificates [][][]*x509.Certificate `json:"verifiedCertificates"`
 }
 
-//nolint:funlen
-func getSignatures(m File) []SignatureDetails {
-	b, err := m.internalFile.CMSBlobBytes(macho.SigningOrder)
+func buildSignatureDetails(cs *blacktopMacho.CodeSignature, cdBytes []byte) (sd SignatureDetails) {
+	ci, err := protocol.ParseContentInfo(cs.CMSSignature)
 	if err != nil {
-		log.Warn("unable to find any signatures: %v", err)
-		return nil
+		log.Debugf("unable to parse content info from signature: %v", err)
 	}
 
-	hashObj := crypto.SHA256
-	hasher := hashObj.New()
-	hasher.Write(b)
-	hash := hasher.Sum(nil)
-
-	superBlob := m.blacktopFile.CodeSignature()
-
-	ci, err := protocol.ParseContentInfo(superBlob.CMSSignature)
-	if err != nil {
-		// TODO
-		panic(err)
-	}
-
-	sd, err := cms.ParseSignedData(superBlob.CMSSignature)
-	if err != nil {
-		// TODO
-		panic(err)
-	}
-
+	// CI is never nil, but the SignedData may be nil
 	psd, err := ci.SignedDataContent()
 	if err != nil {
-		// TODO
-		panic(err)
+		log.Debugf("unable to parse signed data from content: %v", err)
 	}
 
-	// TODO: support multiple CDs
-	cdBytes, err := m.internalFile.CDBytes(macho.SigningOrder, 0)
+	signers := buildSigners(psd)
+	et := findEarliestSigningTime(psd)
+	certs, err := buildCerts(psd)
 	if err != nil {
-		// TODO
-		panic(err)
+		log.Debugf("unable to build certificates: %v", err)
 	}
 
-	// it seems that the timestamp set is based on the sign time, not any certificate information
-	var earliestTime = time.Now()
-	for _, s := range psd.SignerInfos {
-		t, err := s.GetSigningTimeAttribute()
-		if err != nil {
-			panic(err)
-		}
-		if earliestTime.After(t) {
-			earliestTime = t
-		}
+	signedData, err := cms.ParseSignedData(cs.CMSSignature)
+	if err != nil {
+		log.Debugf("unable to parse signed data: %v", err)
 	}
 
-	// TODO: allow for specifying a root of trust
-	// TODO: add verify options
-	verifiedCerts, cmsErr := sd.VerifyDetached(cdBytes,
+	verifiedCerts, cmsValid, err := buildVerifiedCerts(signedData, cdBytes, et)
+	var cmsErrorStr string
+	if err != nil {
+		cmsErrorStr = err.Error()
+	}
+
+	return SignatureDetails{
+		Base64: base64.StdEncoding.EncodeToString(cs.CMSSignature),
+		CMSValidation: CMSValidationDetails{
+			IsValid:              cmsValid,
+			ErrorMessage:         cmsErrorStr,
+			VerifiedCertificates: verifiedCerts,
+		},
+		Certificates: certs,
+		Signers:      signers,
+	}
+}
+
+func buildVerifiedCerts(signedData *cms.SignedData, cdBytes []byte, earliestSignatureTime time.Time) ([][][]*x509.Certificate, bool, error) {
+	if signedData == nil {
+		return nil, false, fmt.Errorf("there is no cryptographic signature")
+	}
+
+	verifiedCerts, cmsErr := signedData.VerifyDetached(cdBytes,
 		x509.VerifyOptions{
-			CurrentTime: earliestTime,
+			CurrentTime: earliestSignatureTime,
 			KeyUsages:   []x509.ExtKeyUsage{x509.ExtKeyUsageCodeSigning},
 		},
 	)
+
 	cmsValid := cmsErr == nil
-	var cmsErrorStr string
-	if cmsErr != nil {
-		cmsErrorStr = cmsErr.Error()
-	}
+	return verifiedCerts, cmsValid, cmsErr
+}
 
-	parsedCerts, err := psd.X509Certificates()
-	if err != nil {
-		// TODO
-		panic(err)
+func buildSigners(psd *protocol.SignedData) []Signer {
+	if psd == nil {
+		log.Debug("signed data is nil cannot build signers")
+		return []Signer{}
 	}
-
-	var certs []Certificate
-	for idx, cert := range parsedCerts {
-		certs = append(certs, Certificate{
-			PEM:    base64.StdEncoding.EncodeToString(psd.Certificates[idx].Bytes),
-			Parsed: cert,
-		})
-	}
-
 	var signers []Signer
 	for _, s := range psd.SignerInfos {
 		var atts []Attribute
@@ -165,26 +146,49 @@ func getSignatures(m File) []SignatureDetails {
 		})
 	}
 
-	return []SignatureDetails{
-		{
-			Blob: BlobDetails{
-				Base64: base64.StdEncoding.EncodeToString(b),
-				Digest: Digest{
-					Algorithm: algorithmName(hashObj),
-					Value:     hex.EncodeToString(hash),
-				},
-			},
-			Base64: base64.StdEncoding.EncodeToString(superBlob.CMSSignature),
-			CMSValidation: CMSValidationDetails{
-				IsValid:      cmsValid,
-				ErrorMessage: cmsErrorStr,
-				//Error:                cmsErr,
-				VerifiedCertificates: verifiedCerts,
-			},
-			Certificates: certs,
-			Signers:      signers,
-		},
+	return signers
+}
+
+func buildCerts(psd *protocol.SignedData) ([]Certificate, error) {
+	if psd == nil {
+		log.Debug("signed data is nil cannot build certificates")
+		return []Certificate{}, nil
 	}
+	parsedCerts, err := psd.X509Certificates()
+	if err != nil {
+		log.Warn("unable to parse x509 certificates for signed data: %v", err)
+		return []Certificate{}, err
+	}
+
+	var certs []Certificate
+	for idx, cert := range parsedCerts {
+		certs = append(certs, Certificate{
+			PEM:    base64.StdEncoding.EncodeToString(psd.Certificates[idx].Bytes),
+			Parsed: cert,
+		})
+	}
+
+	return certs, nil
+}
+
+func findEarliestSigningTime(psd *protocol.SignedData) time.Time {
+	// it seems that the timestamp set is based on the sign time, not any certificate information
+	var earliestTime = time.Now()
+	if psd == nil {
+		log.Debug("signed data is nil cannot find earliest signing time")
+		return earliestTime
+	}
+	for _, s := range psd.SignerInfos {
+		t, err := s.GetSigningTimeAttribute()
+		if err != nil {
+			log.Warn("unable to get signing time attribute: %v", err)
+			continue
+		}
+		if earliestTime.After(t) {
+			earliestTime = t
+		}
+	}
+	return earliestTime
 }
 
 func (a Attribute) String() string {
