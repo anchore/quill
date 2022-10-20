@@ -8,6 +8,19 @@ Simple mac binary signing and notarization from any platform (replacing the `cod
 $ quill sign-and-notarize --p12 [path-to-p12] [path-to-unsigned-binary]
 ```
 
+## Installation
+
+```bash
+curl -sSfL https://raw.githubusercontent.com/anchore/quill/main/install.sh | sh -s -- -b /usr/local/bin
+```
+
+... or, you can specify a release version and destination directory for the installation:
+
+```
+curl -sSfL https://raw.githubusercontent.com/anchore/quill/main/install.sh | sh -s -- -b <DESTINATION_DIR> <RELEASE_VERSION>
+```
+
+
 ## Usage
 
 First you need to download the signing private key and certificate from Apple. Once you do this you need to attach
