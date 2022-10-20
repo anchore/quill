@@ -183,7 +183,7 @@ release: clean-dist clean-changelog CHANGELOG.md ## Build and publish final bina
 	echo "dist: $(DIST_DIR)" > $(TEMP_DIR)/goreleaser.yaml
 	cat .goreleaser.yaml >> $(TEMP_DIR)/goreleaser.yaml
 
-	$(RELEASE_CMD) --release-notes <(cat CHANGELOG.md) --config $(TEMP_DIR)/goreleaser.yaml
+	bash -c "$(RELEASE_CMD) --release-notes <(cat CHANGELOG.md) --config $(TEMP_DIR)/goreleaser.yaml"
 
 .PHONY: clean
 clean: clean-dist clean-snapshot  ## Remove previous builds, result reports, and test cache
