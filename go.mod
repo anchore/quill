@@ -8,7 +8,7 @@ require (
 	github.com/anchore/go-logger v0.0.0-20220728155337-03b66a5207d8
 	github.com/anchore/go-macholibre v0.0.0-20220308212642-53e6d0aaf6fb
 	github.com/aws/aws-sdk-go v1.44.114
-	github.com/blacktop/go-macho v1.1.83
+	github.com/blacktop/go-macho v1.1.147
 	github.com/charmbracelet/bubbles v0.11.0
 	github.com/charmbracelet/bubbletea v0.22.1
 	github.com/charmbracelet/lipgloss v0.6.0
@@ -41,6 +41,7 @@ require (
 require (
 	github.com/asaskevich/govalidator v0.0.0-20200907205600-7a23bdc65eef // indirect
 	github.com/atotto/clipboard v0.1.4 // indirect
+	github.com/blacktop/go-dwarf v1.0.9 // indirect
 	github.com/charmbracelet/harmonica v0.2.0 // indirect
 	github.com/containerd/console v1.0.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
