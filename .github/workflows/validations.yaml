@@ -172,7 +172,7 @@ jobs:
         if: steps.tool-cache.outputs.cache-hit != 'true' || steps.go-cache.outputs.cache-hit != 'true'
         run: make bootstrap
 
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: artifacts
           path: snapshot
