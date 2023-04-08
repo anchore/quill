@@ -60,7 +60,7 @@ func sign(binPath string, opts options.Signing) error {
 		if opts.AdHoc {
 			log.Warn("ad-hoc signing is enabled, but a p12 file was also provided. The p12 file will be ignored.")
 		} else {
-			replacement, err := quill.NewSigningConfigFromP12(binPath, opts.P12, opts.Password)
+			replacement, err := quill.NewSigningConfigFromP12(binPath, opts.P12, opts.Password, opts.FailWithoutFullChain)
 			if err != nil {
 				return fmt.Errorf("unable to read p12: %w", err)
 			}

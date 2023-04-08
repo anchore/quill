@@ -1,4 +1,4 @@
-package pem
+package pki
 
 import (
 	"crypto/x509"
@@ -8,7 +8,7 @@ import (
 	"github.com/anchore/quill/internal/log"
 )
 
-func loadCertificates(path string) ([]*x509.Certificate, error) {
+func LoadCertificates(path string) ([]*x509.Certificate, error) {
 	log.WithFields("path", path).Trace("reading certificate(s)")
 	certPEM, err := LoadBytesFromFileOrEnv(path)
 	if err != nil {

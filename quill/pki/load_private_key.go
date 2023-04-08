@@ -1,4 +1,4 @@
-package pem
+package pki
 
 import (
 	"crypto"
@@ -10,7 +10,7 @@ import (
 	"github.com/anchore/quill/internal/log"
 )
 
-func loadPrivateKey(path string, password string) (crypto.PrivateKey, error) {
+func LoadPrivateKey(path string, password string) (crypto.PrivateKey, error) {
 	log.Debug("loading private key")
 
 	b, err := LoadBytesFromFileOrEnv(path)

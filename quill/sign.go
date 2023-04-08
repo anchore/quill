@@ -2,6 +2,7 @@ package quill
 
 import (
 	"fmt"
+	"github.com/anchore/quill/quill/pki"
 	"os"
 	"path"
 
@@ -10,20 +11,19 @@ import (
 	"github.com/anchore/quill/internal/log"
 	"github.com/anchore/quill/quill/event/monitor"
 	"github.com/anchore/quill/quill/macho"
-	"github.com/anchore/quill/quill/pem"
 	"github.com/anchore/quill/quill/sign"
 )
 
 type SigningConfig struct {
-	SigningMaterial pem.SigningMaterial
+	SigningMaterial pki.SigningMaterial
 	Identity        string
 	Path            string
 }
 
-func NewSigningConfigFromPEMs(binaryPath, certificate, privateKey, password string) (*SigningConfig, error) {
-	var signingMaterial pem.SigningMaterial
+func NewSigningConfigFromPEMs(binaryPath, certificate, privateKey, password string, failWithoutFullChain bool) (*SigningConfig, error) {
+	var signingMaterial pki.SigningMaterial
 	if certificate != "" {
-		sm, err := pem.NewSigningMaterialFromPEMs(certificate, privateKey, password)
+		sm, err := pki.NewSigningMaterialFromPEMs(certificate, privateKey, password, failWithoutFullChain)
 		if err != nil {
 			return nil, err
 		}
@@ -38,8 +38,8 @@ func NewSigningConfigFromPEMs(binaryPath, certificate, privateKey, password stri
 	}, nil
 }
 
-func NewSigningConfigFromP12(binaryPath, p12, password string) (*SigningConfig, error) {
-	signingMaterial, err := pem.NewSigningMaterialFromP12(p12, password)
+func NewSigningConfigFromP12(binaryPath, p12, password string, failWithoutFullChain bool) (*SigningConfig, error) {
+	signingMaterial, err := pki.NewSigningMaterialFromP12(p12, password, failWithoutFullChain)
 	if err != nil {
 		return nil, err
 	}

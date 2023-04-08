@@ -11,10 +11,11 @@ var _ Interface = &Signing{}
 
 type Signing struct {
 	// bound options
-	Identity        string `yaml:"identity" json:"identity" mapstructure:"identity"`
-	P12             string `yaml:"p12" json:"p12" mapstructure:"p12"`
-	TimestampServer string `yaml:"timestamp-server" json:"timestamp-server" mapstructure:"timestamp-server"`
-	AdHoc           bool   `yaml:"ad-hoc" json:"ad-hoc" mapstructure:"ad-hoc"`
+	Identity             string `yaml:"identity" json:"identity" mapstructure:"identity"`
+	P12                  string `yaml:"p12" json:"p12" mapstructure:"p12"`
+	TimestampServer      string `yaml:"timestamp-server" json:"timestamp-server" mapstructure:"timestamp-server"`
+	AdHoc                bool   `yaml:"ad-hoc" json:"ad-hoc" mapstructure:"ad-hoc"`
+	FailWithoutFullChain bool   `yaml:"fail-without-full-chain" json:"fail-without-full-chain" mapstructure:"fail-without-full-chain"`
 
 	// unbound options
 	Password string `yaml:"password" json:"password" mapstructure:"password"`
@@ -22,7 +23,8 @@ type Signing struct {
 
 func DefaultSigning() Signing {
 	return Signing{
-		TimestampServer: "http://timestamp.apple.com/ts01",
+		TimestampServer:      "http://timestamp.apple.com/ts01",
+		FailWithoutFullChain: true,
 	}
 }
 
@@ -55,6 +57,12 @@ func (o *Signing) AddFlags(flags *pflag.FlagSet) {
 		"ad-hoc", "", o.AdHoc,
 		"perform ad-hoc signing. No cryptographic signature is included and --p12 key and certificate input are not needed. Do NOT use this option for production builds.",
 	)
+
+	flags.BoolVarP(
+		&o.FailWithoutFullChain,
+		"fail-without-full-chain", "f", o.FailWithoutFullChain,
+		"fail to sign if the full certificate chain is not available (either in the p12 or with the Apple certificates embedded into quill)",
+	)
 }
 
 func (o *Signing) BindFlags(flags *pflag.FlagSet, v *viper.Viper) error {
@@ -68,6 +76,9 @@ func (o *Signing) BindFlags(flags *pflag.FlagSet, v *viper.Viper) error {
 		return err
 	}
 	if err := Bind(v, "sign.ad-hoc", flags.Lookup("ad-hoc")); err != nil {
+		return err
+	}
+	if err := Bind(v, "sign.fail-without-full-chain", flags.Lookup("fail-without-full-chain")); err != nil {
 		return err
 	}
 

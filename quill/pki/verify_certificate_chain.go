@@ -1,4 +1,4 @@
-package pem
+package pki
 
 import (
 	"crypto/x509"
@@ -7,7 +7,7 @@ import (
 	"github.com/anchore/quill/internal/log"
 )
 
-func VerifyCodesigningCertificateChain(certs []*x509.Certificate) error {
+func VerifyCodesigningCertificateChain(certs []*x509.Certificate, failWithoutFullChain bool) error {
 	log.WithFields("chain-size", len(certs)).Trace("verifying certificate chain")
 
 	var leaf *x509.Certificate
@@ -37,8 +37,11 @@ func VerifyCodesigningCertificateChain(certs []*x509.Certificate) error {
 	}
 
 	if len(certs) == 1 {
+		if failWithoutFullChain {
+			return fmt.Errorf("verification failed: full certificate chain not present (%d certificates found)", len(certs))
+		}
 		// no chain to verify with
-		log.Warnf("only found one certificate, no way to verify it (you need to provide a full certificate chain)")
+		log.Warnf("only found one certificate, no way to verify it (you need to provide a full certificate chain). Skipping verification...")
 		return nil
 	}
 

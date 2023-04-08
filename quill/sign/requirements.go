@@ -10,7 +10,7 @@ import (
 
 	"github.com/anchore/quill/internal/log"
 	"github.com/anchore/quill/quill/macho"
-	"github.com/anchore/quill/quill/pem"
+	"github.com/anchore/quill/quill/pki"
 )
 
 const (
@@ -61,7 +61,7 @@ const (
 	anchorCertIndex        = ^uint32(0) // index for anchor (last in chain), equiv to -1
 )
 
-func generateRequirements(id string, h hash.Hash, signingMaterial pem.SigningMaterial) (*macho.Blob, []byte, error) {
+func generateRequirements(id string, h hash.Hash, signingMaterial pki.SigningMaterial) (*macho.Blob, []byte, error) {
 	var reqBytes []byte
 	if signingMaterial.Signer == nil {
 		log.Trace("skipping adding designated requirement because no signer was found")
@@ -94,7 +94,7 @@ func generateRequirements(id string, h hash.Hash, signingMaterial pem.SigningMat
 	return &blob, h.Sum(nil), nil
 }
 
-func newRequirements(id string, signingMaterial pem.SigningMaterial) (*macho.Requirements, error) {
+func newRequirements(id string, signingMaterial pki.SigningMaterial) (*macho.Requirements, error) {
 	requirementBytes, err := buildRequirementStatements(id, signingMaterial)
 	if err != nil {
 		return nil, fmt.Errorf("unable to build requirement statements from signing material: %w", err)
@@ -123,7 +123,7 @@ func newRequirements(id string, signingMaterial pem.SigningMaterial) (*macho.Req
 	}, nil
 }
 
-func buildRequirementStatements(id string, signingMaterial pem.SigningMaterial) ([]byte, error) {
+func buildRequirementStatements(id string, signingMaterial pki.SigningMaterial) ([]byte, error) {
 	var statements []reqStatement
 
 	// add on the identifier

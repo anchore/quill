@@ -1,4 +1,4 @@
-package pem
+package pki
 
 import (
 	"testing"
@@ -33,7 +33,7 @@ func Test_loadCertFromFile(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.filename, func(t *testing.T) {
 
-			got, err := loadCertificates(tt.filename)
+			got, err := LoadCertificates(tt.filename)
 			require.NoError(t, err)
 
 			require.Len(t, got, len(tt.certs))

@@ -18,7 +18,7 @@ import (
 
 	"github.com/anchore/quill/internal/test"
 	"github.com/anchore/quill/quill/macho"
-	"github.com/anchore/quill/quill/pem"
+	"github.com/anchore/quill/quill/pki"
 )
 
 // TODO: useful for debugging, but doest test anything
@@ -122,7 +122,7 @@ func Test_debugRequirementsHash(t *testing.T) {
 	}
 }
 
-//// TODO: useful for debugging, but doest test anything
+//// TODO: useful for debugging, but doesn't test anything
 //func Test_debugRequirements(t *testing.T) {
 //	buff, err := hex.DecodeString("000000060000000200000009737966745f74657374000000000000060000000f000000060000000e000000010000000a2a864886f763640602060000000000000000000b000000000000000a7375626a6563742e4f550000000000010000000a394d4a484b59583541540000")
 //	require.NoError(t, err)
@@ -147,28 +147,28 @@ func Test_buildRequirementStatements(t *testing.T) {
 	tests := []struct {
 		name            string
 		id              string
-		signingMaterial pem.SigningMaterial
+		signingMaterial pki.SigningMaterial
 		wantBytes       string
 		wantDescription string
 	}{
 		{
 			name:            "encode empty requirements",
 			id:              "",
-			signingMaterial: pem.SigningMaterial{},
+			signingMaterial: pki.SigningMaterial{},
 			wantBytes:       "00000000",
 			wantDescription: "never",
 		},
 		{
 			name:            "encode only the identifier",
 			id:              "the-id",
-			signingMaterial: pem.SigningMaterial{},
+			signingMaterial: pki.SigningMaterial{},
 			wantBytes:       "00000002000000067468652d69640000",
 			wantDescription: `identifier "the-id"`,
 		},
 		{
 			name: "encode apple generic anchor (with and conjunction)",
 			id:   "the-id",
-			signingMaterial: pem.SigningMaterial{
+			signingMaterial: pki.SigningMaterial{
 				Certs: []*x509.Certificate{
 					{
 						Subject: pkix.Name{
@@ -182,7 +182,7 @@ func Test_buildRequirementStatements(t *testing.T) {
 		},
 		{
 			name: "encode intermediate certificate has appleCertificateExtension",
-			signingMaterial: pem.SigningMaterial{
+			signingMaterial: pki.SigningMaterial{
 				Certs: []*x509.Certificate{
 					// root
 					{
@@ -204,7 +204,7 @@ func Test_buildRequirementStatements(t *testing.T) {
 		},
 		{
 			name: "encode root certificate has appleCertificateExtension",
-			signingMaterial: pem.SigningMaterial{
+			signingMaterial: pki.SigningMaterial{
 				Certs: []*x509.Certificate{
 					// root
 					{
@@ -226,7 +226,7 @@ func Test_buildRequirementStatements(t *testing.T) {
 		},
 		{
 			name: "encode intermediate certificate has appleCertificateExtension ONLY if oid present",
-			signingMaterial: pem.SigningMaterial{
+			signingMaterial: pki.SigningMaterial{
 				Certs: []*x509.Certificate{
 					// root
 					{
@@ -248,7 +248,7 @@ func Test_buildRequirementStatements(t *testing.T) {
 		},
 		{
 			name: "encode leaf certificate has specific subject OU",
-			signingMaterial: pem.SigningMaterial{
+			signingMaterial: pki.SigningMaterial{
 				Certs: []*x509.Certificate{
 					{
 						Subject: pkix.Name{
@@ -263,7 +263,7 @@ func Test_buildRequirementStatements(t *testing.T) {
 		{
 			name: "all together now!",
 			id:   "the-id",
-			signingMaterial: pem.SigningMaterial{
+			signingMaterial: pki.SigningMaterial{
 				Certs: []*x509.Certificate{
 					// root
 					{

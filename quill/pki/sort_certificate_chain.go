@@ -1,4 +1,4 @@
-package pem
+package pki
 
 import (
 	"crypto/x509"

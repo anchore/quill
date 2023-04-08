@@ -1,4 +1,4 @@
-package pem
+package pki
 
 import (
 	"crypto/x509"
@@ -66,7 +66,7 @@ func Test_sortCertificates(t *testing.T) {
 
 			var certs []*x509.Certificate
 			for _, path := range tt.certPaths {
-				readCerts, err := loadCertificates(path)
+				readCerts, err := LoadCertificates(path)
 				require.NoError(t, err)
 				certs = append(certs, readCerts...)
 			}

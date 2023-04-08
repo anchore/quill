@@ -142,6 +142,11 @@ unit: $(RESULTS_DIR)  ## Run unit tests (with coverage)
 	@echo "Coverage: $$(cat $(COVER_TOTAL))"
 	@if [ $$(echo "$$(cat $(COVER_TOTAL)) >= $(COVERAGE_THRESHOLD)" | bc -l) -ne 1 ]; then echo "$(RED)$(BOLD)Failed coverage quality gate (> $(COVERAGE_THRESHOLD)%)$(RESET)" && false; fi
 
+.PHONY: update-apple-certs
+update-apple-certs:  ## Update the apple certs checked into the repo
+	$(call title,Updating Apple certs)
+	go generate ./...
+
 .PHONY: build
 build: $(SNAPSHOT_DIR) ## Build release snapshot binaries and packages
 
