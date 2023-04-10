@@ -24,7 +24,7 @@ require (
 	github.com/jedib0t/go-pretty v4.3.0+incompatible
 	github.com/klauspost/compress v1.15.11
 	github.com/mitchellh/go-homedir v1.1.0
-	github.com/pkg/profile v1.6.0
+	github.com/pkg/profile v1.7.0
 	github.com/scylladb/go-set v1.0.2
 	github.com/spf13/cobra v1.6.0
 	github.com/spf13/pflag v1.0.5
@@ -44,11 +44,13 @@ require (
 	github.com/charmbracelet/harmonica v0.2.0 // indirect
 	github.com/containerd/console v1.0.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/felixge/fgprof v0.9.3 // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/gkampitakis/ciinfo v0.1.1 // indirect
 	github.com/gkampitakis/go-diff v1.3.0 // indirect
 	github.com/go-openapi/errors v0.20.2 // indirect
 	github.com/go-openapi/strfmt v0.21.3 // indirect
+	github.com/google/pprof v0.0.0-20211214055906-6f57359322fd // indirect
 	github.com/hashicorp/errwrap v1.0.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
