@@ -3,6 +3,7 @@ package certchain
 import (
 	"crypto/x509"
 	"fmt"
+
 	"github.com/anchore/quill/quill/pki/load"
 )
 

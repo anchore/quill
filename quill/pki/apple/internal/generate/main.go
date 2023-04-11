@@ -16,7 +16,7 @@ import (
 
 const (
 	CertsDir   = "certs"
-	AppleCaUrl = "https://www.apple.com/certificateauthority/"
+	AppleCaURL = "https://www.apple.com/certificateauthority/"
 )
 
 type Link struct {
@@ -36,19 +36,19 @@ func main() {
 	}
 
 	fmt.Println("Downloading Apple CA index page...")
-	by, err := download(AppleCaUrl)
+	by, err := download(AppleCaURL)
 	if err != nil {
 		log.Fatalf("Error reading URL: %v", err)
 	}
 
 	// for casual testing
-	//by, err := os.ReadFile("test-fixtures/index.html")
-	//if err != nil {
-	//	log.Fatalf("Error reading file: %v", err)
-	//}
+	// by, err := os.ReadFile("test-fixtures/index.html")
+	// if err != nil {
+	//  	log.Fatalf("Error reading file: %v", err)
+	// }
 
 	fmt.Println("Parsing Apple CA index page...")
-	appleCALinks, err := findCALinks(by, AppleCaUrl)
+	appleCALinks, err := findCALinks(by, AppleCaURL)
 	if err != nil {
 		log.Fatalf("Error finding Apple CA links: %v", err)
 	}
@@ -105,10 +105,8 @@ func downloadCertTo(url, dest string) error {
 	var suffix string
 	if len(buf.Bytes()) > 0 && buf.Bytes()[0] == 0x30 {
 		// convert the DER encoded certificate in "buf" to PEM
-		pemBy, err := convertDERToPEM(buf.Bytes())
-		if err != nil {
-			return fmt.Errorf("error converting DER to PEM: %v", err)
-		}
+		pemBy := convertDERToPEM(buf.Bytes())
+
 		buf = bytes.NewBuffer(pemBy)
 	}
 
@@ -140,16 +138,16 @@ func downloadCertTo(url, dest string) error {
 	return nil
 }
 
-func convertDERToPEM(der []byte) ([]byte, error) {
+func convertDERToPEM(der []byte) []byte {
 	block := &pem.Block{
 		Type:  "CERTIFICATE",
 		Bytes: der,
 	}
-	return pem.EncodeToMemory(block), nil
+	return pem.EncodeToMemory(block)
 }
 
 func download(url string) ([]byte, error) {
-	resp, err := http.Get(url)
+	resp, err := http.Get(url) // nolint:gosec // G107 is a false positive since the URL is a constant
 	if err != nil {
 		return nil, err
 	}

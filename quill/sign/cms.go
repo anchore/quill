@@ -2,11 +2,11 @@ package sign
 
 import (
 	"fmt"
-	"github.com/anchore/quill/quill/pki"
 
 	cms "github.com/github/smimesign/ietf-cms"
 
 	"github.com/anchore/quill/quill/macho"
+	"github.com/anchore/quill/quill/pki"
 )
 
 func generateCMS(signingMaterial pki.SigningMaterial, cdBlob *macho.Blob) (*macho.Blob, error) {

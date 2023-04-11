@@ -3,12 +3,12 @@ package notary
 import (
 	"crypto/ecdsa"
 	"fmt"
-	"github.com/anchore/quill/quill/pki/load"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
 
 	"github.com/anchore/quill/internal/log"
+	"github.com/anchore/quill/quill/pki/load"
 )
 
 type TokenConfig struct {

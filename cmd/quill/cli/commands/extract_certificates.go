@@ -25,6 +25,9 @@ func ExtractCertificates(app *application.Application) *cobra.Command {
 	opts := &extractCertificatesConfig{}
 
 	cmd := &cobra.Command{
+		Aliases: []string{
+			"certs",
+		},
 		Use:   "certificates PATH",
 		Short: "extract certificates from a signed macho binary",
 		Example: options.FormatPositionalArgsHelp(

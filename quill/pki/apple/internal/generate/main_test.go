@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/google/go-cmp/cmp"
-	"github.com/stretchr/testify/require"
 	"os"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_findCALinks(t *testing.T) {
@@ -120,7 +121,7 @@ func Test_findCALinks(t *testing.T) {
 			html, err := os.ReadFile(tt.fixture)
 			require.NoError(t, err)
 
-			got, err := findCALinks(html, AppleCaUrl)
+			got, err := findCALinks(html, AppleCaURL)
 			tt.wantErr(t, err)
 			if diff := cmp.Diff(tt.want, got); diff != "" {
 				t.Errorf("findCALinks() mismatch (-want +got):\n%s", diff)

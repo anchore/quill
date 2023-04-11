@@ -2,7 +2,6 @@ package quill
 
 import (
 	"fmt"
-	"github.com/anchore/quill/quill/pki"
 	"os"
 	"path"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/anchore/quill/internal/log"
 	"github.com/anchore/quill/quill/event/monitor"
 	"github.com/anchore/quill/quill/macho"
+	"github.com/anchore/quill/quill/pki"
 	"github.com/anchore/quill/quill/sign"
 )
 

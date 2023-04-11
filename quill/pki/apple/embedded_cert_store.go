@@ -5,9 +5,10 @@ import (
 	"crypto/x509"
 	"embed"
 	"fmt"
+	"path"
+
 	"github.com/anchore/quill/quill/pki/certchain"
 	"github.com/anchore/quill/quill/pki/load"
-	"path"
 )
 
 //go:generate go run ./internal/generate/

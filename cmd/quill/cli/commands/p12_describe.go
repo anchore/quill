@@ -3,7 +3,6 @@ package commands
 import (
 	"crypto/x509"
 	"fmt"
-	"github.com/anchore/quill/quill/pki/load"
 	"reflect"
 	"strings"
 
@@ -12,6 +11,7 @@ import (
 	"github.com/anchore/quill/cmd/quill/cli/application"
 	"github.com/anchore/quill/cmd/quill/cli/options"
 	"github.com/anchore/quill/internal/bus"
+	"github.com/anchore/quill/quill/pki/load"
 )
 
 var _ options.Interface = &p12DescribeConfig{}

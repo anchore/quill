@@ -2,20 +2,23 @@ package commands
 
 import (
 	"fmt"
-	"github.com/anchore/quill/quill/pki/apple"
 	"io"
 	"strings"
 
+	"github.com/spf13/cobra"
+
 	"github.com/anchore/quill/cmd/quill/cli/application"
 	"github.com/anchore/quill/internal/bus"
-	"github.com/spf13/cobra"
+	"github.com/anchore/quill/quill/pki/apple"
 )
 
-func AppleCerts(app *application.Application) *cobra.Command {
-
+func EmbeddedCerts(app *application.Application) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "apple-certs",
-		Short:   "show the Apple root and intermediate certificates embedded into quill",
+		Aliases: []string{
+			"embedded-certs",
+		},
+		Use:     "embedded-certificates",
+		Short:   "show the certificates embedded into quill (typically the Apple root and intermediate certs)",
 		Args:    cobra.NoArgs,
 		PreRunE: app.Setup(nil),
 		RunE: func(cmd *cobra.Command, args []string) error {

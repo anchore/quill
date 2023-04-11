@@ -3,12 +3,13 @@ package apple
 import (
 	"crypto/x509"
 	"fmt"
-	"github.com/anchore/quill/internal/log"
-	"github.com/anchore/quill/quill/pki/certchain"
-	"github.com/anchore/quill/quill/pki/load"
 	"os/exec"
 	"runtime"
 	"strings"
+
+	"github.com/anchore/quill/internal/log"
+	"github.com/anchore/quill/quill/pki/certchain"
+	"github.com/anchore/quill/quill/pki/load"
 )
 
 var _ certchain.Searcher = (*keychainSearcher)(nil)

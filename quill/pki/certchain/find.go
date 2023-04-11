@@ -4,8 +4,10 @@ import (
 	"crypto/x509"
 	"encoding/hex"
 	"fmt"
-	"github.com/anchore/quill/internal/log"
+
 	"github.com/scylladb/go-set/strset"
+
+	"github.com/anchore/quill/internal/log"
 )
 
 // Find will look for the full certificate chain for the given certificate from the given cert store.
@@ -71,7 +73,6 @@ func Find(store Store, cert *x509.Certificate) ([]*x509.Certificate, error) {
 
 			// use the key ID of this parent... if it exists, use it over just the CN match
 			if len(c.SubjectKeyId) > 0 {
-
 				if nextKeyIDs.Has(currentKeyID) {
 					// the key ID matches, so use it!
 					nextKeyIDs.Remove(currentKeyID)

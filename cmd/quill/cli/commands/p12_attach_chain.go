@@ -3,9 +3,6 @@ package commands
 import (
 	"crypto/rand"
 	"fmt"
-	"github.com/anchore/quill/quill/pki/apple"
-	"github.com/anchore/quill/quill/pki/certchain"
-	"github.com/anchore/quill/quill/pki/load"
 	"os"
 	"strings"
 
@@ -18,6 +15,9 @@ import (
 	"github.com/anchore/quill/cmd/quill/cli/options"
 	"github.com/anchore/quill/internal/bus"
 	"github.com/anchore/quill/internal/log"
+	"github.com/anchore/quill/quill/pki/apple"
+	"github.com/anchore/quill/quill/pki/certchain"
+	"github.com/anchore/quill/quill/pki/load"
 )
 
 var _ options.Interface = &p12AttachChainConfig{}

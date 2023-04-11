@@ -4,12 +4,14 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/hex"
-	"github.com/anchore/quill/internal/test"
-	"github.com/anchore/quill/quill/pki/load"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/anchore/quill/internal/test"
+	"github.com/anchore/quill/quill/pki/load"
 )
 
 func TestFindRemainingChainCertsWithinQuill(t *testing.T) {
