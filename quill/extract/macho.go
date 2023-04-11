@@ -28,7 +28,7 @@ func getMachoDetails(m File) MachoDetails {
 		Type:             m.blacktopFile.Type.String(),
 		CPU:              m.blacktopFile.CPU.String(),
 		SubCPU:           m.blacktopFile.SubCPU.String(m.blacktopFile.CPU),
-		Flags:            m.blacktopFile.Flags.List(),
+		Flags:            m.blacktopFile.Flags.Flags(),
 		Libs:             m.blacktopFile.ImportedLibraries(),
 		LoadCommandCount: m.blacktopFile.NCommands,
 		LoadCommandSize:  m.blacktopFile.SizeCommands,

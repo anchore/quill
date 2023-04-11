@@ -93,7 +93,7 @@ func getCodeDirectories(m File) (cdObjs []CodeDirectoryDetails) {
 				},
 				TeamID:   cd.TeamID,
 				ID:       cd.ID,
-				Platform: cd.Header.Platform,
+				Platform: uint8(cd.Header.Platform),
 				Version: DescribedValue{
 					Value:       cd.Header.Version,
 					Description: cd.Header.Version.String(),

@@ -3,6 +3,7 @@ package quill
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/anchore/quill/internal/test"
@@ -237,6 +238,53 @@ func TestSign(t *testing.T) {
 			if !tt.args.skipAssertAgainstCodesign {
 				test.AssertAgainstCodesignTool(t, tt.args.path)
 			}
+		})
+	}
+}
+
+func TestIsSigned(t *testing.T) {
+
+	tests := []struct {
+		name     string
+		path     string
+		isSigned bool
+		wantErr  require.ErrorAssertionFunc
+	}{
+		{
+			name:     "check unsigned syft binary",
+			path:     test.AssetCopy(t, "syft_unsigned_arm64"),
+			isSigned: false,
+		},
+		{
+			name:     "check signed, single arch binary",
+			path:     test.AssetCopy(t, "syft_signed"),
+			isSigned: true,
+		},
+		{
+			name:     "check signed, universal arch binary",
+			path:     test.AssetCopy(t, "ls_universal_signed"),
+			isSigned: true,
+		},
+		{
+			name:     "check non-macho file",
+			path:     test.AssetCopy(t, "hello.p12"),
+			isSigned: false,
+			wantErr:  require.Error,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			if tt.wantErr == nil {
+				tt.wantErr = require.NoError
+			}
+
+			actual, err := IsSigned(tt.path)
+			tt.wantErr(t, err)
+			if err != nil {
+				return
+			}
+			assert.Equal(t, tt.isSigned, actual)
 		})
 	}
 }
