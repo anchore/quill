@@ -3,13 +3,25 @@ TEMP_DIR = ./.tmp
 RESULTS_DIR = test/results
 COVER_REPORT = $(RESULTS_DIR)/unit-coverage-details.txt
 COVER_TOTAL = $(RESULTS_DIR)/unit-coverage-summary.txt
+
+# Command templates #################################
 LINTCMD = $(TEMP_DIR)/golangci-lint run --tests=false --timeout=2m --config .golangci.yaml
 GOIMPORTS_CMD = $(TEMP_DIR)/gosimports -local github.com/anchore
 RELEASE_CMD = $(TEMP_DIR)/goreleaser release --rm-dist
 SNAPSHOT_CMD = $(RELEASE_CMD) --skip-publish --snapshot --skip-sign
-VERSION=$(shell git describe --dirty --always --tags)
+CHRONICLE_CMD = $(TEMP_DIR)/chronicle
+GLOW_CMD = $(TEMP_DIR)/glow
 
-# formatting
+# Tool versions #################################
+QUILL_VERSION = latest
+GOLANG_CI_VERSION = v1.52.2
+GOBOUNCER_VERSION = v0.4.0
+GORELEASER_VERSION = v1.17.0
+GOSIMPORTS_VERSION = v0.3.8
+CHRONICLE_VERSION = v0.6.0
+GLOW_VERSION := v1.5.0
+
+# Formatting variables #################################
 BOLD := $(shell tput -T linux bold)
 PURPLE := $(shell tput -T linux setaf 5)
 GREEN := $(shell tput -T linux setaf 2)
@@ -18,24 +30,18 @@ RED := $(shell tput -T linux setaf 1)
 RESET := $(shell tput -T linux sgr0)
 TITLE := $(BOLD)$(PURPLE)
 SUCCESS := $(BOLD)$(GREEN)
+
+# Test variables #################################
 # the quality gate lower threshold for unit test total % coverage (by function statements)
-COVERAGE_THRESHOLD := 30
-# CI cache busting values; change these if you want CI to not use previous stored cache
-BOOTSTRAP_CACHE="c7afb99ad"
+COVERAGE_THRESHOLD := 45
 
-# ci dependency versions
-QUILL_VERSION = latest
-GOLANG_CI_VERSION = v1.52.2
-GOBOUNCER_VERSION = v0.4.0
-GORELEASER_VERSION = v1.11.5
-GOSIMPORTS_VERSION = v0.3.2
-CHRONICLE_VERSION = v0.4.2
-
-## Build variables
+## Build variables #################################
 DIST_DIR = dist
 SNAPSHOT_DIR = snapshot
 OS=$(shell uname | tr '[:upper:]' '[:lower:]')
 SNAPSHOT_BIN=$(realpath $(shell pwd)/$(SNAPSHOT_DIR)/$(OS)-build_$(OS)_amd64_v1/$(BIN))
+CHANGELOG := CHANGELOG.md
+VERSION=$(shell git describe --dirty --always --tags)
 
 ifeq "$(strip $(VERSION))" ""
  override VERSION = $(shell git describe --always --tags --dirty)
@@ -94,6 +100,7 @@ bootstrap-tools: $(TEMP_DIR)
 	curl -sSfL https://raw.githubusercontent.com/wagoodman/go-bouncer/master/bouncer.sh | sh -s -- -b $(TEMP_DIR)/ $(GOBOUNCER_VERSION)
 	GOBIN="$(realpath $(TEMP_DIR))" go install github.com/goreleaser/goreleaser@$(GORELEASER_VERSION)
 	GOBIN="$(realpath $(TEMP_DIR))" go install github.com/rinchsan/gosimports/cmd/gosimports@$(GOSIMPORTS_VERSION)
+	GOBIN="$(realpath $(TEMP_DIR))" go install github.com/charmbracelet/glow@$(GLOW_VERSION)
 
 .PHONY: bootstrap-go
 bootstrap-go:
@@ -143,13 +150,11 @@ check-go-mod-tidy:
 ## Testing targets #################################
 
 .PHONY: unit
-unit: $(RESULTS_DIR)  ## Run unit tests (with coverage)
+unit: $(TEMP_DIR)  ## Run unit tests (with coverage)
 	$(call title,Running unit tests)
-	# we don't do tests in parallel due to test fixture creation collisions
-	go test -p 1 -coverprofile $(COVER_REPORT) $(shell go list ./... | grep -v anchore/quill/test)
-	@go tool cover -func $(COVER_REPORT) | grep total |  awk '{print substr($$3, 1, length($$3)-1)}' > $(COVER_TOTAL)
-	@echo "Coverage: $$(cat $(COVER_TOTAL))"
-	@if [ $$(echo "$$(cat $(COVER_TOTAL)) >= $(COVERAGE_THRESHOLD)" | bc -l) -ne 1 ]; then echo "$(RED)$(BOLD)Failed coverage quality gate (> $(COVERAGE_THRESHOLD)%)$(RESET)" && false; fi
+	go test -coverprofile $(TEMP_DIR)/unit-coverage-details.txt $(shell go list ./... | grep -v anchore/quill/test)
+	@.github/scripts/coverage.py $(COVERAGE_THRESHOLD) $(TEMP_DIR)/unit-coverage-details.txt
+
 
 ## Test-fixture-related targets #################################
 
@@ -210,18 +215,19 @@ cli: $(SNAPSHOT_DIR) ## Run CLI tests
 	go test -count=1 -timeout=15m -v ./test/cli
 
 .PHONY: changelog
-changelog: clean-changelog CHANGELOG.md
-	@docker run -it --rm \
-		-v $(shell pwd)/CHANGELOG.md:/CHANGELOG.md \
-		rawkode/mdv \
-			-t 748.5989 \
-			/CHANGELOG.md
+changelog: clean-changelog  ## Generate and show the changelog for the current unreleased version
+	$(CHRONICLE_CMD) -vvv -n --version-file VERSION > $(CHANGELOG)
+	@$(GLOW_CMD) $(CHANGELOG)
 
-CHANGELOG.md:
-	$(TEMP_DIR)/chronicle -vv > CHANGELOG.md
+$(CHANGELOG):
+	$(CHRONICLE_CMD) -vvv > $(CHANGELOG)
 
 .PHONY: release
-release: clean-dist clean-changelog CHANGELOG.md ## Build and publish final binaries and packages
+release:  ## Cut a new release
+	@.github/scripts/trigger-release.sh
+
+.PHONY: release
+ci-release: ci-check clean-dist $(CHANGELOG)
 	$(call title,Publishing release artifacts)
 
 	# create a config with the dist dir overridden
@@ -230,6 +236,9 @@ release: clean-dist clean-changelog CHANGELOG.md ## Build and publish final bina
 
 	bash -c "$(RELEASE_CMD) --release-notes <(cat CHANGELOG.md) --config $(TEMP_DIR)/goreleaser.yaml"
 
+.PHONY: ci-check
+ci-check:
+	@.github/scripts/ci-check.sh
 
 ## Cleanup targets #################################
 
@@ -247,7 +256,7 @@ clean-dist: clean-changelog
 
 .PHONY: clean-changelog
 clean-changelog:
-	rm -f CHANGELOG.md
+	rm -f $(CHANGELOG) VERSION
 
 
 ## Halp! #################################
