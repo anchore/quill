@@ -30,7 +30,7 @@ func Test_loadPrivateKeyFromFile(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewPrivateKey(tt.filename, tt.password)
+			got, err := PrivateKey(tt.filename, tt.password)
 			require.NoError(t, err)
 
 			// note: we're not testing functionality in depth, just a sanity check.

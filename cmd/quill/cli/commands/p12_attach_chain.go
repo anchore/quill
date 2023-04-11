@@ -98,7 +98,7 @@ func P12AttachChain(app *application.Application) *cobra.Command {
 func writeP12WithChain(p12Path, password, keychainPath string, failWithoutFullChain bool) (string, error) {
 	log.WithFields("file", p12Path).Info("attaching certificate chain to p12 file")
 
-	key, cert, certs, err := load.NewP12(p12Path, password)
+	key, cert, certs, err := load.P12(p12Path, password)
 	if err != nil {
 		return "", err
 	}

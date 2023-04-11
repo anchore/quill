@@ -30,7 +30,7 @@ func (k keychainSearcher) CertificatesByCN(commonName string) ([]*x509.Certifica
 		return nil, fmt.Errorf("unable to search keychain: %w", err)
 	}
 
-	certs, err := load.NewCertificatesFromPEM([]byte(contents))
+	certs, err := load.CertificatesFromPEM([]byte(contents))
 	if err != nil {
 		return nil, fmt.Errorf("unable to load certificates from PEM on keychain: %w", err)
 	}

@@ -8,7 +8,7 @@ import (
 	"github.com/anchore/quill/internal/log"
 )
 
-func NewCertificates(path string) ([]*x509.Certificate, error) {
+func Certificates(path string) ([]*x509.Certificate, error) {
 	log.WithFields("path", path).Trace("reading certificate(s)")
 	certPEM, err := BytesFromFileOrEnv(path)
 	if err != nil {
@@ -35,10 +35,10 @@ func NewCertificates(path string) ([]*x509.Certificate, error) {
 	return certs, nil
 }
 
-func NewCertificatesFromPEMs(pems [][]byte) ([]*x509.Certificate, error) {
+func CertificatesFromPEMs(pems [][]byte) ([]*x509.Certificate, error) {
 	var result []*x509.Certificate
 	for _, pemBytes := range pems {
-		certs, err := NewCertificatesFromPEM(pemBytes)
+		certs, err := CertificatesFromPEM(pemBytes)
 		if err != nil {
 			return nil, err
 		}
@@ -47,7 +47,7 @@ func NewCertificatesFromPEMs(pems [][]byte) ([]*x509.Certificate, error) {
 	return result, nil
 }
 
-func NewCertificatesFromPEM(pemBytes []byte) ([]*x509.Certificate, error) {
+func CertificatesFromPEM(pemBytes []byte) ([]*x509.Certificate, error) {
 	var certs []*x509.Certificate
 	chainBlockBytes := decodeChainFromPEM(pemBytes)
 

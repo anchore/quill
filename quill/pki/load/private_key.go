@@ -10,7 +10,7 @@ import (
 	"github.com/anchore/quill/internal/log"
 )
 
-func NewPrivateKey(path string, password string) (crypto.PrivateKey, error) {
+func PrivateKey(path string, password string) (crypto.PrivateKey, error) {
 	log.Debug("loading private key")
 
 	b, err := BytesFromFileOrEnv(path)

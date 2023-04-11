@@ -57,12 +57,12 @@ func newEmbeddedCertStore() (*embeddedCertStore, error) {
 		return nil, fmt.Errorf("unable to load root certificates: %w", err)
 	}
 
-	store.rootCerts, err = load.NewCertificatesFromPEMs(store.rootPEMs)
+	store.rootCerts, err = load.CertificatesFromPEMs(store.rootPEMs)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse root certificates: %w", err)
 	}
 
-	store.intermediateCerts, err = load.NewCertificatesFromPEMs(store.intermediatePEMs)
+	store.intermediateCerts, err = load.CertificatesFromPEMs(store.intermediatePEMs)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse intermediate certificates: %w", err)
 	}

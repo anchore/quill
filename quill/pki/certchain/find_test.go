@@ -27,7 +27,7 @@ func TestFindRemainingChainCertsWithinQuill(t *testing.T) {
 		{
 			name: "find intermediate and root certs when given leaf cert",
 			cert: func() *x509.Certificate {
-				certs, err := load.NewCertificates(test.Asset(t, "chain.pem"))
+				certs, err := load.Certificates(test.Asset(t, "chain.pem"))
 				require.NoError(t, err)
 				for _, cert := range certs {
 					switch strings.ToLower(cert.Subject.CommonName) {
@@ -40,7 +40,7 @@ func TestFindRemainingChainCertsWithinQuill(t *testing.T) {
 			}(),
 			store: func() Store {
 				store := NewCollection()
-				certs, err := load.NewCertificates(test.Asset(t, "chain.pem"))
+				certs, err := load.Certificates(test.Asset(t, "chain.pem"))
 				require.NoError(t, err)
 				for _, cert := range certs {
 					switch strings.ToLower(cert.Subject.CommonName) {
@@ -68,7 +68,7 @@ func TestFindRemainingChainCertsWithinQuill(t *testing.T) {
 		{
 			name: "only root loaded into store",
 			cert: func() *x509.Certificate {
-				certs, err := load.NewCertificates(test.Asset(t, "chain.pem"))
+				certs, err := load.Certificates(test.Asset(t, "chain.pem"))
 				require.NoError(t, err)
 				for _, cert := range certs {
 					switch strings.ToLower(cert.Subject.CommonName) {
@@ -81,7 +81,7 @@ func TestFindRemainingChainCertsWithinQuill(t *testing.T) {
 			}(),
 			store: func() Store {
 				store := NewCollection()
-				certs, err := load.NewCertificates(test.Asset(t, "chain.pem"))
+				certs, err := load.Certificates(test.Asset(t, "chain.pem"))
 				require.NoError(t, err)
 				for _, cert := range certs {
 					switch strings.ToLower(cert.Subject.CommonName) {
@@ -103,7 +103,7 @@ func TestFindRemainingChainCertsWithinQuill(t *testing.T) {
 		{
 			name: "root missing",
 			cert: func() *x509.Certificate {
-				certs, err := load.NewCertificates(test.Asset(t, "chain.pem"))
+				certs, err := load.Certificates(test.Asset(t, "chain.pem"))
 				require.NoError(t, err)
 				for _, cert := range certs {
 					switch strings.ToLower(cert.Subject.CommonName) {
@@ -116,7 +116,7 @@ func TestFindRemainingChainCertsWithinQuill(t *testing.T) {
 			}(),
 			store: func() Store {
 				store := NewCollection()
-				certs, err := load.NewCertificates(test.Asset(t, "chain.pem"))
+				certs, err := load.Certificates(test.Asset(t, "chain.pem"))
 				require.NoError(t, err)
 				for _, cert := range certs {
 					switch strings.ToLower(cert.Subject.CommonName) {

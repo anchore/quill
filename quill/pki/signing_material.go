@@ -24,7 +24,7 @@ func NewSigningMaterialFromPEMs(certFile, privateKeyPath, password string, failW
 
 	switch {
 	case certFile != "" && privateKeyPath != "":
-		certs, err = load.NewCertificates(certFile)
+		certs, err = load.Certificates(certFile)
 		if err != nil {
 			return nil, err
 		}
@@ -35,7 +35,7 @@ func NewSigningMaterialFromPEMs(certFile, privateKeyPath, password string, failW
 			}
 		}
 
-		privateKey, err = load.NewPrivateKey(privateKeyPath, password)
+		privateKey, err = load.PrivateKey(privateKeyPath, password)
 		if err != nil {
 			return nil, err
 		}
@@ -56,7 +56,7 @@ func NewSigningMaterialFromPEMs(certFile, privateKeyPath, password string, failW
 }
 
 func NewSigningMaterialFromP12(p12Path, password string, failWithoutFullChain bool) (*SigningMaterial, error) {
-	privateKey, cert, certs, err := load.NewP12(p12Path, password)
+	privateKey, cert, certs, err := load.P12(p12Path, password)
 	if err != nil {
 		return nil, fmt.Errorf("unable to decode p12 file: %w", err)
 	}

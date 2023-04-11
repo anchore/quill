@@ -147,7 +147,7 @@ func convertDERToPEM(der []byte) []byte {
 }
 
 func download(url string) ([]byte, error) {
-	resp, err := http.Get(url) // nolint:gosec // G107 is a false positive since the URL is a constant
+	resp, err := http.Get(url) //nolint:gosec // G107 is a false positive since the URL is a constant
 	if err != nil {
 		return nil, err
 	}

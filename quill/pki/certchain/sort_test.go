@@ -67,7 +67,7 @@ func Test_sortCertificates(t *testing.T) {
 
 			var certs []*x509.Certificate
 			for _, path := range tt.certPaths {
-				readCerts, err := load.NewCertificates(path)
+				readCerts, err := load.Certificates(path)
 				require.NoError(t, err)
 				certs = append(certs, readCerts...)
 			}

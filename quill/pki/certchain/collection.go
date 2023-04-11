@@ -64,7 +64,7 @@ func (p *Collection) AddIntermediatePEMs(pems ...[]byte) error {
 }
 
 func (p *Collection) addPEMs(pems ...[]byte) error {
-	certs, err := load.NewCertificatesFromPEMs(pems)
+	certs, err := load.CertificatesFromPEMs(pems)
 	if err != nil {
 		return err
 	}
