@@ -1,4 +1,4 @@
-package pem
+package certchain
 
 import (
 	"crypto/x509"
@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/anchore/quill/internal/test"
+	"github.com/anchore/quill/quill/pki/load"
 )
 
 func Test_sortCertificates(t *testing.T) {
@@ -66,17 +67,17 @@ func Test_sortCertificates(t *testing.T) {
 
 			var certs []*x509.Certificate
 			for _, path := range tt.certPaths {
-				readCerts, err := loadCertificates(path)
+				readCerts, err := load.Certificates(path)
 				require.NoError(t, err)
 				certs = append(certs, readCerts...)
 			}
 
-			got := sortCertificates(certs)
+			got := Sort(certs)
 			var gotNames []string
 			for _, cert := range got {
 				gotNames = append(gotNames, cert.Subject.CommonName)
 			}
-			assert.Equalf(t, tt.want, gotNames, "sortCertificates(%v)", certs)
+			assert.Equalf(t, tt.want, gotNames, "Sort(%v)", certs)
 		})
 	}
 }

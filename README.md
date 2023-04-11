@@ -23,36 +23,24 @@ curl -sSfL https://raw.githubusercontent.com/anchore/quill/main/install.sh | sh 
 
 ## Usage
 
-First you need to download the signing private key and certificate from Apple. Once you do this you need to attach
-the full certificate chain to a new P12 file:
-
-```bash
-# run on a mac
-
-$ export QUILL_P12_PASSWORD=[p12-password]
-
-$ quill p12 attach-chain [path-to-p12-from-apple]
-
-# a new P12 file was created with the suffix `-with-chain.p12`
-```
-*Note: this step only needs to be done once and the result stored in CI for continual use.*
-
-This new P12 file (with the full certificate chain) can be used on any platform as many times as you need to sign binaries:
+First you need to download the signing private key and certificate from Apple (this is in the form of a ".p12" file). 
 
 ```bash
 # run on **any platform** to sign the binary
 
-$ export QUILL_SIGN_P12=[path-to-p12-with-chain]    # can also be base64 encoded contents instead of a file path
+$ export QUILL_SIGN_P12=[path-to-p12]         # can also be base64 encoded contents instead of a file path
 $ export QUILL_SIGN_PASSWORD=[p12-password]
 
 $ quill sign [path/to/binary]
 ```
 
+**Note**: The signing certificate must be issued by Apple and the full certificate chain must be available at 
+signing time. See the section below on ["Attaching the full certificate chain"](#attaching-the-full-certificate-chain) if you do not wish to rely on the 
+[Apple intermediate and root certificates](https://www.apple.com/certificateauthority/) embedded into the Quill binary.
+
 After signing you can notarize the binary against Apple's notary service:
 
 ```bash
-# run on **any platform** to notarize a signed binary
-
 $ export QUILL_NOTARY_KEY=[path-to-private-key-file-from-apple]   # can also be base64 encoded contents instead of a file path
 $ export QUILL_NOTARY_KEY_ID=[apple-private-key-id]               # e.g. XS319FABCD
 $ export QUILL_NOTARY_ISSUER=[apple-notary-issuer-id]             # e.g. a1234b5-1234-5f5d-b0c8-1234bedc5678
@@ -87,6 +75,51 @@ builds:
           env:
             - QUILL_LOG_FILE=/tmp/quill-{{ .Target }}.log
 ```
+
+### Attaching the full certificate chain
+
+In order to pass notarization with Apple you must use:
+
+1. A signing certificate that is issued by Apple
+2. Have the full certificate chain available at signing time
+
+Without the full chain, Apple will reject the notarization request with the following error:
+```json
+{
+  "issues": [
+    {
+      "severity": "error",
+      "code": null,
+      "message": "The signature of the binary is invalid.",
+      "docUrl": "https://developer.apple.com/documentation/security/notarizing_macos_software_before_distribution/resolving_common_notarization_issues#3087735"
+    },
+    {
+      "severity": "error",
+      "code": null,
+      "message": "The signature does not include a secure timestamp.",
+      "docUrl": "https://developer.apple.com/documentation/security/notarizing_macos_software_before_distribution/resolving_common_notarization_issues#3087733"
+    }
+  ]
+}
+```
+
+Quill can attach the full certificate chain at signing time with the Apple root and intermediate certificates embedded 
+into the Quill binary (obtained from [Apple](https://www.apple.com/certificateauthority/) directly). However, an
+alternative to this approach is to attach the full certificate chain to your P12 file:
+
+```bash
+# run on a mac if you want to use certs from your keychain.
+# otherwise this will embed any matching Apple certs that are found within Quill into the P12 file.
+
+$ export QUILL_P12_PASSWORD=[p12-password]
+
+$ quill p12 attach-chain [path-to-p12-from-apple]
+
+# a new P12 file was created with the suffix `-with-chain.p12`
+```
+
+At this point you can use `quill p12 describe` to confirm the full certificate chain is attached.
+
 
 ## Commands
 

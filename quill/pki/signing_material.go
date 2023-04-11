@@ -1,10 +1,14 @@
-package pem
+package pki
 
 import (
 	"crypto"
 	"crypto/x509"
 	"encoding/asn1"
 	"fmt"
+
+	"github.com/anchore/quill/quill/pki/apple"
+	"github.com/anchore/quill/quill/pki/certchain"
+	"github.com/anchore/quill/quill/pki/load"
 )
 
 type SigningMaterial struct {
@@ -13,25 +17,25 @@ type SigningMaterial struct {
 	TimestampServer string
 }
 
-func NewSigningMaterialFromPEMs(certFile, privateKeyPath, password string) (*SigningMaterial, error) {
+func NewSigningMaterialFromPEMs(certFile, privateKeyPath, password string, failWithoutFullChain bool) (*SigningMaterial, error) {
 	var certs []*x509.Certificate
 	var privateKey crypto.PrivateKey
 	var err error
 
 	switch {
 	case certFile != "" && privateKeyPath != "":
-		certs, err = loadCertificates(certFile)
+		certs, err = load.Certificates(certFile)
 		if err != nil {
 			return nil, err
 		}
 
 		if len(certs) > 0 {
-			if err := VerifyCodesigningCertificateChain(certs); err != nil {
+			if err := certchain.VerifyForCodeSigning(certs, failWithoutFullChain); err != nil {
 				return nil, err
 			}
 		}
 
-		privateKey, err = loadPrivateKey(privateKeyPath, password)
+		privateKey, err = load.PrivateKey(privateKeyPath, password)
 		if err != nil {
 			return nil, err
 		}
@@ -47,12 +51,12 @@ func NewSigningMaterialFromPEMs(certFile, privateKeyPath, password string) (*Sig
 
 	return &SigningMaterial{
 		Signer: signer,
-		Certs:  sortCertificates(certs),
+		Certs:  certchain.Sort(certs),
 	}, nil
 }
 
-func NewSigningMaterialFromP12(p12Path, password string) (*SigningMaterial, error) {
-	privateKey, cert, certs, err := LoadP12(p12Path, password)
+func NewSigningMaterialFromP12(p12Path, password string, failWithoutFullChain bool) (*SigningMaterial, error) {
+	privateKey, cert, certs, err := load.P12(p12Path, password)
 	if err != nil {
 		return nil, fmt.Errorf("unable to decode p12 file: %w", err)
 	}
@@ -73,14 +77,24 @@ func NewSigningMaterialFromP12(p12Path, password string) (*SigningMaterial, erro
 	}
 
 	if len(allCerts) > 0 {
-		if err := VerifyCodesigningCertificateChain(allCerts); err != nil {
-			return nil, err
+		if err := certchain.VerifyForCodeSigning(allCerts, failWithoutFullChain); err != nil {
+			store := certchain.NewCollection().WithStores(apple.GetEmbeddedCertStore())
+
+			// verification failed, try again but attempt to find more certs from the embedded certs in quill
+			remainingCerts, err := certchain.Find(store, cert)
+			if err != nil {
+				return nil, fmt.Errorf("unable to find remaining chain certificates: %w", err)
+			}
+			allCerts = append(allCerts, remainingCerts...)
+			if err := certchain.VerifyForCodeSigning(allCerts, failWithoutFullChain); err != nil {
+				return nil, err
+			}
 		}
 	}
 
 	return &SigningMaterial{
 		Signer: signer,
-		Certs:  sortCertificates(allCerts),
+		Certs:  certchain.Sort(allCerts),
 	}, nil
 }
 

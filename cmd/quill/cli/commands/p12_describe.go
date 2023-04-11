@@ -11,7 +11,7 @@ import (
 	"github.com/anchore/quill/cmd/quill/cli/application"
 	"github.com/anchore/quill/cmd/quill/cli/options"
 	"github.com/anchore/quill/internal/bus"
-	"github.com/anchore/quill/quill/pem"
+	"github.com/anchore/quill/quill/pki/load"
 )
 
 var _ options.Interface = &p12DescribeConfig{}
@@ -60,7 +60,7 @@ func P12Describe(app *application.Application) *cobra.Command {
 }
 
 func describeP12(file, password string) (string, error) {
-	key, cert, certs, err := pem.LoadP12(file, password)
+	key, cert, certs, err := load.P12(file, password)
 	if err != nil {
 		return "", err
 	}

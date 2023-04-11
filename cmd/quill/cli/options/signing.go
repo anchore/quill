@@ -11,10 +11,11 @@ var _ Interface = &Signing{}
 
 type Signing struct {
 	// bound options
-	Identity        string `yaml:"identity" json:"identity" mapstructure:"identity"`
-	P12             string `yaml:"p12" json:"p12" mapstructure:"p12"`
-	TimestampServer string `yaml:"timestamp-server" json:"timestamp-server" mapstructure:"timestamp-server"`
-	AdHoc           bool   `yaml:"ad-hoc" json:"ad-hoc" mapstructure:"ad-hoc"`
+	Identity             string `yaml:"identity" json:"identity" mapstructure:"identity"`
+	P12                  string `yaml:"p12" json:"p12" mapstructure:"p12"`
+	TimestampServer      string `yaml:"timestamp-server" json:"timestamp-server" mapstructure:"timestamp-server"`
+	AdHoc                bool   `yaml:"ad-hoc" json:"ad-hoc" mapstructure:"ad-hoc"`
+	FailWithoutFullChain bool   `yaml:"fail-without-full-chain" json:"fail-without-full-chain" mapstructure:"fail-without-full-chain"`
 
 	// unbound options
 	Password string `yaml:"password" json:"password" mapstructure:"password"`
@@ -22,7 +23,8 @@ type Signing struct {
 
 func DefaultSigning() Signing {
 	return Signing{
-		TimestampServer: "http://timestamp.apple.com/ts01",
+		TimestampServer:      "http://timestamp.apple.com/ts01",
+		FailWithoutFullChain: true,
 	}
 }
 
@@ -73,6 +75,7 @@ func (o *Signing) BindFlags(flags *pflag.FlagSet, v *viper.Viper) error {
 
 	// set default values for non-bound struct items
 	v.SetDefault("sign.password", o.Password)
+	v.SetDefault("sign.fail-without-full-chain", o.FailWithoutFullChain)
 
 	return nil
 }

@@ -8,7 +8,7 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 
 	"github.com/anchore/quill/internal/log"
-	"github.com/anchore/quill/quill/pem"
+	"github.com/anchore/quill/quill/pki/load"
 )
 
 type TokenConfig struct {
@@ -47,7 +47,7 @@ func NewSignedToken(cfg TokenConfig) (string, error) {
 func loadPrivateKey(path string) (*ecdsa.PrivateKey, error) {
 	log.Debug("loading private key for notary")
 
-	keyBytes, err := pem.LoadBytesFromFileOrEnv(path)
+	keyBytes, err := load.BytesFromFileOrEnv(path)
 	if err != nil {
 		return nil, fmt.Errorf("unable to load JWT private key bytes: %w", err)
 	}

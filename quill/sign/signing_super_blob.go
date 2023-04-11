@@ -8,10 +8,10 @@ import (
 	"github.com/go-restruct/restruct"
 
 	"github.com/anchore/quill/quill/macho"
-	"github.com/anchore/quill/quill/pem"
+	"github.com/anchore/quill/quill/pki"
 )
 
-func GenerateSigningSuperBlob(id string, m *macho.File, signingMaterial pem.SigningMaterial, paddingTarget int) (int, []byte, error) {
+func GenerateSigningSuperBlob(id string, m *macho.File, signingMaterial pki.SigningMaterial, paddingTarget int) (int, []byte, error) {
 	var cdFlags macho.CdFlag
 	if signingMaterial.Signer != nil {
 		// TODO: add options to enable more strict rules (such as macho.Hard)

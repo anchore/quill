@@ -47,6 +47,7 @@ func New(opts ...Option) *cobra.Command {
 	root.AddCommand(commands.Notarize(app))
 	root.AddCommand(commands.SignAndNotarize(app))
 	root.AddCommand(commands.Describe(app))
+	root.AddCommand(commands.EmbeddedCerts(app))
 	root.AddCommand(submission)
 	root.AddCommand(extract)
 	root.AddCommand(p12)

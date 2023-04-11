@@ -1,10 +1,10 @@
-package pem
+package certchain
 
 import (
 	"crypto/x509"
 )
 
-func sortCertificates(certs []*x509.Certificate) []*x509.Certificate {
+func Sort(certs []*x509.Certificate) []*x509.Certificate {
 	graph := map[string][]string{}
 	lookup := map[string]certAdapter{}
 

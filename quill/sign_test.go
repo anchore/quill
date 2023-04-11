@@ -17,11 +17,14 @@ func TestSign(t *testing.T) {
 		keyPassword               string
 		certFile                  string
 		skipAssertAgainstCodesign bool
+		failWithoutFullChain      bool
 	}
 	tests := []struct {
-		name       string
-		args       args
-		assertions []test.OutputAssertion
+		name              string
+		args              args
+		wantSignConfigErr require.ErrorAssertionFunc
+		wantSignErr       require.ErrorAssertionFunc
+		assertions        []test.OutputAssertion
 	}{
 		{
 			name: "ad-hoc sign syft arm64 binary",
@@ -111,12 +114,24 @@ func TestSign(t *testing.T) {
 			},
 		},
 		{
+			name: "single cert fails when full chain is required",
+			args: args{
+				id:                   "my-id",
+				path:                 test.AssetCopy(t, "hello"),
+				keyFile:              test.Asset(t, "hello-key.pem"),
+				certFile:             test.Asset(t, "hello-cert.pem"),
+				failWithoutFullChain: true,
+			},
+			wantSignConfigErr: require.Error,
+		},
+		{
 			name: "sign the syft binary - cert chain",
 			args: args{
-				id:       "syft-id",
-				path:     test.AssetCopy(t, "syft_unsigned"),
-				keyFile:  test.Asset(t, "chain-leaf-key.pem"),
-				certFile: test.Asset(t, "chain.pem"),
+				id:                   "syft-id",
+				path:                 test.AssetCopy(t, "syft_unsigned"),
+				keyFile:              test.Asset(t, "chain-leaf-key.pem"),
+				certFile:             test.Asset(t, "chain.pem"),
+				failWithoutFullChain: true,
 			},
 			assertions: []test.OutputAssertion{
 				test.AssertContains("CodeDirectory v=20500 size=208904 flags=0x10000(runtime) hashes=6523+2 location=embedded"),
@@ -167,10 +182,11 @@ func TestSign(t *testing.T) {
 			// but codesign will dynamically select the architecture based on the current host architecture
 			name: "sign multi arch binary - cert chain",
 			args: args{
-				id:       "ls",
-				path:     test.AssetCopy(t, "ls_universal_signed"),
-				keyFile:  test.Asset(t, "chain-leaf-key.pem"),
-				certFile: test.Asset(t, "chain.pem"),
+				id:                   "ls",
+				path:                 test.AssetCopy(t, "ls_universal_signed"),
+				keyFile:              test.Asset(t, "chain-leaf-key.pem"),
+				certFile:             test.Asset(t, "chain.pem"),
+				failWithoutFullChain: true,
 			},
 			assertions: []test.OutputAssertion{
 				test.AssertContains("CodeDirectory v=20500 size=643 flags=0x10000(runtime) hashes=15+2 location=embedded"),
@@ -193,13 +209,30 @@ func TestSign(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cfg, err := NewSigningConfigFromPEMs(tt.args.path, tt.args.certFile, tt.args.keyFile, tt.args.keyPassword)
-			require.NoError(t, err)
+
+			if tt.wantSignConfigErr == nil {
+				tt.wantSignConfigErr = require.NoError
+			}
+
+			cfg, err := NewSigningConfigFromPEMs(tt.args.path, tt.args.certFile, tt.args.keyFile, tt.args.keyPassword, tt.args.failWithoutFullChain)
+			tt.wantSignConfigErr(t, err)
+			if err != nil {
+				return
+			}
 			cfg.WithIdentity(tt.args.id)
 			// note: can't do this in snapshot testing
 			//cfg.WithTimestampServer("http://timestamp.apple.com/ts01")
 
-			require.NoError(t, Sign(*cfg))
+			if tt.wantSignErr == nil {
+				tt.wantSignErr = require.NoError
+			}
+
+			err = Sign(*cfg)
+			tt.wantSignErr(t, err)
+			if err != nil {
+				return
+			}
+
 			test.AssertDebugOutput(t, tt.args.path, tt.assertions...)
 			if !tt.args.skipAssertAgainstCodesign {
 				test.AssertAgainstCodesignTool(t, tt.args.path)

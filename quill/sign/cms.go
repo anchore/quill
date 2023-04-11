@@ -6,10 +6,10 @@ import (
 	cms "github.com/github/smimesign/ietf-cms"
 
 	"github.com/anchore/quill/quill/macho"
-	"github.com/anchore/quill/quill/pem"
+	"github.com/anchore/quill/quill/pki"
 )
 
-func generateCMS(signingMaterial pem.SigningMaterial, cdBlob *macho.Blob) (*macho.Blob, error) {
+func generateCMS(signingMaterial pki.SigningMaterial, cdBlob *macho.Blob) (*macho.Blob, error) {
 	cdBlobBytes, err := cdBlob.Pack()
 	if err != nil {
 		return nil, err
@@ -28,7 +28,7 @@ func generateCMS(signingMaterial pem.SigningMaterial, cdBlob *macho.Blob) (*mach
 	return &blob, nil
 }
 
-func signDetached(data []byte, signingMaterial pem.SigningMaterial) ([]byte, error) {
+func signDetached(data []byte, signingMaterial pki.SigningMaterial) ([]byte, error) {
 	sd, err := cms.NewSignedData(data)
 	if err != nil {
 		return nil, err
