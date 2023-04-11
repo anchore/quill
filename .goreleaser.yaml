@@ -17,6 +17,8 @@ builds:
     goarch:
       - amd64
       - arm64
+      - ppc64le
+      - s390x
     mod_timestamp: &build-timestamp '{{ .CommitTimestamp }}'
     ldflags: &build-ldflags |
       -w
@@ -55,8 +57,31 @@ builds:
     env: *build-env
     ldflags: *build-ldflags
 
+  - id: netbsd-build
+    dir: *dir
+    binary: *name
+    goos:
+      - netbsd
+    goarch:
+      - amd64
+    mod_timestamp: *build-timestamp
+    env: *build-env
+    ldflags: *build-ldflags
+
+nfpms:
+  - license: "Apache 2.0"
+    maintainer: "Anchore, Inc"
+    homepage: &website "https://github.com/anchore/quill"
+    description: &description "Simple mac binary signing and notarization from any platform (replacing the codesign utility for simple use cases)."
+    formats:
+      - rpm
+      - deb
 
 archives:
+  - id: netbsd-archives
+    builds:
+      - netbsd-build
+
   - id: linux-archives
     builds:
       - linux-build
