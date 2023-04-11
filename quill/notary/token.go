@@ -3,7 +3,7 @@ package notary
 import (
 	"crypto/ecdsa"
 	"fmt"
-	"github.com/anchore/quill/quill/pki"
+	"github.com/anchore/quill/quill/pki/load"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -47,7 +47,7 @@ func NewSignedToken(cfg TokenConfig) (string, error) {
 func loadPrivateKey(path string) (*ecdsa.PrivateKey, error) {
 	log.Debug("loading private key for notary")
 
-	keyBytes, err := pki.LoadBytesFromFileOrEnv(path)
+	keyBytes, err := load.BytesFromFileOrEnv(path)
 	if err != nil {
 		return nil, fmt.Errorf("unable to load JWT private key bytes: %w", err)
 	}

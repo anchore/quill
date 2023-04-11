@@ -3,7 +3,7 @@ package commands
 import (
 	"crypto/x509"
 	"fmt"
-	"github.com/anchore/quill/quill/pki"
+	"github.com/anchore/quill/quill/pki/load"
 	"reflect"
 	"strings"
 
@@ -60,7 +60,7 @@ func P12Describe(app *application.Application) *cobra.Command {
 }
 
 func describeP12(file, password string) (string, error) {
-	key, cert, certs, err := pki.LoadP12(file, password)
+	key, cert, certs, err := load.NewP12(file, password)
 	if err != nil {
 		return "", err
 	}

@@ -3,7 +3,9 @@ package commands
 import (
 	"crypto/rand"
 	"fmt"
-	"github.com/anchore/quill/quill/pki"
+	"github.com/anchore/quill/quill/pki/apple"
+	"github.com/anchore/quill/quill/pki/certchain"
+	"github.com/anchore/quill/quill/pki/load"
 	"os"
 	"strings"
 
@@ -96,7 +98,7 @@ func P12AttachChain(app *application.Application) *cobra.Command {
 func writeP12WithChain(p12Path, password, keychainPath string, failWithoutFullChain bool) (string, error) {
 	log.WithFields("file", p12Path).Info("attaching certificate chain to p12 file")
 
-	key, cert, certs, err := pki.LoadP12(p12Path, password)
+	key, cert, certs, err := load.NewP12(p12Path, password)
 	if err != nil {
 		return "", err
 	}
@@ -111,7 +113,12 @@ func writeP12WithChain(p12Path, password, keychainPath string, failWithoutFullCh
 		return "", fmt.Errorf("p12 file already has the certificate chain embedded (chain length %d + 1 signing certificate)", len(certs))
 	}
 
-	remainingCerts, err := pki.FindRemainingChainCerts(cert, keychainPath)
+	store := certchain.NewCollection().WithStores(apple.GetEmbeddedCertStore())
+	if keychainPath != "" {
+		store = store.WithSearchers(apple.NewKeychainSearcher(keychainPath))
+	}
+
+	remainingCerts, err := certchain.Find(store, cert)
 	if err != nil {
 		return "", fmt.Errorf("unable to find remaining chain certificates: %w", err)
 	}
@@ -123,7 +130,7 @@ func writeP12WithChain(p12Path, password, keychainPath string, failWithoutFullCh
 	}
 
 	// verify the cert chain before writing...
-	if err := pki.VerifyCodesigningCertificateChain(append(certs, cert), failWithoutFullChain); err != nil {
+	if err := certchain.VerifyForCodeSigning(append(certs, cert), failWithoutFullChain); err != nil {
 		return "", err
 	}
 

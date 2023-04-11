@@ -1,4 +1,4 @@
-package pki
+package load
 
 import (
 	"encoding/base64"
@@ -10,7 +10,7 @@ import (
 	"github.com/anchore/quill/internal/log"
 )
 
-func LoadBytesFromFileOrEnv(path string) ([]byte, error) {
+func BytesFromFileOrEnv(path string) ([]byte, error) {
 	if strings.HasPrefix(path, "env:") {
 		// comes from an env var...
 		fields := strings.Split(path, "env:")

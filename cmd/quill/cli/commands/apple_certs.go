@@ -42,13 +42,15 @@ func AppleCerts(app *application.Application) *cobra.Command {
 }
 
 func showAppleCerts(buf io.Writer) error {
-	for _, cert := range apple.RootPEMs() {
+	store := apple.GetEmbeddedCertStore()
+
+	for _, cert := range store.RootPEMs() {
 		if _, err := buf.Write([]byte(fmt.Sprintln(string(cert)))); err != nil {
 			return fmt.Errorf("unable to write certificate: %w", err)
 		}
 	}
 
-	for _, cert := range apple.IntermediatePEMs() {
+	for _, cert := range store.IntermediatePEMs() {
 		if _, err := buf.Write([]byte(fmt.Sprintln(string(cert)))); err != nil {
 			return fmt.Errorf("unable to write certificate: %w", err)
 		}

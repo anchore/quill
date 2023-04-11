@@ -5,6 +5,9 @@ import (
 	"crypto/x509"
 	"encoding/asn1"
 	"fmt"
+	"github.com/anchore/quill/quill/pki/apple"
+	"github.com/anchore/quill/quill/pki/certchain"
+	"github.com/anchore/quill/quill/pki/load"
 )
 
 type SigningMaterial struct {
@@ -20,18 +23,18 @@ func NewSigningMaterialFromPEMs(certFile, privateKeyPath, password string, failW
 
 	switch {
 	case certFile != "" && privateKeyPath != "":
-		certs, err = LoadCertificates(certFile)
+		certs, err = load.NewCertificates(certFile)
 		if err != nil {
 			return nil, err
 		}
 
 		if len(certs) > 0 {
-			if err := VerifyCodesigningCertificateChain(certs, failWithoutFullChain); err != nil {
+			if err := certchain.VerifyForCodeSigning(certs, failWithoutFullChain); err != nil {
 				return nil, err
 			}
 		}
 
-		privateKey, err = LoadPrivateKey(privateKeyPath, password)
+		privateKey, err = load.NewPrivateKey(privateKeyPath, password)
 		if err != nil {
 			return nil, err
 		}
@@ -47,12 +50,12 @@ func NewSigningMaterialFromPEMs(certFile, privateKeyPath, password string, failW
 
 	return &SigningMaterial{
 		Signer: signer,
-		Certs:  sortCertificates(certs),
+		Certs:  certchain.Sort(certs),
 	}, nil
 }
 
 func NewSigningMaterialFromP12(p12Path, password string, failWithoutFullChain bool) (*SigningMaterial, error) {
-	privateKey, cert, certs, err := LoadP12(p12Path, password)
+	privateKey, cert, certs, err := load.NewP12(p12Path, password)
 	if err != nil {
 		return nil, fmt.Errorf("unable to decode p12 file: %w", err)
 	}
@@ -73,14 +76,16 @@ func NewSigningMaterialFromP12(p12Path, password string, failWithoutFullChain bo
 	}
 
 	if len(allCerts) > 0 {
-		if err := VerifyCodesigningCertificateChain(allCerts, failWithoutFullChain); err != nil {
+		if err := certchain.VerifyForCodeSigning(allCerts, failWithoutFullChain); err != nil {
+			store := certchain.NewCollection().WithStores(apple.GetEmbeddedCertStore())
+
 			// verification failed, try again but attempt to find more certs from the embedded certs in quill
-			remainingCerts, err := FindRemainingChainCertsWithinQuill(cert)
+			remainingCerts, err := certchain.Find(store, cert)
 			if err != nil {
 				return nil, fmt.Errorf("unable to find remaining chain certificates: %w", err)
 			}
 			allCerts = append(allCerts, remainingCerts...)
-			if err := VerifyCodesigningCertificateChain(allCerts, failWithoutFullChain); err != nil {
+			if err := certchain.VerifyForCodeSigning(allCerts, failWithoutFullChain); err != nil {
 				return nil, err
 			}
 		}
@@ -88,7 +93,7 @@ func NewSigningMaterialFromP12(p12Path, password string, failWithoutFullChain bo
 
 	return &SigningMaterial{
 		Signer: signer,
-		Certs:  sortCertificates(allCerts),
+		Certs:  certchain.Sort(allCerts),
 	}, nil
 }
 

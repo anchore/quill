@@ -1,4 +1,4 @@
-package pki
+package load
 
 import (
 	"context"
@@ -13,8 +13,8 @@ import (
 	"github.com/anchore/quill/internal/log"
 )
 
-func LoadP12(path, password string) (crypto.PrivateKey, *x509.Certificate, []*x509.Certificate, error) {
-	by, err := LoadBytesFromFileOrEnv(path)
+func NewP12(path, password string) (crypto.PrivateKey, *x509.Certificate, []*x509.Certificate, error) {
+	by, err := BytesFromFileOrEnv(path)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("unable to read p12 bytes: %w", err)
 	}

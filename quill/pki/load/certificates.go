@@ -1,4 +1,4 @@
-package pki
+package load
 
 import (
 	"crypto/x509"
@@ -8,9 +8,9 @@ import (
 	"github.com/anchore/quill/internal/log"
 )
 
-func LoadCertificates(path string) ([]*x509.Certificate, error) {
+func NewCertificates(path string) ([]*x509.Certificate, error) {
 	log.WithFields("path", path).Trace("reading certificate(s)")
-	certPEM, err := LoadBytesFromFileOrEnv(path)
+	certPEM, err := BytesFromFileOrEnv(path)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read signing certificate: %w", err)
 	}
@@ -29,6 +29,37 @@ func LoadCertificates(path string) ([]*x509.Certificate, error) {
 			return nil, fmt.Errorf("unable to parse certificate %d of %d: %w", i+1, len(chainBlockBytes), err)
 		}
 
+		certs = append(certs, c)
+	}
+
+	return certs, nil
+}
+
+func NewCertificatesFromPEMs(pems [][]byte) ([]*x509.Certificate, error) {
+	var result []*x509.Certificate
+	for _, pemBytes := range pems {
+		certs, err := NewCertificatesFromPEM(pemBytes)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, certs...)
+	}
+	return result, nil
+}
+
+func NewCertificatesFromPEM(pemBytes []byte) ([]*x509.Certificate, error) {
+	var certs []*x509.Certificate
+	chainBlockBytes := decodeChainFromPEM(pemBytes)
+
+	if len(chainBlockBytes) == 0 {
+		return nil, fmt.Errorf("no PEM blocks found")
+	}
+
+	for i, certBytes := range chainBlockBytes {
+		c, err := x509.ParseCertificate(certBytes)
+		if err != nil {
+			return nil, fmt.Errorf("unable to parse certificate %d of %d: %w", i+1, len(chainBlockBytes), err)
+		}
 		certs = append(certs, c)
 	}
 

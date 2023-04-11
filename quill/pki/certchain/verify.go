@@ -1,4 +1,4 @@
-package pki
+package certchain
 
 import (
 	"crypto/x509"
@@ -7,14 +7,14 @@ import (
 	"github.com/anchore/quill/internal/log"
 )
 
-func VerifyCodesigningCertificateChain(certs []*x509.Certificate, failWithoutFullChain bool) error {
+func VerifyForCodeSigning(certs []*x509.Certificate, failWithoutFullChain bool) error {
 	log.WithFields("chain-size", len(certs)).Trace("verifying certificate chain")
 
 	var leaf *x509.Certificate
 	roots := x509.NewCertPool()
 	intermediates := x509.NewCertPool()
 
-	certs = sortCertificates(certs)
+	certs = Sort(certs)
 
 	for i, c := range certs {
 		switch i {

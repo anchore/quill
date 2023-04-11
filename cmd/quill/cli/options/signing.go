@@ -57,12 +57,6 @@ func (o *Signing) AddFlags(flags *pflag.FlagSet) {
 		"ad-hoc", "", o.AdHoc,
 		"perform ad-hoc signing. No cryptographic signature is included and --p12 key and certificate input are not needed. Do NOT use this option for production builds.",
 	)
-
-	flags.BoolVarP(
-		&o.FailWithoutFullChain,
-		"fail-without-full-chain", "f", o.FailWithoutFullChain,
-		"fail to sign if the full certificate chain is not available (either in the p12 or with the Apple certificates embedded into quill)",
-	)
 }
 
 func (o *Signing) BindFlags(flags *pflag.FlagSet, v *viper.Viper) error {
@@ -78,12 +72,10 @@ func (o *Signing) BindFlags(flags *pflag.FlagSet, v *viper.Viper) error {
 	if err := Bind(v, "sign.ad-hoc", flags.Lookup("ad-hoc")); err != nil {
 		return err
 	}
-	if err := Bind(v, "sign.fail-without-full-chain", flags.Lookup("fail-without-full-chain")); err != nil {
-		return err
-	}
 
 	// set default values for non-bound struct items
 	v.SetDefault("sign.password", o.Password)
+	v.SetDefault("sign.fail-without-full-chain", o.FailWithoutFullChain)
 
 	return nil
 }
