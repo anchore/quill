@@ -12,7 +12,7 @@ import (
 	"github.com/anchore/quill/internal/version"
 )
 
-func Version(app *application.Application) *cobra.Command {
+func Version(_ *application.Application) *cobra.Command {
 	var format string
 
 	cmd := &cobra.Command{

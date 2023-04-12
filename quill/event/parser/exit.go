@@ -7,9 +7,5 @@ import (
 )
 
 func Exit(e partybus.Event) error {
-	if err := checkEventType(e.Type, event.Exit); err != nil {
-		return err
-	}
-
-	return nil
+	return checkEventType(e.Type, event.Exit)
 }

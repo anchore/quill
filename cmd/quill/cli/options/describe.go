@@ -23,8 +23,5 @@ func (o *Describe) AddFlags(flags *pflag.FlagSet) {
 }
 
 func (o *Describe) BindFlags(flags *pflag.FlagSet, v *viper.Viper) error {
-	if err := Bind(v, "describe.detail", flags.Lookup("detail")); err != nil {
-		return err
-	}
-	return nil
+	return Bind(v, "describe.detail", flags.Lookup("detail"))
 }

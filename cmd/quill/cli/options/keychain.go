@@ -23,9 +23,5 @@ func (o *Keychain) AddFlags(flags *pflag.FlagSet) {
 }
 
 func (o *Keychain) BindFlags(flags *pflag.FlagSet, v *viper.Viper) error {
-	if err := Bind(v, "keychain.path", flags.Lookup("keychain-path")); err != nil {
-		return err
-	}
-
-	return nil
+	return Bind(v, "keychain.path", flags.Lookup("keychain-path"))
 }

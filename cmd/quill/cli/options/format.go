@@ -27,8 +27,5 @@ func (o *Format) AddFlags(flags *pflag.FlagSet) {
 }
 
 func (o *Format) BindFlags(flags *pflag.FlagSet, v *viper.Viper) error {
-	if err := Bind(v, "output", flags.Lookup("output")); err != nil {
-		return err
-	}
-	return nil
+	return Bind(v, "output", flags.Lookup("output"))
 }

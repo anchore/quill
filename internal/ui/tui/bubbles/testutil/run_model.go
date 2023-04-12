@@ -9,7 +9,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func RunModel(t testing.TB, m tea.Model, iterations int, message tea.Msg) string {
+func RunModel(_ testing.TB, m tea.Model, iterations int, message tea.Msg) string {
 	if iterations == 0 {
 		iterations = 1
 	}

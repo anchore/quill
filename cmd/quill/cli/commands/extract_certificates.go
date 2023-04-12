@@ -78,9 +78,8 @@ func extractCertificates(binPath string, leaf bool) (string, error) {
 				if leaf && c.Parsed.IsCA {
 					log.WithFields("signer", i+1, "certificate", j+1, "cn", c.Parsed.Subject.CommonName).Tracef("skipping certificate")
 					continue
-				} else {
-					log.WithFields("signer", i+1, "certificate", j+1, "cn", c.Parsed.Subject.CommonName).Tracef("parsed certificate")
 				}
+				log.WithFields("signer", i+1, "certificate", j+1, "cn", c.Parsed.Subject.CommonName).Tracef("parsed certificate")
 
 				decodedCerts = append(decodedCerts, pem.Block{
 					Type:  "CERTIFICATE",

@@ -266,6 +266,7 @@ func IsSigned(path string) (bool, error) {
 		}
 		defer mf.Close()
 
+		success := true
 		for _, arch := range mf.Arches {
 			sig := arch.CodeSignature()
 			if sig == nil {
@@ -275,10 +276,10 @@ func IsSigned(path string) (bool, error) {
 			}
 			log.WithFields("length", len(sig.CMSSignature), "arch", arch.String()).Trace("CMS signature found")
 
-			return len(sig.CMSSignature) > 0, nil
+			success = success && len(sig.CMSSignature) > 0
 		}
 
-		return true, nil
+		return success, nil
 	}
 
 	log.WithFields("binary", path).Trace("binary is for a single architecture")
