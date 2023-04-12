@@ -1,0 +1,5 @@
+068ae1bb57cc8fef8269961a85f80c91c5dc115ae626d22f0e941e1fdde7e984  quill_0.2.0_windows_amd64.zip
+0e1e5c6e5fee45d9490d8d8acc390d0977fd98fce965854c1d4f5ee660abd15a  quill_0.2.0_linux_arm64.tar.gz
+6d6d373ee32ea115ce64bd184ea24386795cf6bef50620905d677461f502bbff  quill_0.2.0_darwin_amd64.tar.gz
+85a4a16a4206874c42acee4c5e5031f70ff61251778d101ec7ba866167c4bca4  quill_0.2.0_darwin_arm64.tar.gz
+c6020a2f95a9a2e53b5d08d9b39c62a5fb9990fc15ad67bd5bb1374feab059c2  quill_0.2.0_linux_amd64.tar.gz

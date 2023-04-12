@@ -6,9 +6,6 @@ on:
       - main
   pull_request:
 
-env:
-  GO_VERSION: "1.18.x"
-  GO_CACHE_KEY: efa04b89c1b1
 
 jobs:
 
@@ -17,31 +14,10 @@ jobs:
     name: "Static analysis"
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/setup-go@v4
-        with:
-          go-version: ${{ env.GO_VERSION }}
-
       - uses: actions/checkout@v3
 
-      - name: Restore tool cache
-        id: tool-cache
-        uses: actions/cache@v3
-        with:
-          path: ${{ github.workspace }}/.tmp
-          key: ${{ runner.os }}-tool-${{ hashFiles('Makefile') }}
-
-      - name: Restore go cache
-        id: go-cache
-        uses: actions/cache@v3
-        with:
-          path: ~/go/pkg/mod
-          key:  ${{ runner.os }}-go-${{ env.GO_VERSION }}-${{ env.GO_CACHE_KEY }}-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-             ${{ runner.os }}-go-${{ env.GO_VERSION }}-${{ env.GO_CACHE_KEY }}-
-
-      - name: (cache-miss) Bootstrap all project dependencies
-        if: steps.tool-cache.outputs.cache-hit != 'true' || steps.go-cache.outputs.cache-hit != 'true'
-        run: make bootstrap
+      - name: Bootstrap environment
+        uses: ./.github/actions/bootstrap
 
       - name: Run static analysis
         run: make static-analysis
@@ -51,9 +27,6 @@ jobs:
     name: "Unit tests"
     runs-on: macOS-12
     steps:
-      - uses: actions/setup-go@v4
-        with:
-          go-version: ${{ env.GO_VERSION }}
 
       - uses: actions/checkout@v3
         with:
@@ -64,25 +37,8 @@ jobs:
         # lfs pull does a lfs fetch and lfs checkout, this is NOT the same as "git pull"
         run: git lfs pull
 
-      - name: Restore tool cache
-        id: tool-cache
-        uses: actions/cache@v3
-        with:
-          path: ${{ github.workspace }}/.tmp
-          key: ${{ runner.os }}-tool-${{ hashFiles('Makefile') }}
-
-      - name: Restore go cache
-        id: go-cache
-        uses: actions/cache@v3
-        with:
-          path: ~/go/pkg/mod
-          key:  ${{ runner.os }}-go-${{ env.GO_VERSION }}-${{ env.GO_CACHE_KEY }}-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-             ${{ runner.os }}-go-${{ env.GO_VERSION }}-${{ env.GO_CACHE_KEY }}-
-
-      - name: (cache-miss) Bootstrap all project dependencies
-        if: steps.tool-cache.outputs.cache-hit != 'true' || steps.go-cache.outputs.cache-hit != 'true'
-        run: make bootstrap
+      - name: Bootstrap environment
+        uses: ./.github/actions/bootstrap
 
       - name: Run unit tests
         run: make unit
@@ -96,42 +52,53 @@ jobs:
     name: "Build snapshot artifacts"
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/setup-go@v4
-        with:
-          go-version: ${{ env.GO_VERSION }}
-
       - uses: actions/checkout@v3
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
-
-      - name: Restore tool cache
-        id: tool-cache
-        uses: actions/cache@v3
-        with:
-          path: ${{ github.workspace }}/.tmp
-          key: ${{ runner.os }}-tool-${{ hashFiles('Makefile') }}
-
-      - name: Restore go cache
-        id: go-cache
-        uses: actions/cache@v3
-        with:
-          path: ~/go/pkg/mod
-          key:  ${{ runner.os }}-go-${{ env.GO_VERSION }}-${{ env.GO_CACHE_KEY }}-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-             ${{ runner.os }}-go-${{ env.GO_VERSION }}-${{ env.GO_CACHE_KEY }}-
-
-      - name: (cache-miss) Bootstrap all project dependencies
-        if: steps.tool-cache.outputs.cache-hit != 'true' || steps.go-cache.outputs.cache-hit != 'true'
-        run: make bootstrap
+      - name: Bootstrap environment
+        uses: ./.github/actions/bootstrap
 
       - name: Build snapshot artifacts
         run: make snapshot
 
-      - uses: actions/upload-artifact@v3
+      # why not use actions/upload-artifact? It is very slow (3 minutes to upload ~600MB of data, vs 10 seconds with this approach).
+      # see https://github.com/actions/upload-artifact/issues/199 for more info
+      - name: Upload snapshot artifacts
+        uses: actions/cache/save@v3
         with:
-          name: artifacts
-          path: snapshot/**/*
+          path: snapshot
+          key: snapshot-build-${{ github.run_id }}
+
+  Acceptance-Linux:
+    # Note: changing this job name requires making the same update in the .github/workflows/release.yaml pipeline
+    name: "Acceptance tests (Linux)"
+    needs: [Build-Snapshot-Artifacts]
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Download snapshot build
+        uses: actions/cache/restore@v3
+        with:
+          path: snapshot
+          key: snapshot-build-${{ github.run_id }}
+
+      - name: Restore install.sh test image cache
+        id: install-test-image-cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ github.workspace }}/test/install/cache
+          key: ${{ runner.os }}-install-test-image-cache-${{ hashFiles('test/install/cache.fingerprint') }}
+
+      - name: Load test image cache
+        if: steps.install-test-image-cache.outputs.cache-hit == 'true'
+        run: make install-test-cache-load
+
+      - name: Run install.sh tests (Linux)
+        run: make install-test
+
+      - name: (cache-miss) Create test image cache
+        if: steps.install-test-image-cache.outputs.cache-hit != 'true'
+        run: make install-test-cache-save
 
   Cli-Linux:
     # Note: changing this job name requires making the same update in the .github/workflows/release.yaml pipeline
@@ -139,9 +106,6 @@ jobs:
     needs: [Build-Snapshot-Artifacts]
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/setup-go@v4
-        with:
-          go-version: ${{ env.GO_VERSION }}
 
       - uses: actions/checkout@v3
         with:
@@ -152,30 +116,14 @@ jobs:
         # lfs pull does a lfs fetch and lfs checkout, this is NOT the same as "git pull"
         run: git lfs pull
 
-      - name: Restore go cache
-        id: go-cache
-        uses: actions/cache@v3
-        with:
-          path: ~/go/pkg/mod
-          key:  ${{ runner.os }}-go-${{ env.GO_VERSION }}-${{ env.GO_CACHE_KEY }}-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-${{ env.GO_VERSION }}-${{ env.GO_CACHE_KEY }}-
+      - name: Bootstrap environment
+        uses: ./.github/actions/bootstrap
 
-      - name: Restore tool cache
-        id: tool-cache
-        uses: actions/cache@v3
+      - name: Download snapshot build
+        uses: actions/cache/restore@v3
         with:
-          path: ${{ github.workspace }}/.tmp
-          key: ${{ runner.os }}-tool-${{ hashFiles('Makefile') }}
-
-      - name: (cache-miss) Bootstrap all project dependencies
-        if: steps.tool-cache.outputs.cache-hit != 'true' || steps.go-cache.outputs.cache-hit != 'true'
-        run: make bootstrap
-
-      - uses: actions/download-artifact@v3
-        with:
-          name: artifacts
           path: snapshot
+          key: snapshot-build-${{ github.run_id }}
 
       - name: Run CLI Tests
         run: make cli
