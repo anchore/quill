@@ -82,6 +82,9 @@ $(RESULTS_DIR):
 $(TEMP_DIR):
 	mkdir -p $(TEMP_DIR)
 
+
+## Bootstrapping targets #################################
+
 .PHONY: bootstrap-tools
 bootstrap-tools: $(TEMP_DIR)
 	#GOBIN="$(realpath $(TEMP_DIR))" go install github.com/anchore/quill/cmd/quill@$(QUILL_VERSION)
@@ -99,6 +102,9 @@ bootstrap-go:
 .PHONY: bootstrap
 bootstrap: $(RESULTS_DIR) bootstrap-go bootstrap-tools ## Download and install all go dependencies (+ prep tooling in the ./tmp dir)
 	$(call title,Bootstrapping dependencies)
+
+
+## Static analysis targets #################################
 
 .PHONY: static-analysis
 static-analysis: lint check-go-mod-tidy check-licenses
@@ -133,6 +139,9 @@ check-licenses:
 check-go-mod-tidy:
 	@ .github/scripts/go-mod-tidy-check.sh && echo "go.mod and go.sum are tidy!"
 
+
+## Testing targets #################################
+
 .PHONY: unit
 unit: $(RESULTS_DIR)  ## Run unit tests (with coverage)
 	$(call title,Running unit tests)
@@ -142,10 +151,41 @@ unit: $(RESULTS_DIR)  ## Run unit tests (with coverage)
 	@echo "Coverage: $$(cat $(COVER_TOTAL))"
 	@if [ $$(echo "$$(cat $(COVER_TOTAL)) >= $(COVERAGE_THRESHOLD)" | bc -l) -ne 1 ]; then echo "$(RED)$(BOLD)Failed coverage quality gate (> $(COVERAGE_THRESHOLD)%)$(RESET)" && false; fi
 
+## Test-fixture-related targets #################################
+
+# note: this is used by CI to determine if various test fixture cache should be restored or recreated
+fingerprints:
+	$(call title,Creating all test cache input fingerprints)
+
+	# for INSTALL integration test fixtures
+	cd test/install && \
+		make cache.fingerprint
+
+
+## install.sh testing targets #################################
+
+install-test: $(SNAPSHOT_DIR)
+	cd test/install && \
+		make
+
+install-test-cache-save: $(SNAPSHOT_DIR)
+	cd test/install && \
+		make save
+
+install-test-cache-load: $(SNAPSHOT_DIR)
+	cd test/install && \
+		make load
+
+
+## Code generation targets #################################
+
 .PHONY: update-apple-certs
 update-apple-certs:  ## Update the apple certs checked into the repo
 	$(call title,Updating Apple certs)
 	go generate ./...
+
+
+## Build-related targets #################################
 
 .PHONY: build
 build: $(SNAPSHOT_DIR) ## Build release snapshot binaries and packages
@@ -190,6 +230,9 @@ release: clean-dist clean-changelog CHANGELOG.md ## Build and publish final bina
 
 	bash -c "$(RELEASE_CMD) --release-notes <(cat CHANGELOG.md) --config $(TEMP_DIR)/goreleaser.yaml"
 
+
+## Cleanup targets #################################
+
 .PHONY: clean
 clean: clean-dist clean-snapshot  ## Remove previous builds, result reports, and test cache
 	rm -rf $(RESULTS_DIR)/*
@@ -205,6 +248,9 @@ clean-dist: clean-changelog
 .PHONY: clean-changelog
 clean-changelog:
 	rm -f CHANGELOG.md
+
+
+## Halp! #################################
 
 .PHONY: help
 help:
