@@ -1,12 +1,10 @@
 name: "Release"
 on:
-  push:
-    # take no actions on push to any branch...
-    branches-ignore:
-      - "**"
-    # ... only act on release tags
-    tags:
-      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: tag the latest commit on main with the given version (prefixed with v)
+        required: true
 
 jobs:
   quality-gate:
