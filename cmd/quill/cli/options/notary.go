@@ -47,9 +47,5 @@ func (o *Notary) BindFlags(flags *pflag.FlagSet, v *viper.Viper) error {
 	if err := Bind(v, "notary.key-id", flags.Lookup("notary-key-id")); err != nil {
 		return err
 	}
-	if err := Bind(v, "notary.key", flags.Lookup("notary-key")); err != nil {
-		return err
-	}
-
-	return nil
+	return Bind(v, "notary.key", flags.Lookup("notary-key"))
 }

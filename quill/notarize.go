@@ -94,6 +94,14 @@ func Notarize(path string, cfg NotarizeConfig) (notary.SubmissionStatus, error) 
 
 	defer mon.SetCompleted()
 
+	mon.Stage.Current = "validating binary"
+
+	if isSigned, err := IsSigned(path); err != nil {
+		return "", fmt.Errorf("unable to determine if binary is signed: %+v", err)
+	} else if !isSigned {
+		return "", fmt.Errorf("binary is not signed thus will not pass notarization")
+	}
+
 	mon.Stage.Current = "initializing client"
 
 	token, err := notary.NewSignedToken(cfg.TokenConfig)

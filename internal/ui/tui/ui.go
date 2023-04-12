@@ -33,7 +33,7 @@ type UI struct {
 	quiet          bool
 }
 
-func New(debug, quiet bool) *UI {
+func New(_, quiet bool) *UI {
 	s := spinner.New()
 	s.Spinner = spinner.MiniDot
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))

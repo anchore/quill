@@ -17,10 +17,10 @@ func (o *P12) Redact() {
 	log.Redact(o.Password)
 }
 
-func (o *P12) AddFlags(flags *pflag.FlagSet) {
+func (o *P12) AddFlags(_ *pflag.FlagSet) {
 }
 
-func (o *P12) BindFlags(flags *pflag.FlagSet, v *viper.Viper) error {
+func (o *P12) BindFlags(_ *pflag.FlagSet, v *viper.Viper) error {
 	// set default values for non-bound struct items
 	v.SetDefault("p12.password", o.Password)
 

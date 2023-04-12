@@ -5,6 +5,8 @@ import (
 	"os"
 	"path"
 
+	blacktopMacho "github.com/blacktop/go-macho"
+
 	macholibre "github.com/anchore/go-macholibre"
 	"github.com/anchore/quill/internal/bus"
 	"github.com/anchore/quill/internal/log"
@@ -247,4 +249,55 @@ func signSingleBinary(cfg SigningConfig) error {
 	}
 
 	return nil
+}
+
+func IsSigned(path string) (bool, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return false, err
+	}
+	defer f.Close()
+
+	if macholibre.IsUniversalMachoBinary(f) {
+		log.WithFields("binary", path).Trace("binary is a universal binary")
+		mf, err := blacktopMacho.NewFatFile(f)
+		if mf == nil || err != nil {
+			return false, fmt.Errorf("failed to parse universal macho binary: %w", err)
+		}
+		defer mf.Close()
+
+		success := true
+		for _, arch := range mf.Arches {
+			sig := arch.CodeSignature()
+			if sig == nil {
+				log.WithFields("binary", path, "arch", arch.String()).Trace("no code signature block found")
+
+				return false, nil
+			}
+			log.WithFields("length", len(sig.CMSSignature), "arch", arch.String()).Trace("CMS signature found")
+
+			success = success && len(sig.CMSSignature) > 0
+		}
+
+		return success, nil
+	}
+
+	log.WithFields("binary", path).Trace("binary is for a single architecture")
+
+	mf, err := blacktopMacho.NewFile(f)
+	if mf == nil || err != nil {
+		return false, fmt.Errorf("failed to parse macho binary: %w", err)
+	}
+
+	defer mf.Close()
+
+	sig := mf.CodeSignature()
+	if sig == nil {
+		log.WithFields("binary", path).Trace("no code signature block found")
+		return false, nil
+	}
+
+	log.WithFields("length", len(sig.CMSSignature)).Trace("CMS signature found")
+
+	return len(sig.CMSSignature) > 0, nil
 }

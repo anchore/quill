@@ -23,8 +23,5 @@ func (o *ExtractCertificates) AddFlags(flags *pflag.FlagSet) {
 }
 
 func (o *ExtractCertificates) BindFlags(flags *pflag.FlagSet, v *viper.Viper) error {
-	if err := Bind(v, "extract-certificates.leaf", flags.Lookup("leaf")); err != nil {
-		return err
-	}
-	return nil
+	return Bind(v, "extract-certificates.leaf", flags.Lookup("leaf"))
 }

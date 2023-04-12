@@ -105,10 +105,7 @@ func (m *File) Close() error {
 	if err := m.ReadSeekCloser.Close(); err != nil {
 		return err
 	}
-	if err := m.File.Close(); err != nil {
-		return err
-	}
-	return nil
+	return m.File.Close()
 }
 
 func (m *File) Patch(content []byte, size int, offset uint64) (err error) {
