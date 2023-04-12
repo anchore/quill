@@ -13,12 +13,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      # we don't want to release commits that have been pushed and tagged, but not necessarily merged onto main
-      - name: Ensure tagged commit is on main
+      - name: Check if tag already exists
+        # note: this will fail if the tag already exists
         run: |
-          echo "Tag: ${GITHUB_REF##*/}"
-          git fetch origin main
-          git merge-base --is-ancestor ${GITHUB_REF##*/} origin/main && echo "${GITHUB_REF##*/} is a commit on main!"
+          [[ "${{ github.event.inputs.version }}" == v* ]] || (echo "version '${{ github.event.inputs.version }}' does not have a 'v' prefix" && exit 1)
+          git tag ${{ github.event.inputs.version }}
 
       - name: Check static analysis results
         uses: fountainhead/action-wait-for-check@v1.1.0
@@ -38,6 +37,15 @@ jobs:
           checkName: "Unit tests"
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
+      - name: Check acceptance test results (linux)
+        uses: fountainhead/action-wait-for-check@v1.1.0
+        id: acceptance-linux
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          # This check name is defined as the github action job name (in .github/workflows/testing.yaml)
+          checkName: "Acceptance tests (Linux)"
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
       - name: Check unit test results
         uses: fountainhead/action-wait-for-check@v1.1.0
         id: cli
@@ -48,10 +56,11 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Quality gate
-        if: steps.static-analysis.outputs.conclusion != 'success' || steps.unit.outputs.conclusion != 'success' || steps.cli.outputs.conclusion != 'success'
+        if: steps.static-analysis.outputs.conclusion != 'success' || steps.unit.outputs.conclusion != 'success' || steps.acceptance-linux.outputs.conclusion != 'success' || steps.cli.outputs.conclusion != 'success'
         run: |
           echo "Static Analysis Status: ${{ steps.static-analysis.conclusion }}"
           echo "Unit Test Status: ${{ steps.unit.outputs.conclusion }}"
+          echo "Acceptance Test (Linux) Status: ${{ steps.acceptance-linux.outputs.conclusion }}"
           echo "CLI test Status: ${{ steps.cli.conclusion }}"
           false
 
@@ -69,6 +78,13 @@ jobs:
 
       - name: Bootstrap environment
         uses: ./.github/actions/bootstrap
+
+      - name: Tag release
+        run: |
+          git tag ${{ github.event.inputs.version }}
+          git push origin --tags
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build & publish release artifacts
         run: make ci-release
