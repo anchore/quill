@@ -5,7 +5,7 @@ COVER_REPORT = $(RESULTS_DIR)/unit-coverage-details.txt
 COVER_TOTAL = $(RESULTS_DIR)/unit-coverage-summary.txt
 
 # Command templates #################################
-LINTCMD = $(TEMP_DIR)/golangci-lint run --tests=false --timeout=2m --config .golangci.yaml
+LINT_CMD = $(TEMP_DIR)/golangci-lint run --tests=false --timeout=2m --config .golangci.yaml
 GOIMPORTS_CMD = $(TEMP_DIR)/gosimports -local github.com/anchore
 RELEASE_CMD = $(TEMP_DIR)/goreleaser release --rm-dist
 SNAPSHOT_CMD = $(RELEASE_CMD) --skip-publish --snapshot --skip-sign
@@ -124,20 +124,24 @@ lint: ## Run gofmt + golangci lint checks
 	@test -z "$(shell gofmt -l -s .)"
 
 	# run all golangci-lint rules
-	$(LINTCMD)
+	$(LINT_CMD)
 	@[ -z "$(shell $(GOIMPORTS_CMD) -d .)" ] || (echo "goimports needs to be fixed" && false)
 
 	# go tooling does not play well with certain filename characters, ensure the common cases don't result in future "go get" failures
 	$(eval MALFORMED_FILENAMES := $(shell find . | grep -e ':'))
 	@bash -c "[[ '$(MALFORMED_FILENAMES)' == '' ]] || (printf '\nfound unsupported filename characters:\n$(MALFORMED_FILENAMES)\n\n' && false)"
 
-.PHONY: lint-fix
-lint-fix: ## Auto-format all source code + run golangci lint fixers
-	$(call title,Running lint fixers)
+.PHONY: format
+format: ## Auto-format all source code
+	$(call title,Running formatters)
 	gofmt -w -s .
 	$(GOIMPORTS_CMD) -w .
-	$(LINTCMD) --fix
 	go mod tidy
+
+.PHONY: lint-fix
+lint-fix: format  ## Auto-format all source code + run golangci lint fixers
+	$(call title,Running lint fixers)
+	$(LINT_CMD) --fix
 
 .PHONY: check-licenses
 check-licenses:
