@@ -10,6 +10,8 @@ After cloning do the following:
 3. run `git lfs pull` to get the test-fixture files from LFS
 4. run `make` to run linting, tests, and other verifications to make certain everything is working alright.
 
+The main make tasks for common static analysis and testing are `lint`, `format`, `lint-fix`, and `unit`.
+
 Checkout `make help` to see what other actions you can take.
 
 ```
