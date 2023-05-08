@@ -4,14 +4,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
-
 	"github.com/anchore/quill/cmd/quill/cli/application"
 	"github.com/anchore/quill/cmd/quill/cli/options"
 	"github.com/anchore/quill/internal/bus"
 	"github.com/anchore/quill/quill/extract"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 var _ options.Interface = &describeConfig{}
@@ -28,10 +26,6 @@ func (d *describeConfig) Redact() {
 
 func (d *describeConfig) AddFlags(flags *pflag.FlagSet) {
 	options.AddAllFlags(flags, &d.Format, &d.Describe)
-}
-
-func (d *describeConfig) BindFlags(flags *pflag.FlagSet, v *viper.Viper) error {
-	return options.BindAllFlags(flags, v, &d.Format, &d.Describe)
 }
 
 func Describe(app *application.Application) *cobra.Command {

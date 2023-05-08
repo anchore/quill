@@ -2,7 +2,6 @@ package options
 
 import (
 	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
 )
 
 var _ Interface = &Keychain{}
@@ -20,8 +19,4 @@ func (o *Keychain) AddFlags(flags *pflag.FlagSet) {
 		"keychain-path", "", o.Path,
 		"path to the mac system keychain",
 	)
-}
-
-func (o *Keychain) BindFlags(flags *pflag.FlagSet, v *viper.Viper) error {
-	return Bind(v, "keychain.path", flags.Lookup("keychain-path"))
 }

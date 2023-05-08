@@ -1,10 +1,11 @@
 package application
 
 import (
-	"github.com/spf13/viper"
-
+	"github.com/anchore/fangs/config"
 	"github.com/anchore/go-logger"
 )
+
+var _ config.PostLoad = (*Logging)(nil)
 
 // Logging contains all logging-related configuration options available to the user via the application config.
 type Logging struct {
@@ -17,12 +18,7 @@ type Logging struct {
 	// Structured   bool         `yaml:"structured" json:"structured" mapstructure:"structured"`                        // show all log entries as JSON formatted strings
 }
 
-func (cfg Logging) loadDefaultValues(v *viper.Viper) {
-	v.SetDefault("log.level", string(logger.WarnLevel))
-	v.SetDefault("log.file", cfg.FileLocation)
-}
-
-func (cfg *Logging) parseConfigValues() error {
+func (cfg *Logging) PostLoad() error {
 	switch {
 	case cfg.Quiet:
 		// TODO: this is bad: quiet option trumps all other logging options (such as to a file on disk)

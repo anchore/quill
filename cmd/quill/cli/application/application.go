@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"fmt"
+	"github.com/anchore/fangs/config"
 	"os"
 	"strings"
 
@@ -35,29 +36,12 @@ func New() *Application {
 }
 
 func (a *Application) Setup(opts options.Interface) func(cmd *cobra.Command, args []string) error {
-	v := utils.NewViper()
 	return func(cmd *cobra.Command, args []string) error {
-		// bind options to viper
-		if opts != nil {
-			if err := opts.BindFlags(cmd.Flags(), v); err != nil {
-				return err
-			}
-		}
+		fCfg := config.NewConfig(internal.ApplicationName)
+		// TODO: log!
 
-		if err := a.Config.BindFlags(cmd.Root().PersistentFlags(), v); err != nil {
-			return fmt.Errorf("unable to bind persistent flags: %w", err)
-		}
-
-		if err := a.Config.Load(v); err != nil {
+		if err := config.Load(fCfg, cmd, a.Config, opts); err != nil {
 			return fmt.Errorf("invalid application config: %v", err)
-		}
-
-		// setup command config...
-		if opts != nil {
-			err := v.Unmarshal(opts)
-			if err != nil {
-				return fmt.Errorf("unable to unmarshal command configuration for cmd=%q: %w", strings.TrimSpace(cmd.CommandPath()), err)
-			}
 		}
 
 		// setup logger...

@@ -2,7 +2,6 @@ package options
 
 import (
 	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
 )
 
 var _ Interface = &Describe{}
@@ -20,8 +19,4 @@ func (o *Describe) AddFlags(flags *pflag.FlagSet) {
 		"detail", "d", o.Detail,
 		"show additional detail of description",
 	)
-}
-
-func (o *Describe) BindFlags(flags *pflag.FlagSet, v *viper.Viper) error {
-	return Bind(v, "describe.detail", flags.Lookup("detail"))
 }

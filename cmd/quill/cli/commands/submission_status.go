@@ -3,16 +3,14 @@ package commands
 import (
 	"time"
 
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
-
 	"github.com/anchore/quill/cmd/quill/cli/application"
 	"github.com/anchore/quill/cmd/quill/cli/options"
 	"github.com/anchore/quill/internal/bus"
 	"github.com/anchore/quill/internal/log"
 	"github.com/anchore/quill/quill"
 	"github.com/anchore/quill/quill/notary"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 var _ options.Interface = &submissionStatusConfig{}
@@ -29,10 +27,6 @@ func (o *submissionStatusConfig) Redact() {
 
 func (o *submissionStatusConfig) AddFlags(flags *pflag.FlagSet) {
 	options.AddAllFlags(flags, &o.Notary, &o.Status)
-}
-
-func (o *submissionStatusConfig) BindFlags(flags *pflag.FlagSet, v *viper.Viper) error {
-	return options.BindAllFlags(flags, v, &o.Notary, &o.Status)
 }
 
 func SubmissionStatus(app *application.Application) *cobra.Command {

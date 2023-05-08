@@ -3,13 +3,11 @@ package commands
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
-
 	"github.com/anchore/quill/cmd/quill/cli/application"
 	"github.com/anchore/quill/cmd/quill/cli/options"
 	"github.com/anchore/quill/internal/log"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 var _ options.Interface = &signConfig{}
@@ -29,13 +27,6 @@ func (o *signAndNotarizeConfig) Redact() {
 func (o *signAndNotarizeConfig) AddFlags(flags *pflag.FlagSet) {
 	flags.BoolVar(&o.DryRun, "dry-run", o.DryRun, "dry run mode (do not actually notarize)")
 	options.AddAllFlags(flags, &o.Notary, &o.Status, &o.Signing)
-}
-
-func (o *signAndNotarizeConfig) BindFlags(flags *pflag.FlagSet, v *viper.Viper) error {
-	if err := options.Bind(v, "dry-run", flags.Lookup("dry-run")); err != nil {
-		return err
-	}
-	return options.BindAllFlags(flags, v, &o.Notary, &o.Status, &o.Signing)
 }
 
 func SignAndNotarize(app *application.Application) *cobra.Command {

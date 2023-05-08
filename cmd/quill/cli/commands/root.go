@@ -4,14 +4,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-
 	"github.com/anchore/quill/cmd/quill/cli/application"
 	"github.com/anchore/quill/cmd/quill/cli/options"
 	"github.com/anchore/quill/internal"
 	"github.com/anchore/quill/internal/utils"
 	"github.com/anchore/quill/internal/version"
+	"github.com/spf13/cobra"
 )
 
 func Root(app *application.Application) *cobra.Command {
@@ -38,15 +36,9 @@ func Root(app *application.Application) *cobra.Command {
 }
 
 func formatRootExamples() string {
-	cfg := application.Config{
-		DisableLoadFromDisk: true,
-	}
-	// best effort to load current or default values
-	// intentionally don't read from the environment
-	_ = cfg.Load(viper.New())
+	cfg := application.DefaultConfig()
 
 	cfgString := utils.Indent(options.Summarize(cfg, nil), "  ")
-	return fmt.Sprintf(`Application Config:
- (search locations: %+v)
-%s`, strings.Join(application.ConfigSearchLocations, ", "), strings.TrimSuffix(cfgString, "\n"))
+	// TODO: add back string helper for all config locations searched (added to the help)
+	return strings.TrimSuffix(cfgString, "\n")
 }

@@ -3,15 +3,13 @@ package commands
 import (
 	"time"
 
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
-
 	"github.com/anchore/quill/cmd/quill/cli/application"
 	"github.com/anchore/quill/cmd/quill/cli/options"
 	"github.com/anchore/quill/internal/log"
 	"github.com/anchore/quill/quill"
 	"github.com/anchore/quill/quill/notary"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 var _ options.Interface = &notarizeConfig{}
@@ -30,13 +28,6 @@ func (o *notarizeConfig) Redact() {
 func (o *notarizeConfig) AddFlags(flags *pflag.FlagSet) {
 	flags.BoolVar(&o.DryRun, "dry-run", o.DryRun, "dry run mode (do not actually notarize)")
 	options.AddAllFlags(flags, &o.Notary, &o.Status)
-}
-
-func (o *notarizeConfig) BindFlags(flags *pflag.FlagSet, v *viper.Viper) error {
-	if err := options.Bind(v, "dry-run", flags.Lookup("dry-run")); err != nil {
-		return err
-	}
-	return options.BindAllFlags(flags, v, &o.Notary, &o.Status)
 }
 
 func Notarize(app *application.Application) *cobra.Command {

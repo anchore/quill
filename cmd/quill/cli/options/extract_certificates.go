@@ -2,7 +2,6 @@ package options
 
 import (
 	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
 )
 
 var _ Interface = &ExtractCertificates{}
@@ -20,8 +19,4 @@ func (o *ExtractCertificates) AddFlags(flags *pflag.FlagSet) {
 		"leaf", "l", o.Leaf,
 		"only extract the leaf certificate",
 	)
-}
-
-func (o *ExtractCertificates) BindFlags(flags *pflag.FlagSet, v *viper.Viper) error {
-	return Bind(v, "extract-certificates.leaf", flags.Lookup("leaf"))
 }

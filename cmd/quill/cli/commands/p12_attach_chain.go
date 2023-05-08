@@ -8,7 +8,6 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
 	"software.sslmate.com/src/go-pkcs12"
 
 	"github.com/anchore/quill/cmd/quill/cli/application"
@@ -34,10 +33,6 @@ func (p *p12AttachChainConfig) Redact() {
 
 func (p *p12AttachChainConfig) AddFlags(set *pflag.FlagSet) {
 	options.AddAllFlags(set, &p.P12, &p.Keychain)
-}
-
-func (p *p12AttachChainConfig) BindFlags(set *pflag.FlagSet, viper *viper.Viper) error {
-	return options.BindAllFlags(set, viper, &p.P12, &p.Keychain)
 }
 
 func P12AttachChain(app *application.Application) *cobra.Command {
