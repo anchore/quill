@@ -1,12 +1,54 @@
 package commands
 
 import (
-	"github.com/spf13/cobra"
+	"context"
+	"errors"
+	"fmt"
 
-	"github.com/anchore/quill/cmd/quill/cli/application"
+	"github.com/spf13/cobra"
+	"software.sslmate.com/src/go-pkcs12"
+
+	"github.com/anchore/clio"
 	"github.com/anchore/quill/cmd/quill/cli/options"
 	"github.com/anchore/quill/internal/bus"
+	"github.com/anchore/quill/internal/log"
+	"github.com/anchore/quill/quill/pki/load"
 )
+
+func loadP12Interactively(p12Path, password string) (*load.P12Contents, error) {
+	p12Content, err := load.P12(p12Path, password)
+	if err == nil {
+		return p12Content, nil
+	}
+
+	if !errors.Is(err, load.ErrNeedPassword) {
+		return nil, err
+	}
+
+	by, err := load.BytesFromFileOrEnv(p12Path)
+	if err != nil {
+		return nil, fmt.Errorf("unable to read p12 bytes: %w", err)
+	}
+
+	prompter := bus.PromptForInput("Enter P12 password:", true)
+	newPassword, err := prompter.GetPromptResponse(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("unable to get password from prompt: %w", err)
+	}
+
+	log.Redact(newPassword)
+
+	key, cert, certs, err := pkcs12.DecodeChain(by, newPassword)
+	if err != nil {
+		return nil, fmt.Errorf("unable to decode p12 file: %w", err)
+	}
+
+	return &load.P12Contents{
+		PrivateKey:   key,
+		Certificate:  cert,
+		Certificates: certs,
+	}, nil
+}
 
 func async(f func() error) <-chan error {
 	errs := make(chan error)
@@ -32,7 +74,7 @@ func chainArgs(processors ...func(cmd *cobra.Command, args []string) error) func
 	}
 }
 
-func commonConfiguration(app *application.Application, cmd *cobra.Command, opts options.Interface) {
+func commonConfiguration(app clio.Application, cmd *cobra.Command, opts options.Interface) {
 	if opts != nil {
 		opts.AddFlags(cmd.Flags())
 

@@ -2,22 +2,21 @@ package commands
 
 import (
 	"crypto/rand"
+	"crypto/x509"
 	"fmt"
 	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
 	"software.sslmate.com/src/go-pkcs12"
 
-	"github.com/anchore/quill/cmd/quill/cli/application"
+	"github.com/anchore/clio"
 	"github.com/anchore/quill/cmd/quill/cli/options"
 	"github.com/anchore/quill/internal/bus"
 	"github.com/anchore/quill/internal/log"
 	"github.com/anchore/quill/quill/pki/apple"
 	"github.com/anchore/quill/quill/pki/certchain"
-	"github.com/anchore/quill/quill/pki/load"
 )
 
 var _ options.Interface = &p12AttachChainConfig{}
@@ -28,19 +27,15 @@ type p12AttachChainConfig struct {
 	options.P12      `yaml:"p12" json:"p12" mapstructure:"p12"`
 }
 
-func (p *p12AttachChainConfig) Redact() {
-	options.RedactAll(&p.P12, &p.Keychain)
+func (p *p12AttachChainConfig) PostLoad() error {
+	return options.PostLoadAll(&p.P12, &p.Keychain)
 }
 
 func (p *p12AttachChainConfig) AddFlags(set *pflag.FlagSet) {
 	options.AddAllFlags(set, &p.P12, &p.Keychain)
 }
 
-func (p *p12AttachChainConfig) BindFlags(set *pflag.FlagSet, viper *viper.Viper) error {
-	return options.BindAllFlags(set, viper, &p.P12, &p.Keychain)
-}
-
-func P12AttachChain(app *application.Application) *cobra.Command {
+func P12AttachChain(app clio.Application) *cobra.Command {
 	opts := &p12AttachChainConfig{
 		Keychain: options.Keychain{
 			Path: "/System/Library/Keychains/SystemRootCertificates.keychain",
@@ -98,19 +93,19 @@ func P12AttachChain(app *application.Application) *cobra.Command {
 func writeP12WithChain(p12Path, password, keychainPath string, failWithoutFullChain bool) (string, error) {
 	log.WithFields("file", p12Path).Info("attaching certificate chain to p12 file")
 
-	key, cert, certs, err := load.P12(p12Path, password)
+	p12Contents, err := loadP12Interactively(p12Path, password)
 	if err != nil {
 		return "", err
 	}
 
-	if cert == nil {
+	if p12Contents.Certificate == nil {
 		return "", fmt.Errorf("unable to find signing certificate in p12")
 	}
 
-	log.WithFields("chain-certs", len(certs), "signing-cert", fmt.Sprintf("%q", cert.Subject.CommonName)).Debug("existing p12 contents")
+	log.WithFields("chain-certs", len(p12Contents.Certificates), "signing-cert", fmt.Sprintf("%q", p12Contents.Certificate.Subject.CommonName)).Debug("existing p12 contents")
 
-	if len(certs) > 0 {
-		return "", fmt.Errorf("p12 file already has the certificate chain embedded (chain length %d + 1 signing certificate)", len(certs))
+	if len(p12Contents.Certificates) > 0 {
+		return "", fmt.Errorf("p12 file already has the certificate chain embedded (chain length %d + 1 signing certificate)", len(p12Contents.Certificates))
 	}
 
 	store := certchain.NewCollection().WithStores(apple.GetEmbeddedCertStore())
@@ -118,19 +113,20 @@ func writeP12WithChain(p12Path, password, keychainPath string, failWithoutFullCh
 		store = store.WithSearchers(apple.NewKeychainSearcher(keychainPath))
 	}
 
-	remainingCerts, err := certchain.Find(store, cert)
+	var certs = append([]*x509.Certificate{}, p12Contents.Certificates...)
+	remainingCerts, err := certchain.Find(store, p12Contents.Certificate)
 	if err != nil {
 		return "", fmt.Errorf("unable to find remaining chain certificates: %w", err)
 	}
 	certs = append(certs, remainingCerts...)
 
-	p12Bytes, err := pkcs12.Encode(rand.Reader, key, cert, certs, password)
+	p12Bytes, err := pkcs12.Encode(rand.Reader, p12Contents.PrivateKey, p12Contents.Certificate, certs, password)
 	if err != nil {
 		return "", fmt.Errorf("unable to encode p12 file: %w", err)
 	}
 
 	// verify the cert chain before writing...
-	if err := certchain.VerifyForCodeSigning(append(certs, cert), failWithoutFullChain); err != nil {
+	if err := certchain.VerifyForCodeSigning(append(certs, p12Contents.Certificate), failWithoutFullChain); err != nil {
 		return "", err
 	}
 

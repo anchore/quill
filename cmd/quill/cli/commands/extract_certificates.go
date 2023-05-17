@@ -7,7 +7,7 @@ import (
 	"github.com/scylladb/go-set/strset"
 	"github.com/spf13/cobra"
 
-	"github.com/anchore/quill/cmd/quill/cli/application"
+	"github.com/anchore/clio"
 	"github.com/anchore/quill/cmd/quill/cli/options"
 	"github.com/anchore/quill/internal/bus"
 	"github.com/anchore/quill/internal/log"
@@ -21,7 +21,7 @@ type extractCertificatesConfig struct {
 	options.ExtractCertificates `yaml:"extract-certificates" json:"extract-certificates" mapstructure:"extract-certificates"`
 }
 
-func ExtractCertificates(app *application.Application) *cobra.Command {
+func ExtractCertificates(app clio.Application) *cobra.Command {
 	opts := &extractCertificatesConfig{}
 
 	cmd := &cobra.Command{

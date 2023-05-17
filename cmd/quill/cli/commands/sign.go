@@ -5,7 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/anchore/quill/cmd/quill/cli/application"
+	"github.com/anchore/clio"
 	"github.com/anchore/quill/cmd/quill/cli/options"
 	"github.com/anchore/quill/internal/log"
 	"github.com/anchore/quill/quill"
@@ -18,7 +18,7 @@ type signConfig struct {
 	options.Signing `yaml:"sign" json:"sign" mapstructure:"sign"`
 }
 
-func Sign(app *application.Application) *cobra.Command {
+func Sign(app clio.Application) *cobra.Command {
 	opts := &signConfig{
 		Signing: options.DefaultSigning(),
 	}
@@ -60,7 +60,15 @@ func sign(binPath string, opts options.Signing) error {
 		if opts.AdHoc {
 			log.Warn("ad-hoc signing is enabled, but a p12 file was also provided. The p12 file will be ignored.")
 		} else {
-			replacement, err := quill.NewSigningConfigFromP12(binPath, opts.P12, opts.Password, opts.FailWithoutFullChain)
+			p12Content, err := loadP12Interactively(opts.P12, opts.Password)
+			if err != nil {
+				return fmt.Errorf("unable to decode p12 file: %w", err)
+			}
+			if p12Content == nil {
+				return fmt.Errorf("no content found in the p12 file")
+			}
+
+			replacement, err := quill.NewSigningConfigFromP12(binPath, *p12Content, opts.FailWithoutFullChain)
 			if err != nil {
 				return fmt.Errorf("unable to read p12: %w", err)
 			}

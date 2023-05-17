@@ -1,15 +1,14 @@
 package options
 
 import (
-	"github.com/hashicorp/go-multierror"
+	"fmt"
+
 	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
 )
 
 type Interface interface {
-	Redact()
+	PostLoad() error
 	AddFlags(*pflag.FlagSet)
-	BindFlags(*pflag.FlagSet, *viper.Viper) error
 }
 
 func AddAllFlags(flags *pflag.FlagSet, i ...Interface) {
@@ -18,18 +17,11 @@ func AddAllFlags(flags *pflag.FlagSet, i ...Interface) {
 	}
 }
 
-func BindAllFlags(flags *pflag.FlagSet, v *viper.Viper, i ...Interface) error {
-	var errs error
+func PostLoadAll(i ...Interface) error {
 	for _, o := range i {
-		if err := o.BindFlags(flags, v); err != nil {
-			errs = multierror.Append(errs, err)
+		if err := o.PostLoad(); err != nil {
+			return fmt.Errorf("failed to load options: %+v", err)
 		}
 	}
-	return errs
-}
-
-func RedactAll(i ...Interface) {
-	for _, o := range i {
-		o.Redact()
-	}
+	return nil
 }

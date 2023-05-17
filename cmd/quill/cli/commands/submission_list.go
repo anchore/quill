@@ -6,7 +6,7 @@ import (
 	"github.com/jedib0t/go-pretty/table"
 	"github.com/spf13/cobra"
 
-	"github.com/anchore/quill/cmd/quill/cli/application"
+	"github.com/anchore/clio"
 	"github.com/anchore/quill/cmd/quill/cli/options"
 	"github.com/anchore/quill/internal/bus"
 	"github.com/anchore/quill/internal/log"
@@ -20,7 +20,7 @@ type submissionListConfig struct {
 	options.Notary `yaml:"notary" json:"notary" mapstructure:"notary"`
 }
 
-func SubmissionList(app *application.Application) *cobra.Command {
+func SubmissionList(app clio.Application) *cobra.Command {
 	opts := &submissionListConfig{}
 
 	cmd := &cobra.Command{

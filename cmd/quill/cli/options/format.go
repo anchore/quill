@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
 )
 
 var _ Interface = &Format{}
@@ -14,8 +13,8 @@ type Format struct {
 	AllowableFormats []string `yaml:"-" json:"-" mapstructure:"-"`
 }
 
-func (o *Format) Redact() {
-
+func (o *Format) PostLoad() error {
+	return nil
 }
 
 func (o *Format) AddFlags(flags *pflag.FlagSet) {
@@ -24,8 +23,4 @@ func (o *Format) AddFlags(flags *pflag.FlagSet) {
 		"output", "o", o.Output,
 		fmt.Sprintf("output format to report results in (allowable values: %s)", o.AllowableFormats),
 	)
-}
-
-func (o *Format) BindFlags(flags *pflag.FlagSet, v *viper.Viper) error {
-	return Bind(v, "output", flags.Lookup("output"))
 }

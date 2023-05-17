@@ -8,18 +8,18 @@ import (
 	"github.com/erikgeiser/promptkit/textinput"
 
 	"github.com/anchore/quill/internal/log"
-	"github.com/anchore/quill/quill/event/monitor"
+	"github.com/anchore/quill/quill/event"
 )
 
 type Prompt struct {
 	complete bool
-	monitor.PromptWriter
+	event.PromptWriter
 	tea.Model
 	value func() (string, error)
 	*textinput.TextInput
 }
 
-func New(prompter monitor.PromptWriter) *Prompt {
+func New(prompter event.PromptWriter) *Prompt {
 	// candidates: ‣⧗⧖⌛💬ⓘ■⬛⬢◼⧓►❖
 	spec := textinput.New(" ❖ " + prompter.PromptMessage())
 	spec.Hidden = prompter.IsSensitive()

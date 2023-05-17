@@ -1,4 +1,4 @@
-package monitor
+package event
 
 import "github.com/wagoodman/go-progress"
 

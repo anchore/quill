@@ -4,14 +4,17 @@ import (
 	"context"
 	"os"
 	"os/signal"
+	"strings"
+
+	"github.com/gookit/color"
 
 	"github.com/anchore/quill/cmd/quill/cli"
+	"github.com/anchore/quill/cmd/quill/internal/version"
 	"github.com/anchore/quill/internal/log"
-	"github.com/anchore/quill/internal/utils"
 )
 
 func main() {
-	cmd := cli.New()
+	cmd := cli.New(version.FromBuild())
 
 	// drive application control from a single context which can be cancelled (notifying the event loop to stop)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -22,6 +25,14 @@ func main() {
 	// nicely enforces this constraint)
 	signals := make(chan os.Signal, 10) // Note: A buffered channel is recommended for this; see https://golang.org/pkg/os/signal/#Notify
 	signal.Notify(signals, os.Interrupt)
+
+	var exitCode int
+
+	defer func() {
+		if exitCode != 0 {
+			os.Exit(exitCode)
+		}
+	}()
 
 	defer func() {
 		signal.Stop(signals)
@@ -40,5 +51,9 @@ func main() {
 		os.Exit(1)
 	}()
 
-	utils.FatalOnError(cmd.Execute(), "error")
+	if err := cmd.Execute(); err != nil {
+		// report an issue on stdout
+		color.Red.Println(strings.TrimSpace(err.Error()))
+		exitCode = 1
+	}
 }

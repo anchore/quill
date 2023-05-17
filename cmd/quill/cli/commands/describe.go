@@ -6,9 +6,8 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
 
-	"github.com/anchore/quill/cmd/quill/cli/application"
+	"github.com/anchore/clio"
 	"github.com/anchore/quill/cmd/quill/cli/options"
 	"github.com/anchore/quill/internal/bus"
 	"github.com/anchore/quill/quill/extract"
@@ -22,19 +21,15 @@ type describeConfig struct {
 	options.Describe `yaml:"describe" json:"describe" mapstructure:"describe"`
 }
 
-func (d *describeConfig) Redact() {
-	options.RedactAll(&d.Format, &d.Describe)
+func (d *describeConfig) PostLoad() error {
+	return options.PostLoadAll(&d.Format, &d.Describe)
 }
 
 func (d *describeConfig) AddFlags(flags *pflag.FlagSet) {
 	options.AddAllFlags(flags, &d.Format, &d.Describe)
 }
 
-func (d *describeConfig) BindFlags(flags *pflag.FlagSet, v *viper.Viper) error {
-	return options.BindAllFlags(flags, v, &d.Format, &d.Describe)
-}
-
-func Describe(app *application.Application) *cobra.Command {
+func Describe(app clio.Application) *cobra.Command {
 	opts := &describeConfig{
 		Format: options.Format{
 			Output:           "text",

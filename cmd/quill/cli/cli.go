@@ -1,33 +1,58 @@
 package cli
 
 import (
+	"os"
+
 	"github.com/spf13/cobra"
 
-	"github.com/anchore/quill/cmd/quill/cli/application"
+	"github.com/anchore/clio"
+	"github.com/anchore/go-logger"
 	"github.com/anchore/quill/cmd/quill/cli/commands"
+	"github.com/anchore/quill/cmd/quill/internal/ui"
+	"github.com/anchore/quill/internal"
+	"github.com/anchore/quill/internal/bus"
+	"github.com/anchore/quill/internal/log"
 )
 
-type config struct {
-	app *application.Application
-}
+func New(version clio.Version) *cobra.Command {
+	clioCfg := clio.NewConfig(internal.ApplicationName, version.Version).
+		WithLoggingConfig(
+			clio.LoggingConfig{
+				Level: logger.WarnLevel,
+			},
+		).
+		WithLoggerConstructor(
+			func(config clio.Config) (logger.Logger, error) {
+				l, err := clio.DefaultLogger(config)
+				if err != nil {
+					return nil, err
+				}
+				// immediately set the logger to account for redactions from any configurations
+				log.Set(l)
+				return log.Get(), nil
+			},
+		).
+		WithUIConstructor(
+			func(cfg clio.Config) ([]clio.UI, error) {
+				if !cfg.Log.AllowUI(os.Stdin) {
+					return nil, nil
+				}
 
-type Option func(*config)
+				return []clio.UI{
+					ui.New(false, cfg.Log.Quiet),
+				}, nil
+			},
+		).
+		WithInitializers(
+			func(cfg clio.Config, state clio.State) error {
+				bus.Set(state.Bus)
+				return nil
+			},
+		)
 
-func WithApplication(app *application.Application) Option {
-	return func(config *config) {
-		config.app = app
-	}
-}
+	app := clio.New(*clioCfg)
 
-func New(opts ...Option) *cobra.Command {
-	cfg := &config{
-		app: application.New(),
-	}
-	for _, fn := range opts {
-		fn(cfg)
-	}
-
-	app := cfg.app
+	root := commands.Root(clioCfg, app)
 
 	submission := commands.Submission(app)
 	submission.AddCommand(commands.SubmissionList(app))
@@ -41,8 +66,7 @@ func New(opts ...Option) *cobra.Command {
 	p12.AddCommand(commands.P12AttachChain(app))
 	p12.AddCommand(commands.P12Describe(app))
 
-	root := commands.Root(app)
-	root.AddCommand(commands.Version(app))
+	root.AddCommand(clio.VersionCommand(app, version))
 	root.AddCommand(commands.Sign(app))
 	root.AddCommand(commands.Notarize(app))
 	root.AddCommand(commands.SignAndNotarize(app))

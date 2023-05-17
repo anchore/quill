@@ -2,7 +2,6 @@ package options
 
 import (
 	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
 )
 
 var _ Interface = (*Notary)(nil)
@@ -16,8 +15,9 @@ type Notary struct {
 	// unbound options
 }
 
-func (o *Notary) Redact() {
+func (o *Notary) PostLoad() error {
 	redactNonFileOrEnvHint(o.PrivateKey)
+	return nil
 }
 
 func (o *Notary) AddFlags(flags *pflag.FlagSet) {
@@ -38,14 +38,4 @@ func (o *Notary) AddFlags(flags *pflag.FlagSet) {
 		"notary-key", "", o.PrivateKey,
 		"App Store Connect API key. File system path to the private key. This can also be the base64-encoded contents of the key file, or 'env:ENV_VAR_NAME' to read the key from a different environment variable",
 	)
-}
-
-func (o *Notary) BindFlags(flags *pflag.FlagSet, v *viper.Viper) error {
-	if err := Bind(v, "notary.issuer", flags.Lookup("notary-issuer")); err != nil {
-		return err
-	}
-	if err := Bind(v, "notary.key-id", flags.Lookup("notary-key-id")); err != nil {
-		return err
-	}
-	return Bind(v, "notary.key", flags.Lookup("notary-key"))
 }

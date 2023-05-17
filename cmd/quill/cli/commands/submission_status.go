@@ -5,9 +5,8 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
 
-	"github.com/anchore/quill/cmd/quill/cli/application"
+	"github.com/anchore/clio"
 	"github.com/anchore/quill/cmd/quill/cli/options"
 	"github.com/anchore/quill/internal/bus"
 	"github.com/anchore/quill/internal/log"
@@ -23,19 +22,15 @@ type submissionStatusConfig struct {
 	options.Status `yaml:"status" json:"status" mapstructure:"status"`
 }
 
-func (o *submissionStatusConfig) Redact() {
-	options.RedactAll(&o.Notary, &o.Status)
+func (o *submissionStatusConfig) PostLoad() error {
+	return options.PostLoadAll(&o.Notary, &o.Status)
 }
 
 func (o *submissionStatusConfig) AddFlags(flags *pflag.FlagSet) {
 	options.AddAllFlags(flags, &o.Notary, &o.Status)
 }
 
-func (o *submissionStatusConfig) BindFlags(flags *pflag.FlagSet, v *viper.Viper) error {
-	return options.BindAllFlags(flags, v, &o.Notary, &o.Status)
-}
-
-func SubmissionStatus(app *application.Application) *cobra.Command {
+func SubmissionStatus(app clio.Application) *cobra.Command {
 	opts := &submissionStatusConfig{
 		Status: options.Status{
 			Wait: false,

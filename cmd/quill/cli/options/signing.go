@@ -2,7 +2,6 @@ package options
 
 import (
 	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
 
 	"github.com/anchore/quill/internal/log"
 )
@@ -28,9 +27,10 @@ func DefaultSigning() Signing {
 	}
 }
 
-func (o *Signing) Redact() {
+func (o *Signing) PostLoad() error {
 	log.Redact(o.Password)
 	redactNonFileOrEnvHint(o.P12)
+	return nil
 }
 
 func (o *Signing) AddFlags(flags *pflag.FlagSet) {
@@ -57,25 +57,4 @@ func (o *Signing) AddFlags(flags *pflag.FlagSet) {
 		"ad-hoc", "", o.AdHoc,
 		"perform ad-hoc signing. No cryptographic signature is included and --p12 key and certificate input are not needed. Do NOT use this option for production builds.",
 	)
-}
-
-func (o *Signing) BindFlags(flags *pflag.FlagSet, v *viper.Viper) error {
-	if err := Bind(v, "sign.override-identity", flags.Lookup("identity")); err != nil {
-		return err
-	}
-	if err := Bind(v, "sign.p12", flags.Lookup("p12")); err != nil {
-		return err
-	}
-	if err := Bind(v, "sign.timestamp-server", flags.Lookup("timestamp-server")); err != nil {
-		return err
-	}
-	if err := Bind(v, "sign.ad-hoc", flags.Lookup("ad-hoc")); err != nil {
-		return err
-	}
-
-	// set default values for non-bound struct items
-	v.SetDefault("sign.password", o.Password)
-	v.SetDefault("sign.fail-without-full-chain", o.FailWithoutFullChain)
-
-	return nil
 }

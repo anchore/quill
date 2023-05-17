@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/wagoodman/go-progress"
 
-	"github.com/anchore/quill/internal/ui/tui/bubbles/testutil"
+	"github.com/anchore/quill/cmd/quill/internal/ui/bubbles/testutil"
 )
 
 func subject(t testing.TB) (*progress.Manual, *progress.Stage, Model) {

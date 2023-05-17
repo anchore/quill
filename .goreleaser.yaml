@@ -24,10 +24,10 @@ builds:
       -w
       -s
       -extldflags '-static'
-      -X github.com/anchore/quill/internal/version.version={{.Version}}
-      -X github.com/anchore/quill/internal/version.gitCommit={{.Commit}}
-      -X github.com/anchore/quill/internal/version.buildDate={{.Date}}
-      -X github.com/anchore/quill/internal/version.gitDescription={{.Summary}}
+      -X github.com/anchore/quill/cmd/quill/internal/version.version={{.Version}}
+      -X github.com/anchore/quill/cmd/quill/internal/version.gitCommit={{.Commit}}
+      -X github.com/anchore/quill/cmd/quill/internal/version.buildDate={{.Date}}
+      -X github.com/anchore/quill/cmd/quill/internal/version.gitDescription={{.Summary}}
 
   - id: darwin-build
     dir: *dir

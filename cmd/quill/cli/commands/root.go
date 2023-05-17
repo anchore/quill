@@ -2,26 +2,20 @@ package commands
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 
-	"github.com/anchore/quill/cmd/quill/cli/application"
-	"github.com/anchore/quill/cmd/quill/cli/options"
+	"github.com/anchore/clio"
+	"github.com/anchore/quill/cmd/quill/internal/version"
 	"github.com/anchore/quill/internal"
-	"github.com/anchore/quill/internal/utils"
-	"github.com/anchore/quill/internal/version"
 )
 
-func Root(app *application.Application) *cobra.Command {
-	opts := app.Config
-
+func Root(cfg *clio.Config, app clio.Application) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "",
 		Version: version.FromBuild().Version,
 		PreRunE: app.Setup(nil),
-		Example: formatRootExamples(),
+		//Example: formatRootExamples(),
 	}
 
 	commonConfiguration(nil, cmd, nil)
@@ -30,23 +24,18 @@ func Root(app *application.Application) *cobra.Command {
 
 	flags := cmd.PersistentFlags()
 
-	flags.StringVarP(&opts.ConfigPath, "config", "c", "", "application config file")
-	flags.CountVarP(&opts.Log.Verbosity, "verbose", "v", "increase verbosity (-v = info, -vv = debug)")
-	flags.BoolVarP(&opts.Log.Quiet, "quiet", "q", false, "suppress all logging output")
+	cfg.Log.AddFlags(flags)         // -v, -q
+	cfg.FangsConfig.AddFlags(flags) // -c
+
+	// TODO: fangs.AddFlags(flags, cfg.Log, cfg.FangsConfig)
 
 	return cmd
 }
 
-func formatRootExamples() string {
-	cfg := application.Config{
-		DisableLoadFromDisk: true,
-	}
-	// best effort to load current or default values
-	// intentionally don't read from the environment
-	_ = cfg.Load(viper.New())
-
-	cfgString := utils.Indent(options.Summarize(cfg, nil), "  ")
-	return fmt.Sprintf(`Application Config:
- (search locations: %+v)
-%s`, strings.Join(application.ConfigSearchLocations, ", "), strings.TrimSuffix(cfgString, "\n"))
-}
+// func formatRootExamples() string {
+//	cfg := application.DefaultConfig()
+//
+//	cfgString := utils.Indent(options.Summarize(cfg, nil), "  ")
+//	// TODO: add back string helper for all config locations searched (added to the help)
+//	return strings.TrimSuffix(cfgString, "\n")
+//}

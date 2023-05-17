@@ -7,12 +7,12 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/anchore/quill/cmd/quill/cli/application"
+	"github.com/anchore/clio"
 	"github.com/anchore/quill/internal/bus"
 	"github.com/anchore/quill/quill/pki/apple"
 )
 
-func EmbeddedCerts(app *application.Application) *cobra.Command {
+func EmbeddedCerts(app clio.Application) *cobra.Command {
 	cmd := &cobra.Command{
 		Aliases: []string{
 			"embedded-certs",

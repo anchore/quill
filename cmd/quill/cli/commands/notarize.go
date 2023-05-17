@@ -5,9 +5,8 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
 
-	"github.com/anchore/quill/cmd/quill/cli/application"
+	"github.com/anchore/clio"
 	"github.com/anchore/quill/cmd/quill/cli/options"
 	"github.com/anchore/quill/internal/log"
 	"github.com/anchore/quill/quill"
@@ -23,8 +22,8 @@ type notarizeConfig struct {
 	DryRun         bool `yaml:"dry-run" json:"dry-run" mapstructure:"dry-run"`
 }
 
-func (o *notarizeConfig) Redact() {
-	options.RedactAll(&o.Notary, &o.Status)
+func (o *notarizeConfig) PostLoad() error {
+	return options.PostLoadAll(&o.Notary, &o.Status)
 }
 
 func (o *notarizeConfig) AddFlags(flags *pflag.FlagSet) {
@@ -32,14 +31,7 @@ func (o *notarizeConfig) AddFlags(flags *pflag.FlagSet) {
 	options.AddAllFlags(flags, &o.Notary, &o.Status)
 }
 
-func (o *notarizeConfig) BindFlags(flags *pflag.FlagSet, v *viper.Viper) error {
-	if err := options.Bind(v, "dry-run", flags.Lookup("dry-run")); err != nil {
-		return err
-	}
-	return options.BindAllFlags(flags, v, &o.Notary, &o.Status)
-}
-
-func Notarize(app *application.Application) *cobra.Command {
+func Notarize(app clio.Application) *cobra.Command {
 	opts := &notarizeConfig{
 		Status: options.DefaultStatus(),
 	}
