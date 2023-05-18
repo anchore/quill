@@ -8,13 +8,28 @@ import (
 
 	"github.com/gookit/color"
 
+	"github.com/anchore/clio"
 	"github.com/anchore/quill/cmd/quill/cli"
-	"github.com/anchore/quill/cmd/quill/internal/version"
 	"github.com/anchore/quill/internal/log"
 )
 
+const valueNotProvided = "[not provided]"
+
+// all variables here are provided as build-time arguments, with clear default values
+var version = valueNotProvided
+var gitCommit = valueNotProvided
+var gitDescription = valueNotProvided
+var buildDate = valueNotProvided
+
 func main() {
-	cmd := cli.New(version.FromBuild())
+	cmd := cli.New(
+		clio.Version{
+			Version:        version,
+			GitCommit:      gitCommit,
+			GitDescription: gitDescription,
+			BuildDate:      buildDate,
+		},
+	)
 
 	// drive application control from a single context which can be cancelled (notifying the event loop to stop)
 	ctx, cancel := context.WithCancel(context.Background())

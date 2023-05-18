@@ -6,14 +6,13 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/anchore/clio"
-	"github.com/anchore/quill/cmd/quill/internal/version"
 	"github.com/anchore/quill/internal"
 )
 
 func Root(cfg *clio.Config, app clio.Application) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "",
-		Version: version.FromBuild().Version,
+		Version: app.Config().Version,
 		PreRunE: app.Setup(nil),
 		//Example: formatRootExamples(),
 	}
