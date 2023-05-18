@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/PuerkitoBio/goquery v1.8.1
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d
-	github.com/anchore/clio v0.0.0-20230517192829-c5443167cddc
+	github.com/anchore/clio v0.0.0-20230517211941-092e1da43e66
 	github.com/anchore/go-logger v0.0.0-20230120230012-47be9bb822a2
 	github.com/anchore/go-macholibre v0.0.0-20220308212642-53e6d0aaf6fb
 	github.com/aws/aws-sdk-go v1.44.114
@@ -35,6 +35,7 @@ require (
 
 require (
 	github.com/adrg/xdg v0.4.0 // indirect
+	github.com/anchore/bubbly v0.0.0-20230518153401-87b6af8ccf22 // indirect
 	github.com/anchore/fangs v0.0.0-20230509200458-37a1ede7b92a // indirect
 	github.com/andybalholm/cascadia v1.3.1 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20200907205600-7a23bdc65eef // indirect

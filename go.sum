@@ -44,8 +44,12 @@ github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d h1:licZJFw2RwpH
 github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d/go.mod h1:asat636LX7Bqt5lYEZ27JNDcqxfjdBQuJ/MM4CN/Lzo=
 github.com/adrg/xdg v0.4.0 h1:RzRqFcjH4nE5C6oTAxhBtoE2IRyjBSa62SCbyPidvls=
 github.com/adrg/xdg v0.4.0/go.mod h1:N6ag73EX4wyxeaoeHctc1mas01KZgsj5tYiAIwqJE/E=
+github.com/anchore/bubbly v0.0.0-20230518153401-87b6af8ccf22 h1:5NFK6VGgqBUOAX2SYyzFYvNdOiYDxzim8jga386FlZY=
+github.com/anchore/bubbly v0.0.0-20230518153401-87b6af8ccf22/go.mod h1:Kv+Mm9CdtnV8iem48iEPIwy7/N4Wmk0hpxYNH5gTwKQ=
 github.com/anchore/clio v0.0.0-20230517192829-c5443167cddc h1:zTBGcLBDAmcG73N1A7cvJCxqfvXFBEBpW71OP4NbjoU=
 github.com/anchore/clio v0.0.0-20230517192829-c5443167cddc/go.mod h1:qi+5fEYVn89QgmSW6BJM15EHWMnhB0P6GpCcka8hhQ4=
+github.com/anchore/clio v0.0.0-20230517211941-092e1da43e66 h1:uCjG81EHQdJQ1DOMD/ASKSJGmCyyFB673oRGGf6taeQ=
+github.com/anchore/clio v0.0.0-20230517211941-092e1da43e66/go.mod h1:qi+5fEYVn89QgmSW6BJM15EHWMnhB0P6GpCcka8hhQ4=
 github.com/anchore/fangs v0.0.0-20230509200458-37a1ede7b92a h1:7vegl5H7WIrzGTspbeDIfNByt9+ialBwsKE/qKVjjD4=
 github.com/anchore/fangs v0.0.0-20230509200458-37a1ede7b92a/go.mod h1:4J+CHTBoKvtC7nyHHoBUoa8DLKA5NPhqUSOR74X+jHM=
 github.com/anchore/go-macholibre v0.0.0-20220308212642-53e6d0aaf6fb h1:iDMnx6LIjtjZ46C0akqveX83WFzhpTD3eqOthawb5vU=
