@@ -2,7 +2,7 @@ go.work
 go.work.sum
 
 CHANGELOG.md
-VERSION
+/VERSION
 /test/results
 /dist
 /snapshot
