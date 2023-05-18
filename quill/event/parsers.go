@@ -2,10 +2,11 @@ package event
 
 import (
 	"fmt"
-	"github.com/anchore/bubbly"
 
 	"github.com/wagoodman/go-partybus"
 	"github.com/wagoodman/go-progress"
+
+	"github.com/anchore/bubbly"
 )
 
 type ErrBadPayload struct {

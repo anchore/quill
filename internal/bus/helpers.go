@@ -1,10 +1,10 @@
 package bus
 
 import (
-	"github.com/anchore/bubbly"
 	"github.com/wagoodman/go-partybus"
 	"github.com/wagoodman/go-progress"
 
+	"github.com/anchore/bubbly"
 	"github.com/anchore/quill/quill/event"
 )
 

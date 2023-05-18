@@ -2,12 +2,12 @@ package ui
 
 import (
 	"fmt"
-	"github.com/charmbracelet/lipgloss"
 	"os"
 	"strings"
 	"sync"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/wagoodman/go-partybus"
 
 	"github.com/anchore/bubbly/bubbles/frame"
@@ -136,14 +136,14 @@ func (m *UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
-		newModel := m.handler.Handle(msg)
-		if newModel != nil {
+		for _, newModel := range m.handler.Handle(msg) {
+			if newModel == nil {
+				continue
+			}
 			cmds = append(cmds, newModel.Init())
-
 			m.frame.(*frame.Frame).AppendModel(newModel)
-
-			// intentionally fallthrough to update the frame model
 		}
+		// intentionally fallthrough to update the frame model
 	}
 
 	frameModel, cmd := m.frame.Update(msg)
