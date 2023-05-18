@@ -2,6 +2,7 @@ package event
 
 import (
 	"fmt"
+	"github.com/anchore/bubbly"
 
 	"github.com/wagoodman/go-partybus"
 	"github.com/wagoodman/go-progress"
@@ -32,12 +33,12 @@ func checkEventType(actual, expected partybus.EventType) error {
 	return nil
 }
 
-func ParseCLIInputPromptType(e partybus.Event) (PromptWriter, error) {
+func ParseCLIInputPromptType(e partybus.Event) (bubbly.PromptWriter, error) {
 	if err := checkEventType(e.Type, CLIInputPromptType); err != nil {
 		return nil, err
 	}
 
-	p, ok := e.Value.(PromptWriter)
+	p, ok := e.Value.(bubbly.PromptWriter)
 	if !ok {
 		return nil, newPayloadErr(e.Type, "Value", e.Value)
 	}

@@ -1,6 +1,7 @@
 package bus
 
 import (
+	"github.com/anchore/bubbly"
 	"github.com/wagoodman/go-partybus"
 	"github.com/wagoodman/go-progress"
 
@@ -52,11 +53,11 @@ func Notify(message string) {
 	})
 }
 
-func PromptForInput(message string, sensitive bool, validators ...func(string) error) *event.Prompter {
-	p := event.NewPrompter(message, sensitive, validators...)
+func PromptForInput(message string, sensitive bool, validators ...func(string) error) *bubbly.Prompter {
+	p := bubbly.NewPrompter(message, sensitive, validators...)
 	publish(partybus.Event{
 		Type:  event.CLIInputPromptType,
-		Value: event.PromptWriter(p),
+		Value: bubbly.PromptWriter(p),
 	})
 
 	return p

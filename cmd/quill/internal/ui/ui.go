@@ -1,15 +1,18 @@
 package ui
 
 import (
+	"fmt"
+	"github.com/charmbracelet/lipgloss"
 	"os"
+	"strings"
 	"sync"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/wagoodman/go-partybus"
 
+	"github.com/anchore/bubbly/bubbles/frame"
 	"github.com/anchore/go-logger"
 	handler "github.com/anchore/quill/cmd/quill/cli/ui"
-	"github.com/anchore/quill/cmd/quill/internal/ui/bubbles/frame"
 	"github.com/anchore/quill/internal/bus"
 	"github.com/anchore/quill/internal/log"
 	"github.com/anchore/quill/quill/event"
@@ -35,7 +38,7 @@ func New(_, quiet bool) *UI {
 	h := handler.New()
 	return &UI{
 		handler: h,
-		frame:   frame.New(h.State()),
+		frame:   frame.New(),
 		running: &sync.WaitGroup{},
 		quiet:   quiet,
 	}
@@ -152,4 +155,46 @@ func (m *UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m UI) View() string {
 	return m.frame.View()
+}
+
+func postUIEvents(quiet bool, events ...partybus.Event) {
+	// TODO: add partybus event filter to filter down to events matching a type
+
+	// show all accumulated reports to stdout
+	var reports []string
+	for _, e := range events {
+		if e.Type != event.CLIReportType {
+			continue
+		}
+
+		source, report, err := event.ParseCLIReportType(e)
+		if err != nil {
+			log.WithFields("error", err).
+				Warn("failed to gather final report for %q", source)
+		} else {
+			// remove all whitespace padding from the end of the report
+			reports = append(reports, strings.TrimRight(report, "\n ")+"\n")
+		}
+	}
+
+	// prevent the double new-line at the end of the report
+	fmt.Print(strings.Join(reports, "\n"))
+
+	if !quiet {
+		// show all notifications reports to stderr
+		for _, e := range events {
+			if e.Type != event.CLINotificationType {
+				continue
+			}
+
+			source, notification, err := event.ParseCLINotificationType(e)
+			if err != nil {
+				log.WithFields("error", err).
+					Warnf("failed to gather notification for %q", source)
+			} else {
+				// 13 = high intensity magenta (ANSI 16 bit code)
+				_, _ = fmt.Fprintln(os.Stderr, lipgloss.NewStyle().Foreground(lipgloss.Color("13")).Render(notification))
+			}
+		}
+	}
 }

@@ -7,8 +7,8 @@ import (
 	"github.com/wagoodman/go-partybus"
 	"github.com/wagoodman/go-progress"
 
-	"github.com/anchore/quill/cmd/quill/internal/ui/bubbles/prompt"
-	"github.com/anchore/quill/cmd/quill/internal/ui/bubbles/taskprogress"
+	"github.com/anchore/bubbly/bubbles/prompt"
+	"github.com/anchore/bubbly/bubbles/taskprogress"
 	"github.com/anchore/quill/internal/log"
 	"github.com/anchore/quill/quill/event"
 )
