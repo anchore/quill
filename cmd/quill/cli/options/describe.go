@@ -1,23 +1,19 @@
 package options
 
 import (
-	"github.com/spf13/pflag"
+	"github.com/anchore/fangs"
 )
-
-var _ Interface = &Describe{}
 
 type Describe struct {
 	Detail bool `yaml:"detail" json:"detail" mapstructure:"detail"`
 }
 
-func (o *Describe) PostLoad() error {
-	return nil
-}
+var _ fangs.FlagAdder = (*Describe)(nil)
 
-func (o *Describe) AddFlags(flags *pflag.FlagSet) {
+func (o *Describe) AddFlags(flags fangs.FlagSet) {
 	flags.BoolVarP(
 		&o.Detail,
-		"detail", "d", o.Detail,
+		"detail", "d",
 		"show additional detail of description",
 	)
 }

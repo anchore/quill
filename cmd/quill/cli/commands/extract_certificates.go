@@ -14,8 +14,6 @@ import (
 	"github.com/anchore/quill/quill/extract"
 )
 
-var _ options.Interface = &extractCertificatesConfig{}
-
 type extractCertificatesConfig struct {
 	Path                        string `yaml:"path" json:"path" mapstructure:"path"`
 	options.ExtractCertificates `yaml:"extract-certificates" json:"extract-certificates" mapstructure:"extract-certificates"`
@@ -24,7 +22,7 @@ type extractCertificatesConfig struct {
 func ExtractCertificates(app clio.Application) *cobra.Command {
 	opts := &extractCertificatesConfig{}
 
-	cmd := &cobra.Command{
+	return app.SetupCommand(&cobra.Command{
 		Aliases: []string{
 			"certs",
 		},
@@ -42,7 +40,6 @@ func ExtractCertificates(app clio.Application) *cobra.Command {
 				return nil
 			},
 		),
-		PreRunE: app.Setup(opts),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return app.Run(cmd.Context(), async(func() error {
 				certs, err := extractCertificates(opts.Path, opts.Leaf)
@@ -56,11 +53,7 @@ func ExtractCertificates(app clio.Application) *cobra.Command {
 				return nil
 			}))
 		},
-	}
-
-	commonConfiguration(app, cmd, opts)
-
-	return cmd
+	}, opts)
 }
 
 func extractCertificates(binPath string, leaf bool) (string, error) {

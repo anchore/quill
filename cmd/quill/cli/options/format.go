@@ -3,24 +3,20 @@ package options
 import (
 	"fmt"
 
-	"github.com/spf13/pflag"
+	"github.com/anchore/fangs"
 )
-
-var _ Interface = &Format{}
 
 type Format struct {
 	Output           string   `yaml:"output" json:"output" mapstructure:"output"`
 	AllowableFormats []string `yaml:"-" json:"-" mapstructure:"-"`
 }
 
-func (o *Format) PostLoad() error {
-	return nil
-}
+var _ fangs.FlagAdder = (*Format)(nil)
 
-func (o *Format) AddFlags(flags *pflag.FlagSet) {
+func (o *Format) AddFlags(flags fangs.FlagSet) {
 	flags.StringVarP(
 		&o.Output,
-		"output", "o", o.Output,
+		"output", "o",
 		fmt.Sprintf("output format to report results in (allowable values: %s)", o.AllowableFormats),
 	)
 }

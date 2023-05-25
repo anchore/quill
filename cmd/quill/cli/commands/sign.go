@@ -11,8 +11,6 @@ import (
 	"github.com/anchore/quill/quill"
 )
 
-var _ options.Interface = &signConfig{}
-
 type signConfig struct {
 	Path            string `yaml:"path" json:"path" mapstructure:"path"`
 	options.Signing `yaml:"sign" json:"sign" mapstructure:"sign"`
@@ -23,7 +21,7 @@ func Sign(app clio.Application) *cobra.Command {
 		Signing: options.DefaultSigning(),
 	}
 
-	cmd := &cobra.Command{
+	return app.SetupCommand(&cobra.Command{
 		Use:   "sign PATH",
 		Short: "sign a macho (darwin) executable binary",
 		Example: options.FormatPositionalArgsHelp(
@@ -38,17 +36,12 @@ func Sign(app clio.Application) *cobra.Command {
 				return nil
 			},
 		),
-		PreRunE: app.Setup(opts),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return app.Run(cmd.Context(), async(func() error {
 				return sign(opts.Path, opts.Signing)
 			}))
 		},
-	}
-
-	commonConfiguration(app, cmd, opts)
-
-	return cmd
+	}, opts)
 }
 
 func sign(binPath string, opts options.Signing) error {

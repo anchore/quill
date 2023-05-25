@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 	"software.sslmate.com/src/go-pkcs12"
 
 	"github.com/anchore/clio"
@@ -19,20 +18,10 @@ import (
 	"github.com/anchore/quill/quill/pki/certchain"
 )
 
-var _ options.Interface = &p12AttachChainConfig{}
-
 type p12AttachChainConfig struct {
 	Path             string `yaml:"path" json:"path" mapstructure:"path"`
 	options.Keychain `yaml:"keychain" json:"keychain" mapstructure:"keychain"`
 	options.P12      `yaml:"p12" json:"p12" mapstructure:"p12"`
-}
-
-func (p *p12AttachChainConfig) PostLoad() error {
-	return options.PostLoadAll(&p.P12, &p.Keychain)
-}
-
-func (p *p12AttachChainConfig) AddFlags(set *pflag.FlagSet) {
-	options.AddAllFlags(set, &p.P12, &p.Keychain)
 }
 
 func P12AttachChain(app clio.Application) *cobra.Command {
@@ -42,7 +31,7 @@ func P12AttachChain(app clio.Application) *cobra.Command {
 		},
 	}
 
-	cmd := &cobra.Command{
+	return app.SetupCommand(&cobra.Command{
 		Use:   "attach-chain PATH",
 		Short: "pack full Apple certificate chain into a p12 file",
 		Long: "The p12 file you download from Apple contains a single private key and signing certificate. In order for " +
@@ -64,7 +53,6 @@ func P12AttachChain(app clio.Application) *cobra.Command {
 				return nil
 			},
 		),
-		PreRunE: app.Setup(opts),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return app.Run(cmd.Context(), async(func() error {
 				newFilename, err := writeP12WithChain(opts.Path, opts.P12.Password, opts.Keychain.Path, true)
@@ -83,11 +71,7 @@ func P12AttachChain(app clio.Application) *cobra.Command {
 				return nil
 			}))
 		},
-	}
-
-	commonConfiguration(app, cmd, opts)
-
-	return cmd
+	}, opts)
 }
 
 func writeP12WithChain(p12Path, password, keychainPath string, failWithoutFullChain bool) (string, error) {

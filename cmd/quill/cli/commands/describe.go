@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 
 	"github.com/anchore/clio"
 	"github.com/anchore/quill/cmd/quill/cli/options"
@@ -13,20 +12,10 @@ import (
 	"github.com/anchore/quill/quill/extract"
 )
 
-var _ options.Interface = &describeConfig{}
-
 type describeConfig struct {
 	Path             string `yaml:"path" json:"path" mapstructure:"path"`
-	options.Format   `yaml:",inline" json:",inline" mapstructure:",squash"`
+	options.Format   `yaml:",inline,squash" json:",inline" mapstructure:",squash"`
 	options.Describe `yaml:"describe" json:"describe" mapstructure:"describe"`
-}
-
-func (d *describeConfig) PostLoad() error {
-	return options.PostLoadAll(&d.Format, &d.Describe)
-}
-
-func (d *describeConfig) AddFlags(flags *pflag.FlagSet) {
-	options.AddAllFlags(flags, &d.Format, &d.Describe)
 }
 
 func Describe(app clio.Application) *cobra.Command {
@@ -37,7 +26,7 @@ func Describe(app clio.Application) *cobra.Command {
 		},
 	}
 
-	cmd := &cobra.Command{
+	return app.SetupCommand(&cobra.Command{
 		Use:   "describe PATH",
 		Short: "show the details of a macho binary",
 		Example: options.FormatPositionalArgsHelp(
@@ -52,7 +41,6 @@ func Describe(app clio.Application) *cobra.Command {
 				return nil
 			},
 		),
-		PreRunE: app.Setup(opts),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return app.Run(cmd.Context(), async(func() error {
 				var err error
@@ -75,9 +63,5 @@ func Describe(app clio.Application) *cobra.Command {
 				return nil
 			}))
 		},
-	}
-
-	commonConfiguration(app, cmd, opts)
-
-	return cmd
+	}, opts)
 }

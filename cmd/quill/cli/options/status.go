@@ -3,10 +3,8 @@ package options
 import (
 	"time"
 
-	"github.com/spf13/pflag"
+	"github.com/anchore/fangs"
 )
-
-var _ Interface = &Status{}
 
 type Status struct {
 	// bound options
@@ -16,6 +14,8 @@ type Status struct {
 	PollSeconds    int `yaml:"poll-seconds" json:"poll-seconds" mapstructure:"poll-seconds"`
 	TimeoutSeconds int `yaml:"timeout-seconds" json:"timeout-seconds" mapstructure:"timeout-seconds"`
 }
+
+var _ fangs.FlagAdder = (*Status)(nil)
 
 func DefaultStatus() Status {
 	return Status{
@@ -29,10 +29,10 @@ func (o *Status) PostLoad() error {
 	return nil
 }
 
-func (o *Status) AddFlags(flags *pflag.FlagSet) {
+func (o *Status) AddFlags(flags fangs.FlagSet) {
 	flags.BoolVarP(
 		&o.Wait,
-		"wait", "w", o.Wait,
+		"wait", "w",
 		"wait for a conclusive status before exiting (accepted, rejected, or invalid status)",
 	)
 }

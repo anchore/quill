@@ -76,5 +76,7 @@ func New(version clio.Version) *cobra.Command {
 	root.AddCommand(extract)
 	root.AddCommand(p12)
 
+	root.Example = app.SummarizeConfig(root)
+
 	return root
 }

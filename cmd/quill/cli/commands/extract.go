@@ -6,13 +6,10 @@ import (
 	"github.com/anchore/clio"
 )
 
-func Extract(_ clio.Application) *cobra.Command {
-	cmd := &cobra.Command{
+func Extract(app clio.Application) *cobra.Command {
+	return app.SetupCommand(&cobra.Command{
 		Use:   "extract",
 		Short: "extract information from a macho binary",
 		Args:  cobra.NoArgs,
-	}
-
-	commonConfiguration(nil, cmd, nil)
-	return cmd
+	})
 }

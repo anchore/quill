@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 
 	"github.com/anchore/clio"
 	"github.com/anchore/quill/cmd/quill/cli/options"
@@ -14,20 +13,10 @@ import (
 	"github.com/anchore/quill/quill/notary"
 )
 
-var _ options.Interface = &submissionStatusConfig{}
-
 type submissionStatusConfig struct {
 	ID             string `yaml:"id" json:"id" mapstructure:"id"`
 	options.Notary `yaml:"notary" json:"notary" mapstructure:"notary"`
 	options.Status `yaml:"status" json:"status" mapstructure:"status"`
-}
-
-func (o *submissionStatusConfig) PostLoad() error {
-	return options.PostLoadAll(&o.Notary, &o.Status)
-}
-
-func (o *submissionStatusConfig) AddFlags(flags *pflag.FlagSet) {
-	options.AddAllFlags(flags, &o.Notary, &o.Status)
 }
 
 func SubmissionStatus(app clio.Application) *cobra.Command {
@@ -37,7 +26,7 @@ func SubmissionStatus(app clio.Application) *cobra.Command {
 		},
 	}
 
-	cmd := &cobra.Command{
+	return app.SetupCommand(&cobra.Command{
 		Use:   "status SUBMISSION_ID",
 		Short: "check against Apple's Notary service to see the status of a notarization submission request",
 		Example: options.FormatPositionalArgsHelp(
@@ -52,7 +41,6 @@ func SubmissionStatus(app clio.Application) *cobra.Command {
 				return nil
 			},
 		),
-		PreRunE: app.Setup(opts),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return app.Run(cmd.Context(), async(func() error {
 				log.Infof("checking submission status for %q", opts.ID)
@@ -93,9 +81,5 @@ func SubmissionStatus(app clio.Application) *cobra.Command {
 				return nil
 			}))
 		},
-	}
-
-	commonConfiguration(app, cmd, opts)
-
-	return cmd
+	}, opts)
 }

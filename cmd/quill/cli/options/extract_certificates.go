@@ -1,23 +1,19 @@
 package options
 
 import (
-	"github.com/spf13/pflag"
+	"github.com/anchore/fangs"
 )
-
-var _ Interface = &ExtractCertificates{}
 
 type ExtractCertificates struct {
 	Leaf bool `yaml:"leaf" json:"leaf" mapstructure:"leaf"`
 }
 
-func (o *ExtractCertificates) PostLoad() error {
-	return nil
-}
+var _ fangs.FlagAdder = (*ExtractCertificates)(nil)
 
-func (o *ExtractCertificates) AddFlags(flags *pflag.FlagSet) {
+func (o *ExtractCertificates) AddFlags(flags fangs.FlagSet) {
 	flags.BoolVarP(
 		&o.Leaf,
-		"leaf", "l", o.Leaf,
+		"leaf", "l",
 		"only extract the leaf certificate",
 	)
 }
