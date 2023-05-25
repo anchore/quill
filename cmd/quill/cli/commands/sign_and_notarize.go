@@ -4,14 +4,14 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 
 	"github.com/anchore/clio"
+	"github.com/anchore/fangs"
 	"github.com/anchore/quill/cmd/quill/cli/options"
 	"github.com/anchore/quill/internal/log"
 )
 
-var _ options.Interface = &signConfig{}
+var _ fangs.FlagAdder = &signAndNotarizeConfig{}
 
 type signAndNotarizeConfig struct {
 	Path            string `yaml:"path" json:"path" mapstructure:"path"`
@@ -21,13 +21,8 @@ type signAndNotarizeConfig struct {
 	DryRun          bool `yaml:"dry-run" json:"dry-run" mapstructure:"dry-run"`
 }
 
-func (o *signAndNotarizeConfig) PostLoad() error {
-	return options.PostLoadAll(&o.Notary, &o.Status, &o.Signing)
-}
-
-func (o *signAndNotarizeConfig) AddFlags(flags *pflag.FlagSet) {
-	flags.BoolVar(&o.DryRun, "dry-run", o.DryRun, "dry run mode (do not actually notarize)")
-	options.AddAllFlags(flags, &o.Notary, &o.Status, &o.Signing)
+func (o *signAndNotarizeConfig) AddFlags(flags fangs.FlagSet) {
+	flags.BoolVarP(&o.DryRun, "dry-run", "", "dry run mode (do not actually notarize)")
 }
 
 func SignAndNotarize(app clio.Application) *cobra.Command {
@@ -36,7 +31,7 @@ func SignAndNotarize(app clio.Application) *cobra.Command {
 		Signing: options.DefaultSigning(),
 	}
 
-	cmd := &cobra.Command{
+	return app.SetupCommand(&cobra.Command{
 		Use:   "sign-and-notarize PATH",
 		Short: "sign and notarize a macho (darwin) executable binary",
 		Example: options.FormatPositionalArgsHelp(
@@ -51,7 +46,6 @@ func SignAndNotarize(app clio.Application) *cobra.Command {
 				return nil
 			},
 		),
-		PreRunE: app.Setup(opts),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return app.Run(cmd.Context(), async(func() error {
 				err := sign(opts.Path, opts.Signing)
@@ -72,9 +66,5 @@ func SignAndNotarize(app clio.Application) *cobra.Command {
 				return nil
 			}))
 		},
-	}
-
-	commonConfiguration(app, cmd, opts)
-
-	return cmd
+	}, opts)
 }

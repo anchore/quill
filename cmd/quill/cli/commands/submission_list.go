@@ -14,8 +14,6 @@ import (
 	"github.com/anchore/quill/quill/notary"
 )
 
-var _ options.Interface = &submissionListConfig{}
-
 type submissionListConfig struct {
 	options.Notary `yaml:"notary" json:"notary" mapstructure:"notary"`
 }
@@ -23,11 +21,10 @@ type submissionListConfig struct {
 func SubmissionList(app clio.Application) *cobra.Command {
 	opts := &submissionListConfig{}
 
-	cmd := &cobra.Command{
-		Use:     "list",
-		Short:   "list previous submissions to Apple's Notary service",
-		Args:    cobra.NoArgs,
-		PreRunE: app.Setup(opts),
+	return app.SetupCommand(&cobra.Command{
+		Use:   "list",
+		Short: "list previous submissions to Apple's Notary service",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return app.Run(cmd.Context(), async(func() error {
 				log.Info("fetching previous submissions")
@@ -68,9 +65,5 @@ func SubmissionList(app clio.Application) *cobra.Command {
 				return nil
 			}))
 		},
-	}
-
-	commonConfiguration(app, cmd, opts)
-
-	return cmd
+	}, opts)
 }

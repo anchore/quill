@@ -13,8 +13,6 @@ import (
 	"github.com/anchore/quill/internal/bus"
 )
 
-var _ options.Interface = &p12DescribeConfig{}
-
 type p12DescribeConfig struct {
 	Path        string `yaml:"path" json:"path" mapstructure:"path"`
 	options.P12 `yaml:"p12" json:"p12" mapstructure:"p12"`
@@ -23,7 +21,7 @@ type p12DescribeConfig struct {
 func P12Describe(app clio.Application) *cobra.Command {
 	opts := &p12DescribeConfig{}
 
-	cmd := &cobra.Command{
+	return app.SetupCommand(&cobra.Command{
 		Use:   "describe PATH",
 		Short: "describe the contents of a p12 file",
 		Example: options.FormatPositionalArgsHelp(
@@ -38,7 +36,6 @@ func P12Describe(app clio.Application) *cobra.Command {
 				return nil
 			},
 		),
-		PreRunE: app.Setup(opts),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return app.Run(cmd.Context(), async(func() error {
 				description, err := describeP12(opts.Path, opts.Password)
@@ -51,11 +48,7 @@ func P12Describe(app clio.Application) *cobra.Command {
 				return nil
 			}))
 		},
-	}
-
-	commonConfiguration(app, cmd, opts)
-
-	return cmd
+	}, opts)
 }
 
 func describeP12(file, password string) (string, error) {

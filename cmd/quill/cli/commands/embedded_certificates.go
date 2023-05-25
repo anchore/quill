@@ -13,14 +13,13 @@ import (
 )
 
 func EmbeddedCerts(app clio.Application) *cobra.Command {
-	cmd := &cobra.Command{
+	return app.SetupCommand(&cobra.Command{
 		Aliases: []string{
 			"embedded-certs",
 		},
-		Use:     "embedded-certificates",
-		Short:   "show the certificates embedded into quill (typically the Apple root and intermediate certs)",
-		Args:    cobra.NoArgs,
-		PreRunE: app.Setup(nil),
+		Use:   "embedded-certificates",
+		Short: "show the certificates embedded into quill (typically the Apple root and intermediate certs)",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return app.Run(cmd.Context(), async(func() error {
 				var err error
@@ -37,11 +36,7 @@ func EmbeddedCerts(app clio.Application) *cobra.Command {
 				return nil
 			}))
 		},
-	}
-
-	commonConfiguration(app, cmd, nil)
-
-	return cmd
+	})
 }
 
 func showAppleCerts(buf io.Writer) error {

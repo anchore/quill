@@ -11,17 +11,15 @@ import (
 	"github.com/anchore/quill/quill/notary"
 )
 
-var _ options.Interface = &submissionLogsConfig{}
-
 type submissionLogsConfig struct {
-	ID             string `yaml:"id" json:"id" mapstructure:"id"`
+	ID             string `yaml:"id" json:"id" mapstructure:"-"`
 	options.Notary `yaml:"notary" json:"notary" mapstructure:"notary"`
 }
 
 func SubmissionLogs(app clio.Application) *cobra.Command {
 	opts := &submissionLogsConfig{}
 
-	cmd := &cobra.Command{
+	return app.SetupCommand(&cobra.Command{
 		Use:   "logs SUBMISSION_ID",
 		Short: "fetch logs for an existing submission from Apple's Notary service",
 		Example: options.FormatPositionalArgsHelp(
@@ -36,7 +34,6 @@ func SubmissionLogs(app clio.Application) *cobra.Command {
 				return nil
 			},
 		),
-		PreRunE: app.Setup(opts),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return app.Run(cmd.Context(), async(func() error {
 				log.Infof("fetching submission logs for %q", opts.ID)
@@ -66,9 +63,5 @@ func SubmissionLogs(app clio.Application) *cobra.Command {
 				return nil
 			}))
 		},
-	}
-
-	commonConfiguration(app, cmd, opts)
-
-	return cmd
+	}, opts)
 }

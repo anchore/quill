@@ -76,5 +76,9 @@ func New(version clio.Version) *cobra.Command {
 	root.AddCommand(extract)
 	root.AddCommand(p12)
 
+	// root.Example is set _after all added commands_ because it collects all the
+	// options structs in order to output an accurate "config file" summary
+	root.Example = app.SummarizeConfig(root)
+
 	return root
 }

@@ -4,16 +4,16 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 
 	"github.com/anchore/clio"
+	"github.com/anchore/fangs"
 	"github.com/anchore/quill/cmd/quill/cli/options"
 	"github.com/anchore/quill/internal/log"
 	"github.com/anchore/quill/quill"
 	"github.com/anchore/quill/quill/notary"
 )
 
-var _ options.Interface = &notarizeConfig{}
+var _ fangs.FlagAdder = &notarizeConfig{}
 
 type notarizeConfig struct {
 	Path           string `yaml:"path" json:"path" mapstructure:"path"`
@@ -22,13 +22,8 @@ type notarizeConfig struct {
 	DryRun         bool `yaml:"dry-run" json:"dry-run" mapstructure:"dry-run"`
 }
 
-func (o *notarizeConfig) PostLoad() error {
-	return options.PostLoadAll(&o.Notary, &o.Status)
-}
-
-func (o *notarizeConfig) AddFlags(flags *pflag.FlagSet) {
-	flags.BoolVar(&o.DryRun, "dry-run", o.DryRun, "dry run mode (do not actually notarize)")
-	options.AddAllFlags(flags, &o.Notary, &o.Status)
+func (o *notarizeConfig) AddFlags(flags fangs.FlagSet) {
+	flags.BoolVarP(&o.DryRun, "dry-run", "", "dry run mode (do not actually notarize)")
 }
 
 func Notarize(app clio.Application) *cobra.Command {
@@ -36,7 +31,7 @@ func Notarize(app clio.Application) *cobra.Command {
 		Status: options.DefaultStatus(),
 	}
 
-	cmd := &cobra.Command{
+	return app.SetupCommand(&cobra.Command{
 		Use:   "notarize PATH",
 		Short: "notarize a signed a macho binary with Apple's Notary service",
 		Example: options.FormatPositionalArgsHelp(
@@ -51,7 +46,6 @@ func Notarize(app clio.Application) *cobra.Command {
 				return nil
 			},
 		),
-		PreRunE: app.Setup(opts),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return app.Run(cmd.Context(), async(func() error {
 				// TODO: verify path is a signed darwin binary
@@ -64,11 +58,7 @@ func Notarize(app clio.Application) *cobra.Command {
 				return err
 			}))
 		},
-	}
-
-	commonConfiguration(app, cmd, opts)
-
-	return cmd
+	}, opts)
 }
 
 func notarize(binPath string, notaryCfg options.Notary, statusCfg options.Status) (notary.SubmissionStatus, error) {

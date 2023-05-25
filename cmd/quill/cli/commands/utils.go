@@ -8,8 +8,6 @@ import (
 	"github.com/spf13/cobra"
 	"software.sslmate.com/src/go-pkcs12"
 
-	"github.com/anchore/clio"
-	"github.com/anchore/quill/cmd/quill/cli/options"
 	"github.com/anchore/quill/internal/bus"
 	"github.com/anchore/quill/internal/log"
 	"github.com/anchore/quill/quill/pki/load"
@@ -72,46 +70,4 @@ func chainArgs(processors ...func(cmd *cobra.Command, args []string) error) func
 		}
 		return nil
 	}
-}
-
-func commonConfiguration(app clio.Application, cmd *cobra.Command, opts options.Interface) {
-	if opts != nil {
-		opts.AddFlags(cmd.Flags())
-
-		if app != nil {
-			// we want to be able to attach config binding information to the help output
-			cmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
-				_ = app.Setup(opts)(cmd, args)
-				cmd.Parent().HelpFunc()(cmd, args)
-			})
-		}
-	}
-
-	cmd.SilenceUsage = true
-	cmd.SilenceErrors = true
-	cmd.SetHelpTemplate(`{{if (or .Long .Short)}}{{.Long}}{{if not .Long}}{{.Short}}{{end}}
-
-{{end}}Usage:{{if .Runnable}}
-  {{.UseLine}}{{end}}{{if .HasAvailableSubCommands}}
-  {{.CommandPath}} [command]{{end}}{{if .HasExample}}
-
-{{.Example}}{{end}}{{if gt (len .Aliases) 0}}
-
-Aliases:
-  {{.NameAndAliases}}{{end}}{{if .HasAvailableSubCommands}}
-
-Available Commands:{{range .Commands}}{{if (or .IsAvailableCommand (eq .Name "help"))}}
-  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
-
-{{if not .CommandPath}}Global {{end}}Flags:
-{{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if (and .HasAvailableInheritedFlags (not .CommandPath))}}
-
-Global Flags:
-{{.InheritedFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasHelpSubCommands}}
-
-Additional help topics:{{range .Commands}}{{if .IsAdditionalHelpTopicCommand}}
-  {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableSubCommands}}
-
-Use "{{if .CommandPath}}{{.CommandPath}} {{end}}[command] --help" for more information about a command.{{end}}
-`)
 }

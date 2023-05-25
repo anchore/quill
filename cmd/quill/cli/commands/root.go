@@ -13,28 +13,38 @@ func Root(cfg *clio.Config, app clio.Application) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "",
 		Version: app.Config().Version,
-		PreRunE: app.Setup(nil),
-		//Example: formatRootExamples(),
 	}
 
-	commonConfiguration(nil, cmd, nil)
+	cmd.SetUsageTemplate(helpUsageTemplate)
+	cmd.SetHelpTemplate(helpUsageTemplate)
 
 	cmd.SetVersionTemplate(fmt.Sprintf("%s {{.Version}}\n", internal.ApplicationName))
 
-	flags := cmd.PersistentFlags()
-
-	cfg.Log.AddFlags(flags)         // -v, -q
-	cfg.FangsConfig.AddFlags(flags) // -c
-
-	// TODO: fangs.AddFlags(flags, cfg.Log, cfg.FangsConfig)
-
-	return cmd
+	return app.SetupPersistentCommand(cmd, cfg)
 }
 
-// func formatRootExamples() string {
-//	cfg := application.DefaultConfig()
-//
-//	cfgString := utils.Indent(options.Summarize(cfg, nil), "  ")
-//	// TODO: add back string helper for all config locations searched (added to the help)
-//	return strings.TrimSuffix(cfgString, "\n")
-//}
+var helpUsageTemplate = fmt.Sprintf(`{{if (or .Long .Short)}}{{.Long}}{{if not .Long}}{{.Short}}{{end}}
+
+{{end}}Usage:{{if (and .Runnable (ne .CommandPath "%s"))}}
+  {{.UseLine}}{{end}}{{if .HasAvailableSubCommands}}
+  {{.CommandPath}} [command]{{end}}{{if .HasExample}}
+
+{{.Example}}{{end}}{{if gt (len .Aliases) 0}}
+
+Aliases:
+  {{.NameAndAliases}}{{end}}{{if .HasAvailableSubCommands}}
+
+Available Commands:{{range .Commands}}{{if (or .IsAvailableCommand (eq .Name "help"))}}
+  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
+
+{{if not .CommandPath}}Global {{end}}Flags:
+{{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if (and .HasAvailableInheritedFlags (not .CommandPath))}}
+
+Global Flags:
+{{.InheritedFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasHelpSubCommands}}
+
+Additional help topics:{{range .Commands}}{{if .IsAdditionalHelpTopicCommand}}
+  {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableSubCommands}}
+
+Use "{{if .CommandPath}}{{.CommandPath}} {{end}}[command] --help" for more information about a command.{{end}}
+`, internal.ApplicationName)
