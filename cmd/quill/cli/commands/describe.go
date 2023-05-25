@@ -14,7 +14,7 @@ import (
 
 type describeConfig struct {
 	Path             string `yaml:"path" json:"path" mapstructure:"path"`
-	options.Format   `yaml:",inline,squash" json:",inline" mapstructure:",squash"`
+	options.Format   `yaml:",inline" json:",inline" mapstructure:",squash"`
 	options.Describe `yaml:"describe" json:"describe" mapstructure:"describe"`
 }
 
