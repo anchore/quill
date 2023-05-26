@@ -50,8 +50,8 @@ github.com/anchore/clio v0.0.0-20230525172659-33438e534447 h1:8AO/XKvh41Esw13FoQ
 github.com/anchore/clio v0.0.0-20230525172659-33438e534447/go.mod h1:SfGfT3hORJoNRIHKf8mnUMGlvvLtkpmBj/Etk8djIB4=
 github.com/anchore/fangs v0.0.0-20230525152902-638d36dafff9 h1:9/le0E9Otix3zsmHeLmZQNFvxl5UeCkRCJEvDyghcoc=
 github.com/anchore/fangs v0.0.0-20230525152902-638d36dafff9/go.mod h1:De5l9cqmdqwZDNeKesOdaunSAS1KWySSno/MjmacAso=
-github.com/anchore/go-logger v0.0.0-20230512132723-e9c89b2ace31 h1:DKRDGHxPb06QunlaQfLN32hP9X4N+JIBbYWY8JV+a64=
-github.com/anchore/go-logger v0.0.0-20230512132723-e9c89b2ace31/go.mod h1:ubLFmlsv8/DFUQrZwY5syT5/8Er3ugSr4rDFwHsE3hg=
+github.com/anchore/go-logger v0.0.0-20230526175617-0324e97600a2 h1:N9M1Ds1RSHCwjtcIY9Xin3BZi3nyb3SdcqU6Hg1+7M8=
+github.com/anchore/go-logger v0.0.0-20230526175617-0324e97600a2/go.mod h1:ubLFmlsv8/DFUQrZwY5syT5/8Er3ugSr4rDFwHsE3hg=
 github.com/anchore/go-macholibre v0.0.0-20220308212642-53e6d0aaf6fb h1:iDMnx6LIjtjZ46C0akqveX83WFzhpTD3eqOthawb5vU=
 github.com/anchore/go-macholibre v0.0.0-20220308212642-53e6d0aaf6fb/go.mod h1:DmTY2Mfcv38hsHbG78xMiTDdxFtkHpgYNVDPsF2TgHk=
 github.com/andreyvit/diff v0.0.0-20170406064948-c7f18ee00883/go.mod h1:rCTlJbsFo29Kk6CurOXKm700vrz8f0KW0JNfpkRJY/8=

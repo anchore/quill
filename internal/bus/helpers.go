@@ -5,6 +5,7 @@ import (
 	"github.com/wagoodman/go-progress"
 
 	"github.com/anchore/bubbly"
+	"github.com/anchore/quill/internal/log"
 	"github.com/anchore/quill/quill/event"
 )
 
@@ -40,6 +41,7 @@ func Exit() {
 }
 
 func Report(report string) {
+	report = log.Redactor.RedactString(report)
 	publish(partybus.Event{
 		Type:  event.CLIReportType,
 		Value: report,

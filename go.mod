@@ -8,7 +8,7 @@ require (
 	github.com/anchore/bubbly v0.0.0-20230518153401-87b6af8ccf22
 	github.com/anchore/clio v0.0.0-20230525172659-33438e534447
 	github.com/anchore/fangs v0.0.0-20230525152902-638d36dafff9
-	github.com/anchore/go-logger v0.0.0-20230512132723-e9c89b2ace31
+	github.com/anchore/go-logger v0.0.0-20230526175617-0324e97600a2
 	github.com/anchore/go-macholibre v0.0.0-20220308212642-53e6d0aaf6fb
 	github.com/aws/aws-sdk-go v1.44.114
 	github.com/blacktop/go-macho v1.1.154

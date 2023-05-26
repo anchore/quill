@@ -14,6 +14,8 @@ var (
 	log = discard.New()
 
 	store = redact.NewStore()
+
+	Redactor = store.(redact.Redactor)
 )
 
 func Set(l logger.Logger) {
