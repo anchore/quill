@@ -24,7 +24,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/iancoleman/strcase v0.2.0
 	github.com/jedib0t/go-pretty v4.3.0+incompatible
-	github.com/klauspost/compress v1.16.4
+	github.com/klauspost/compress v1.16.5
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pkg/profile v1.7.0
 	github.com/scylladb/go-set v1.0.2
