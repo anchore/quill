@@ -13,10 +13,10 @@ import (
 	"github.com/anchore/quill/quill/notary"
 )
 
-var _ fangs.FlagAdder = &notarizeConfig{}
+var _ fangs.FlagAdder = (*notarizeConfig)(nil)
 
 type notarizeConfig struct {
-	Path           string `yaml:"path" json:"path" mapstructure:"path"`
+	Path           string `yaml:"path" json:"path" mapstructure:"-"`
 	options.Notary `yaml:"notary" json:"notary" mapstructure:"notary"`
 	options.Status `yaml:"status" json:"status" mapstructure:"status"`
 	DryRun         bool `yaml:"dry-run" json:"dry-run" mapstructure:"dry-run"`

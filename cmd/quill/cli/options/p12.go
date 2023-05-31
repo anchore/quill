@@ -5,13 +5,20 @@ import (
 	"github.com/anchore/quill/internal/log"
 )
 
+var _ interface {
+	fangs.PostLoader
+	fangs.FieldDescriber
+} = (*P12)(nil)
+
 type P12 struct {
 	Password string `yaml:"password" json:"password" mapstructure:"password"`
 }
 
-var _ fangs.PostLoad = (*P12)(nil)
-
 func (o *P12) PostLoad() error {
 	log.Redact(o.Password)
 	return nil
+}
+
+func (o *P12) DescribeFields(d fangs.FieldDescriptionSet) {
+	d.Add(&o.Password, "password to decrypt the p12 file")
 }

@@ -4,6 +4,11 @@ import (
 	"github.com/anchore/fangs"
 )
 
+var _ interface {
+	fangs.FlagAdder
+	fangs.PostLoader
+} = (*Notary)(nil)
+
 type Notary struct {
 	// bound options
 	Issuer       string `yaml:"issuer" json:"issuer" mapstructure:"issuer"`
@@ -12,9 +17,6 @@ type Notary struct {
 
 	// unbound options
 }
-
-var _ fangs.FlagAdder = (*Notary)(nil)
-var _ fangs.PostLoad = (*Notary)(nil)
 
 func (o *Notary) PostLoad() error {
 	redactNonFileOrEnvHint(o.PrivateKey)
@@ -37,6 +39,6 @@ func (o *Notary) AddFlags(flags fangs.FlagSet) {
 	flags.StringVarP(
 		&o.PrivateKey,
 		"notary-key", "",
-		"App Store Connect API key. File system path to the private key. This can also be the base64-encoded contents of the key file, or 'env:ENV_VAR_NAME' to read the key from a different environment variable",
+		"App Store Connect API key. File system path to the private key.\nThis can also be the base64-encoded contents of the key file, or 'env:ENV_VAR_NAME' to read the key from a different environment variable",
 	)
 }

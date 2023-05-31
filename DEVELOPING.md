@@ -180,3 +180,18 @@ quill/
 │   └── lib.go
 └── test                        # high-level tests
 ```
+
+# Known issues
+
+Unit test failure on main when using go 1.20+ with no changes (see [issue #35](https://github.com/anchore/quill/issues/35)):
+```
+--- FAIL: TestSign (4.84s)
+    --- FAIL: TestSign/sign_the_syft_binary_(with_a_password) (0.02s)
+        sign_test.go:219: 
+                Error Trace:    /Users/wagoodman/code/quill/quill/sign_test.go:219
+                Error:          Received unexpected error:
+                                unable to parse certificate 1 of 1: x509: certificate contains duplicate extensions
+                Test:           TestSign/sign_the_syft_binary_(with_a_password)
+```
+This is [new behavior in starting in go 1.20](https://groups.google.com/g/golang-checkins/c/nishT5TtWeo). The workaround 
+is to use go 1.19 or earlier, but this test fixture will need to be regenerated.

@@ -13,7 +13,7 @@ import (
 )
 
 type describeConfig struct {
-	Path             string `yaml:"path" json:"path" mapstructure:"path"`
+	Path             string `yaml:"path" json:"path" mapstructure:"-"`
 	options.Format   `yaml:",inline" json:",inline" mapstructure:",squash"`
 	options.Describe `yaml:"describe" json:"describe" mapstructure:"describe"`
 }

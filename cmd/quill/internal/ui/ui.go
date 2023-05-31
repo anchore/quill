@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"github.com/anchore/clio"
 	"os"
 	"strings"
 	"sync"
@@ -21,6 +22,7 @@ import (
 var _ interface {
 	tea.Model
 	partybus.Responder
+	clio.UI
 } = (*UI)(nil)
 
 type UI struct {

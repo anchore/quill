@@ -14,7 +14,7 @@ import (
 )
 
 type submissionStatusConfig struct {
-	ID             string `yaml:"id" json:"id" mapstructure:"id"`
+	ID             string `yaml:"id" json:"id" mapstructure:"-"`
 	options.Notary `yaml:"notary" json:"notary" mapstructure:"notary"`
 	options.Status `yaml:"status" json:"status" mapstructure:"status"`
 }

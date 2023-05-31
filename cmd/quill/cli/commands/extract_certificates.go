@@ -15,7 +15,7 @@ import (
 )
 
 type extractCertificatesConfig struct {
-	Path                        string `yaml:"path" json:"path" mapstructure:"path"`
+	Path                        string `yaml:"path" json:"path" mapstructure:"-"`
 	options.ExtractCertificates `yaml:"extract-certificates" json:"extract-certificates" mapstructure:"extract-certificates"`
 }
 

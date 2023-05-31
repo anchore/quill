@@ -1,9 +1,8 @@
 package cli
 
 import (
-	"os"
-
 	"github.com/spf13/cobra"
+	"os"
 
 	"github.com/anchore/clio"
 	"github.com/anchore/go-logger"
@@ -34,12 +33,14 @@ func New(version clio.Version) *cobra.Command {
 		).
 		WithUIConstructor(
 			func(cfg clio.Config) ([]clio.UI, error) {
+				noUI := ui.None()
 				if !cfg.Log.AllowUI(os.Stdin) {
-					return nil, nil
+					return []clio.UI{noUI}, nil
 				}
 
 				return []clio.UI{
 					ui.New(false, cfg.Log.Quiet),
+					noUI,
 				}, nil
 			},
 		).

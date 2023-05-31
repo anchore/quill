@@ -6,12 +6,12 @@ import (
 	"github.com/anchore/fangs"
 )
 
+var _ fangs.FlagAdder = (*Format)(nil)
+
 type Format struct {
 	Output           string   `yaml:"output" json:"output" mapstructure:"output"`
 	AllowableFormats []string `yaml:"-" json:"-" mapstructure:"-"`
 }
-
-var _ fangs.FlagAdder = (*Format)(nil)
 
 func (o *Format) AddFlags(flags fangs.FlagSet) {
 	flags.StringVarP(

@@ -19,7 +19,7 @@ import (
 )
 
 type p12AttachChainConfig struct {
-	Path             string `yaml:"path" json:"path" mapstructure:"path"`
+	Path             string `yaml:"path" json:"path" mapstructure:"-"`
 	options.Keychain `yaml:"keychain" json:"keychain" mapstructure:"keychain"`
 	options.P12      `yaml:"p12" json:"p12" mapstructure:"p12"`
 }

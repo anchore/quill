@@ -12,7 +12,7 @@ import (
 )
 
 type signConfig struct {
-	Path            string `yaml:"path" json:"path" mapstructure:"path"`
+	Path            string `yaml:"path" json:"path" mapstructure:"-"`
 	options.Signing `yaml:"sign" json:"sign" mapstructure:"sign"`
 }
 

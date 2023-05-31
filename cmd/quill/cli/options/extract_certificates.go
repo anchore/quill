@@ -4,11 +4,11 @@ import (
 	"github.com/anchore/fangs"
 )
 
+var _ fangs.FlagAdder = (*ExtractCertificates)(nil)
+
 type ExtractCertificates struct {
 	Leaf bool `yaml:"leaf" json:"leaf" mapstructure:"leaf"`
 }
-
-var _ fangs.FlagAdder = (*ExtractCertificates)(nil)
 
 func (o *ExtractCertificates) AddFlags(flags fangs.FlagSet) {
 	flags.BoolVarP(

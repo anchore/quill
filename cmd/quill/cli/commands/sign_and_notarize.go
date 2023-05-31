@@ -14,7 +14,7 @@ import (
 var _ fangs.FlagAdder = &signAndNotarizeConfig{}
 
 type signAndNotarizeConfig struct {
-	Path            string `yaml:"path" json:"path" mapstructure:"path"`
+	Path            string `yaml:"path" json:"path" mapstructure:"-"`
 	options.Signing `yaml:"sign" json:"sign" mapstructure:"sign"`
 	options.Notary  `yaml:"notary" json:"notary" mapstructure:"notary"`
 	options.Status  `yaml:"status" json:"status" mapstructure:"status"`

@@ -5,6 +5,12 @@ import (
 	"github.com/anchore/quill/internal/log"
 )
 
+var _ interface {
+	fangs.FlagAdder
+	fangs.PostLoader
+	fangs.FieldDescriber
+} = (*Signing)(nil)
+
 type Signing struct {
 	// bound options
 	Identity             string `yaml:"identity" json:"identity" mapstructure:"identity"`
@@ -16,10 +22,6 @@ type Signing struct {
 	// unbound options
 	Password string `yaml:"password" json:"password" mapstructure:"password"`
 }
-
-var _ fangs.FlagAdder = (*Signing)(nil)
-var _ fangs.PostLoad = (*Signing)(nil)
-var _ fangs.FieldDescriber = (*Signing)(nil)
 
 func DefaultSigning() Signing {
 	return Signing{
@@ -44,7 +46,7 @@ func (o *Signing) AddFlags(flags fangs.FlagSet) {
 	flags.StringVarP(
 		&o.P12,
 		"p12", "",
-		"path to a PKCS12 file containing the private key, (leaf) signing certificate, remaining certificate chain. This can also be the base64-encoded contents of the p12 file, or 'env:ENV_VAR_NAME' to read the p12 from a different environment variable",
+		"path to a PKCS12 file containing the private key, (leaf) signing certificate, remaining certificate chain.\nThis can also be the base64-encoded contents of the p12 file, or 'env:ENV_VAR_NAME' to read the p12 from a different environment variable",
 	)
 
 	flags.StringVarP(
