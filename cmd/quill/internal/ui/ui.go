@@ -2,7 +2,6 @@ package ui
 
 import (
 	"fmt"
-	"github.com/anchore/clio"
 	"os"
 	"strings"
 	"sync"
@@ -12,6 +11,7 @@ import (
 	"github.com/wagoodman/go-partybus"
 
 	"github.com/anchore/bubbly/bubbles/frame"
+	"github.com/anchore/clio"
 	"github.com/anchore/go-logger"
 	handler "github.com/anchore/quill/cmd/quill/cli/ui"
 	"github.com/anchore/quill/internal/bus"
