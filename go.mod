@@ -6,9 +6,9 @@ require (
 	github.com/PuerkitoBio/goquery v1.8.1
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d
 	github.com/anchore/bubbly v0.0.0-20230518153401-87b6af8ccf22
-	github.com/anchore/clio v0.0.0-20230525172659-33438e534447
-	github.com/anchore/fangs v0.0.0-20230525152902-638d36dafff9
-	github.com/anchore/go-logger v0.0.0-20230526175617-0324e97600a2
+	github.com/anchore/clio v0.0.0-20230531204310-4a8bc623b049
+	github.com/anchore/fangs v0.0.0-20230531202914-48a718c6b4ba
+	github.com/anchore/go-logger v0.0.0-20230531193951-db5ae83e7dbe
 	github.com/anchore/go-macholibre v0.0.0-20220308212642-53e6d0aaf6fb
 	github.com/aws/aws-sdk-go v1.44.114
 	github.com/blacktop/go-macho v1.1.154
@@ -19,7 +19,7 @@ require (
 	github.com/go-restruct/restruct v1.2.0-alpha
 	github.com/golang-jwt/jwt/v4 v4.4.2
 	github.com/google/go-cmp v0.5.9
-	github.com/gookit/color v1.5.2
+	github.com/gookit/color v1.5.3
 	github.com/jedib0t/go-pretty v4.3.0+incompatible
 	github.com/klauspost/compress v1.16.4
 	github.com/scylladb/go-set v1.0.2
@@ -68,6 +68,7 @@ require (
 	github.com/muesli/reflow v0.3.0 // indirect
 	github.com/muesli/termenv v0.15.1 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
+	github.com/pborman/indent v1.2.1 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.6 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pkg/profile v1.7.0 // indirect
