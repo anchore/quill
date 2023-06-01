@@ -148,23 +148,24 @@ Here's the 10,000 foot view of the quill repo:
 
 ```
 quill/
+│
 ├── cmd/
 │   └── quill/
 │       ├── cli/              # the CLI API
 │       │   ├── commands/       # produce cobra commands
 │       │   ├── options/        # composable CLI options used by commands
-│       │   ├── ui/             # reusable event handler to be used with bubbletea
+│       │   ├── ui/             # reusable bubbletea event handler (plugs into a bubbletea application)
 │       │   └── cli.go
 │       ├── internal/         # internal concerns for the CLI         
-│       │   ├── ui/             # the bubbletea UI
-│       │   └── version/        # ldflags targets for version, git commit, git description, etc.
-│       └── main.go
+│       │   └── ui/             # the bubbletea UI
+│       └── main.go           # entrypoint and target for ldflags (version info)
+│
 ├── internal/                 # internal concerns needed by both the CLI and core API
 │   ├── bus/                    # global/singleton event bus
 │   ├── log/                    # globa/singleton logger
 │   ├── test/                   # common test assets and utilities
-│   ├── version/                # quill version information
 │   └── constants.go
+│
 ├── quill                     # the "top-level" or "core" API
 │   ├── event/                  # all events emitted by quill, with parsers, and parsed types
 │   ├── extract/                # string display utils for macho binaries
@@ -178,6 +179,7 @@ quill/
 │   ├── notarize.go             # notarization API
 │   ├── sign.go                 # signing API
 │   └── lib.go
+│
 └── test                        # high-level tests
 ```
 
