@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/x509"
 	"fmt"
@@ -53,24 +54,24 @@ func P12AttachChain(app clio.Application) *cobra.Command {
 				return nil
 			},
 		),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return app.Run(cmd.Context(), async(func() error {
-				newFilename, err := writeP12WithChain(opts.Path, opts.P12.Password, opts.Keychain.Path, true)
-				if err != nil {
-					return fmt.Errorf("unable to write new p12 with chain attached file=%q : %w", opts.Path, err)
-				}
+		RunE: app.Run(func(ctx context.Context) error {
+			defer bus.Exit()
 
-				description, err := describeP12(newFilename, opts.P12.Password)
-				if err != nil {
-					return fmt.Errorf("unable to describe p12 file=%q : %w", newFilename, err)
-				}
+			newFilename, err := writeP12WithChain(opts.Path, opts.P12.Password, opts.Keychain.Path, true)
+			if err != nil {
+				return fmt.Errorf("unable to write new p12 with chain attached file=%q : %w", opts.Path, err)
+			}
 
-				bus.Report(description)
-				bus.Notify(fmt.Sprintf("Wrote new p12 file with certificate chain to %q", newFilename))
+			description, err := describeP12(newFilename, opts.P12.Password)
+			if err != nil {
+				return fmt.Errorf("unable to describe p12 file=%q : %w", newFilename, err)
+			}
 
-				return nil
-			}))
-		},
+			bus.Report(description)
+			bus.Notify(fmt.Sprintf("Wrote new p12 file with certificate chain to %q", newFilename))
+
+			return nil
+		}),
 	}, opts)
 }
 

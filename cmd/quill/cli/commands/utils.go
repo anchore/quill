@@ -48,19 +48,6 @@ func loadP12Interactively(p12Path, password string) (*load.P12Contents, error) {
 	}, nil
 }
 
-func async(f func() error) <-chan error {
-	errs := make(chan error)
-	go func() {
-		defer close(errs)
-		if err := f(); err != nil {
-			errs <- err
-		}
-		bus.Exit()
-	}()
-
-	return errs
-}
-
 func chainArgs(processors ...func(cmd *cobra.Command, args []string) error) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		for _, p := range processors {

@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -8,6 +9,7 @@ import (
 	"github.com/anchore/clio"
 	"github.com/anchore/fangs"
 	"github.com/anchore/quill/cmd/quill/cli/options"
+	"github.com/anchore/quill/internal/bus"
 	"github.com/anchore/quill/internal/log"
 	"github.com/anchore/quill/quill"
 	"github.com/anchore/quill/quill/notary"
@@ -46,18 +48,18 @@ func Notarize(app clio.Application) *cobra.Command {
 				return nil
 			},
 		),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return app.Run(cmd.Context(), async(func() error {
-				// TODO: verify path is a signed darwin binary
-				// ... however, we may want to allow notarization of other kinds of assets (zip with darwin binary, etc)
-				if opts.DryRun {
-					log.Warn("[DRY RUN] skipping notarization...")
-					return nil
-				}
-				_, err := notarize(opts.Path, opts.Notary, opts.Status)
-				return err
-			}))
-		},
+		RunE: app.Run(func(ctx context.Context) error {
+			defer bus.Exit()
+
+			// TODO: verify path is a signed darwin binary
+			// ... however, we may want to allow notarization of other kinds of assets (zip with darwin binary, etc)
+			if opts.DryRun {
+				log.Warn("[DRY RUN] skipping notarization...")
+				return nil
+			}
+			_, err := notarize(opts.Path, opts.Notary, opts.Status)
+			return err
+		}),
 	}, opts)
 }
 
