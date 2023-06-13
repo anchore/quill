@@ -14,7 +14,7 @@ import (
 
 func New(id clio.Identification) *cobra.Command {
 	clioCfg := clio.NewSetupConfig(id).
-		WithUI(
+		WithUIConstructor(
 			func(cfg clio.Config) ([]clio.UI, error) {
 				noUI := ui.None()
 				if !cfg.Log.AllowUI(os.Stdin) {
@@ -38,7 +38,9 @@ func New(id clio.Identification) *cobra.Command {
 			},
 		)
 
-	app, root := clio.New(*clioCfg)
+	app := clio.New(*clioCfg)
+
+	root := app.SetupCommand(&cobra.Command{})
 
 	submission := commands.Submission(app)
 	submission.AddCommand(commands.SubmissionList(app))
