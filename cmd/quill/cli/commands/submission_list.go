@@ -25,7 +25,7 @@ func SubmissionList(app clio.Application) *cobra.Command {
 		Use:   "list",
 		Short: "list previous submissions to Apple's Notary service",
 		Args:  cobra.NoArgs,
-		RunE: app.Run(func(ctx context.Context) error {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			defer bus.Exit()
 
 			log.Info("fetching previous submissions")
@@ -64,6 +64,6 @@ func SubmissionList(app clio.Application) *cobra.Command {
 			bus.Report(t.Render())
 
 			return nil
-		}),
+		},
 	}, opts)
 }

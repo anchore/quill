@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -38,11 +37,11 @@ func Sign(app clio.Application) *cobra.Command {
 				return nil
 			},
 		),
-		RunE: app.Run(func(ctx context.Context) error {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			defer bus.Exit()
 
 			return sign(opts.Path, opts.Signing)
-		}),
+		},
 	}, opts)
 }
 

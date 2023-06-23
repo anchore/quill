@@ -38,9 +38,9 @@ func New(id clio.Identification) *cobra.Command {
 			},
 		)
 
-	app := clio.New(*clioCfg)
+	root := &cobra.Command{}
 
-	root := app.SetupCommand(&cobra.Command{})
+	app := clio.New(*clioCfg, root)
 
 	submission := commands.Submission(app)
 	submission.AddCommand(commands.SubmissionList(app))
@@ -54,7 +54,7 @@ func New(id clio.Identification) *cobra.Command {
 	p12.AddCommand(commands.P12AttachChain(app))
 	p12.AddCommand(commands.P12Describe(app))
 
-	root.AddCommand(clio.VersionCommand(app))
+	root.AddCommand(clio.VersionCommand(id))
 	root.AddCommand(commands.Sign(app))
 	root.AddCommand(commands.Notarize(app))
 	root.AddCommand(commands.SignAndNotarize(app))

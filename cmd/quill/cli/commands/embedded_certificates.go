@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"strings"
@@ -21,7 +20,7 @@ func EmbeddedCerts(app clio.Application) *cobra.Command {
 		Use:   "embedded-certificates",
 		Short: "show the certificates embedded into quill (typically the Apple root and intermediate certs)",
 		Args:  cobra.NoArgs,
-		RunE: app.Run(func(ctx context.Context) error {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			defer bus.Exit()
 
 			var err error
@@ -36,7 +35,7 @@ func EmbeddedCerts(app clio.Application) *cobra.Command {
 			bus.Report(buf.String())
 
 			return nil
-		}),
+		},
 	})
 }
 

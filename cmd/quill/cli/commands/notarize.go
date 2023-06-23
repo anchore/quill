@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"context"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -48,7 +47,7 @@ func Notarize(app clio.Application) *cobra.Command {
 				return nil
 			},
 		),
-		RunE: app.Run(func(ctx context.Context) error {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			defer bus.Exit()
 
 			// TODO: verify path is a signed darwin binary
@@ -59,7 +58,7 @@ func Notarize(app clio.Application) *cobra.Command {
 			}
 			_, err := notarize(opts.Path, opts.Notary, opts.Status)
 			return err
-		}),
+		},
 	}, opts)
 }
 

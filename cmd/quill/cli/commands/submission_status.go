@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"context"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -42,7 +41,7 @@ func SubmissionStatus(app clio.Application) *cobra.Command {
 				return nil
 			},
 		),
-		RunE: app.Run(func(ctx context.Context) error {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			defer bus.Exit()
 
 			log.Infof("checking submission status for %q", opts.ID)
@@ -70,9 +69,9 @@ func SubmissionStatus(app clio.Application) *cobra.Command {
 
 			var status notary.SubmissionStatus
 			if opts.Wait {
-				status, err = notary.PollStatus(ctx, sub, cfg.StatusConfig)
+				status, err = notary.PollStatus(cmd.Context(), sub, cfg.StatusConfig)
 			} else {
-				status, err = sub.Status(ctx)
+				status, err = sub.Status(cmd.Context())
 			}
 			if err != nil {
 				return err
@@ -81,6 +80,6 @@ func SubmissionStatus(app clio.Application) *cobra.Command {
 			bus.Report(string(status))
 
 			return nil
-		}),
+		},
 	}, opts)
 }

@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"context"
 	"encoding/pem"
 	"strings"
 
@@ -41,7 +40,7 @@ func ExtractCertificates(app clio.Application) *cobra.Command {
 				return nil
 			},
 		),
-		RunE: app.Run(func(ctx context.Context) error {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			defer bus.Exit()
 
 			certs, err := extractCertificates(opts.Path, opts.Leaf)
@@ -53,7 +52,7 @@ func ExtractCertificates(app clio.Application) *cobra.Command {
 			bus.Notify("Try running 'openssl x509 -text -in <path-to-file-with-output>.pem' to view the certificate details")
 
 			return nil
-		}),
+		},
 	}, opts)
 }
 

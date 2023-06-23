@@ -1,8 +1,6 @@
 package commands
 
 import (
-	"context"
-
 	"github.com/spf13/cobra"
 
 	"github.com/anchore/clio"
@@ -36,7 +34,7 @@ func SubmissionLogs(app clio.Application) *cobra.Command {
 				return nil
 			},
 		),
-		RunE: app.Run(func(ctx context.Context) error {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			defer bus.Exit()
 
 			log.Infof("fetching submission logs for %q", opts.ID)
@@ -56,7 +54,7 @@ func SubmissionLogs(app clio.Application) *cobra.Command {
 
 			sub := notary.ExistingSubmission(a, opts.ID)
 
-			content, err := sub.Logs(ctx)
+			content, err := sub.Logs(cmd.Context())
 			if err != nil {
 				return err
 			}
@@ -64,6 +62,6 @@ func SubmissionLogs(app clio.Application) *cobra.Command {
 			bus.Report(content)
 
 			return nil
-		}),
+		},
 	}, opts)
 }

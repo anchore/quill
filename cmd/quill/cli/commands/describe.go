@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"context"
 	"fmt"
 	"strings"
 
@@ -42,7 +41,7 @@ func Describe(app clio.Application) *cobra.Command {
 				return nil
 			},
 		),
-		RunE: app.Run(func(ctx context.Context) error {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			defer bus.Exit()
 
 			var err error
@@ -63,6 +62,6 @@ func Describe(app clio.Application) *cobra.Command {
 			bus.Report(buf.String())
 
 			return nil
-		}),
+		},
 	}, opts)
 }

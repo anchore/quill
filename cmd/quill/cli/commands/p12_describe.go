@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"context"
 	"crypto/x509"
 	"fmt"
 	"reflect"
@@ -37,7 +36,7 @@ func P12Describe(app clio.Application) *cobra.Command {
 				return nil
 			},
 		),
-		RunE: app.Run(func(ctx context.Context) error {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			defer bus.Exit()
 
 			description, err := describeP12(opts.Path, opts.Password)
@@ -48,7 +47,7 @@ func P12Describe(app clio.Application) *cobra.Command {
 			bus.Report(description)
 
 			return nil
-		}),
+		},
 	}, opts)
 }
 

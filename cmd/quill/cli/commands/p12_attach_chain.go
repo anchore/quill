@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"context"
 	"crypto/rand"
 	"crypto/x509"
 	"fmt"
@@ -54,7 +53,7 @@ func P12AttachChain(app clio.Application) *cobra.Command {
 				return nil
 			},
 		),
-		RunE: app.Run(func(ctx context.Context) error {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			defer bus.Exit()
 
 			newFilename, err := writeP12WithChain(opts.Path, opts.P12.Password, opts.Keychain.Path, true)
@@ -71,7 +70,7 @@ func P12AttachChain(app clio.Application) *cobra.Command {
 			bus.Notify(fmt.Sprintf("Wrote new p12 file with certificate chain to %q", newFilename))
 
 			return nil
-		}),
+		},
 	}, opts)
 }
 

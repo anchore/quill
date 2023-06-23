@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -48,7 +47,7 @@ func SignAndNotarize(app clio.Application) *cobra.Command {
 				return nil
 			},
 		),
-		RunE: app.Run(func(ctx context.Context) error {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			defer bus.Exit()
 
 			err := sign(opts.Path, opts.Signing)
@@ -67,6 +66,6 @@ func SignAndNotarize(app clio.Application) *cobra.Command {
 			}
 
 			return nil
-		}),
+		},
 	}, opts)
 }
