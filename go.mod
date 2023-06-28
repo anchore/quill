@@ -20,7 +20,7 @@ require (
 	github.com/go-restruct/restruct v1.2.0-alpha
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/google/go-cmp v0.5.9
-	github.com/gookit/color v1.5.2
+	github.com/gookit/color v1.5.3
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/iancoleman/strcase v0.2.0
 	github.com/jedib0t/go-pretty v4.3.0+incompatible
