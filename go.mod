@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/PuerkitoBio/goquery v1.8.1
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d
-	github.com/adrg/xdg v0.2.1
+	github.com/adrg/xdg v0.4.0
 	github.com/anchore/go-logger v0.0.0-20220728155337-03b66a5207d8
 	github.com/anchore/go-macholibre v0.0.0-20220308212642-53e6d0aaf6fb
 	github.com/aws/aws-sdk-go v1.44.114
