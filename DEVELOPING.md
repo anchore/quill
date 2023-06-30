@@ -115,7 +115,7 @@ The code signature data at the end of the `__LINKEDIT` segment can contain the f
 All of these blobs are contained within a single "super blob".
 
 
-## Historical Notes
+### Historical Notes
 - plist with CD hashes as a signed CMS attribute does not appear to be required (was implemented, and now removed)
 - sha256 nested set as a signed CMS attribute does not appear to be required (was implemented, and now removed)
 
@@ -133,3 +133,67 @@ All of these blobs are contained within a single "super blob".
 - Apple's docs on notarization: 
   - https://developer.apple.com/documentation/security/notarizing_macos_software_before_distribution
   - https://developer.apple.com/documentation/notaryapi/submitting_software_for_notarization_over_the_web
+
+## Architecture
+
+Quill is designed to be used as a CLI application as well as a library. When used as a library, there are two main
+ways to use it:
+
+- Core API: the `github.com/anchore/quill/quill` package, which is where all of the core functionality resides. This is most common when using quill as a library.
+
+- CLI API: the `github.com/anchore/quill/cmd/quill/cli` package, which is a wrapper around the core functionality that
+  provides a CLI interface. This is helpful if you are trying to create a wrapping application that extends quill's functionality or are using the core API but want the same bubbletea UI interactions.
+
+Here's the 10,000 foot view of the quill repo:
+
+```
+quill/
+│
+├── cmd/
+│   └── quill/
+│       ├── cli/              # the CLI API
+│       │   ├── commands/       # produce cobra commands
+│       │   ├── options/        # composable CLI options used by commands
+│       │   ├── ui/             # reusable bubbletea event handler (plugs into a bubbletea application)
+│       │   └── cli.go
+│       ├── internal/         # internal concerns for the CLI         
+│       │   └── ui/             # the bubbletea UI
+│       └── main.go           # entrypoint and target for ldflags (version info)
+│
+├── internal/                 # internal concerns needed by both the CLI and core API
+│   ├── bus/                    # global/singleton event bus
+│   ├── log/                    # globa/singleton logger
+│   ├── test/                   # common test assets and utilities
+│   └── constants.go
+│
+├── quill                     # the "top-level" or "core" API
+│   ├── event/                  # all events emitted by quill, with parsers, and parsed types
+│   ├── extract/                # string display utils for macho binaries
+│   ├── macho/                  # all macho binary types, parsing, and manipulation utils
+│   ├── notary/                 # api client for Apple's notarization service
+│   ├── pki/                    # all PKI manipulation utils
+│   │   ├── apple/                # Apple's PKI material
+│   │   ├── certchain/            # utils for searching, sorting, and representing certificate chains
+│   │   └── load/                 # utils for reading certificates and key material safely
+│   ├── sign/                   # functions for creating the code signature data for macho binaries
+│   ├── notarize.go             # notarization API
+│   ├── sign.go                 # signing API
+│   └── lib.go
+│
+└── test                        # high-level tests
+```
+
+# Known issues
+
+Unit test failure on main when using go 1.20+ with no changes (see [issue #35](https://github.com/anchore/quill/issues/35)):
+```
+--- FAIL: TestSign (4.84s)
+    --- FAIL: TestSign/sign_the_syft_binary_(with_a_password) (0.02s)
+        sign_test.go:219: 
+                Error Trace:    /Users/wagoodman/code/quill/quill/sign_test.go:219
+                Error:          Received unexpected error:
+                                unable to parse certificate 1 of 1: x509: certificate contains duplicate extensions
+                Test:           TestSign/sign_the_syft_binary_(with_a_password)
+```
+This is [new behavior in starting in go 1.20](https://groups.google.com/g/golang-checkins/c/nishT5TtWeo). The workaround 
+is to use go 1.19 or earlier, but this test fixture will need to be regenerated.

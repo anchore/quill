@@ -1,13 +1,15 @@
 package options
 
 import (
-	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
-
-	"github.com/anchore/quill/internal/log"
+	"github.com/anchore/fangs"
+	"github.com/anchore/quill/internal/redact"
 )
 
-var _ Interface = &Signing{}
+var _ interface {
+	fangs.FlagAdder
+	fangs.PostLoader
+	fangs.FieldDescriber
+} = (*Signing)(nil)
 
 type Signing struct {
 	// bound options
@@ -28,54 +30,39 @@ func DefaultSigning() Signing {
 	}
 }
 
-func (o *Signing) Redact() {
-	log.Redact(o.Password)
+func (o *Signing) PostLoad() error {
+	redact.Add(o.Password)
 	redactNonFileOrEnvHint(o.P12)
+	return nil
 }
 
-func (o *Signing) AddFlags(flags *pflag.FlagSet) {
+func (o *Signing) AddFlags(flags fangs.FlagSet) {
 	flags.StringVarP(
 		&o.Identity,
-		"identity", "", o.Identity,
+		"identity", "",
 		"identifier to encode into the code directory of the code signing super block (default is derived from the name of the binary being solved)",
 	)
 
 	flags.StringVarP(
 		&o.P12,
-		"p12", "", o.P12,
-		"path to a PKCS12 file containing the private key, (leaf) signing certificate, remaining certificate chain. This can also be the base64-encoded contents of the p12 file, or 'env:ENV_VAR_NAME' to read the p12 from a different environment variable",
+		"p12", "",
+		"path to a PKCS12 file containing the private key, (leaf) signing certificate, remaining certificate chain.\nThis can also be the base64-encoded contents of the p12 file, or 'env:ENV_VAR_NAME' to read the p12 from a different environment variable",
 	)
 
 	flags.StringVarP(
 		&o.TimestampServer,
-		"timestamp-server", "", o.TimestampServer,
+		"timestamp-server", "",
 		"URL to a timestamp server to use for timestamping the signature",
 	)
 
 	flags.BoolVarP(
 		&o.AdHoc,
-		"ad-hoc", "", o.AdHoc,
+		"ad-hoc", "",
 		"perform ad-hoc signing. No cryptographic signature is included and --p12 key and certificate input are not needed. Do NOT use this option for production builds.",
 	)
 }
 
-func (o *Signing) BindFlags(flags *pflag.FlagSet, v *viper.Viper) error {
-	if err := Bind(v, "sign.override-identity", flags.Lookup("identity")); err != nil {
-		return err
-	}
-	if err := Bind(v, "sign.p12", flags.Lookup("p12")); err != nil {
-		return err
-	}
-	if err := Bind(v, "sign.timestamp-server", flags.Lookup("timestamp-server")); err != nil {
-		return err
-	}
-	if err := Bind(v, "sign.ad-hoc", flags.Lookup("ad-hoc")); err != nil {
-		return err
-	}
-
-	// set default values for non-bound struct items
-	v.SetDefault("sign.password", o.Password)
-	v.SetDefault("sign.fail-without-full-chain", o.FailWithoutFullChain)
-
-	return nil
+func (o *Signing) DescribeFields(d fangs.FieldDescriptionSet) {
+	d.Add(&o.FailWithoutFullChain, "fail without the full certificate chain present in the p12 file")
+	d.Add(&o.Password, "password for the p12 file")
 }

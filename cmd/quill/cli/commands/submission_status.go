@@ -4,10 +4,8 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
 
-	"github.com/anchore/quill/cmd/quill/cli/application"
+	"github.com/anchore/clio"
 	"github.com/anchore/quill/cmd/quill/cli/options"
 	"github.com/anchore/quill/internal/bus"
 	"github.com/anchore/quill/internal/log"
@@ -15,34 +13,20 @@ import (
 	"github.com/anchore/quill/quill/notary"
 )
 
-var _ options.Interface = &submissionStatusConfig{}
-
 type submissionStatusConfig struct {
-	ID             string `yaml:"id" json:"id" mapstructure:"id"`
+	ID             string `yaml:"id" json:"id" mapstructure:"-"`
 	options.Notary `yaml:"notary" json:"notary" mapstructure:"notary"`
 	options.Status `yaml:"status" json:"status" mapstructure:"status"`
 }
 
-func (o *submissionStatusConfig) Redact() {
-	options.RedactAll(&o.Notary, &o.Status)
-}
-
-func (o *submissionStatusConfig) AddFlags(flags *pflag.FlagSet) {
-	options.AddAllFlags(flags, &o.Notary, &o.Status)
-}
-
-func (o *submissionStatusConfig) BindFlags(flags *pflag.FlagSet, v *viper.Viper) error {
-	return options.BindAllFlags(flags, v, &o.Notary, &o.Status)
-}
-
-func SubmissionStatus(app *application.Application) *cobra.Command {
+func SubmissionStatus(app clio.Application) *cobra.Command {
 	opts := &submissionStatusConfig{
 		Status: options.Status{
 			Wait: false,
 		},
 	}
 
-	cmd := &cobra.Command{
+	return app.SetupCommand(&cobra.Command{
 		Use:   "status SUBMISSION_ID",
 		Short: "check against Apple's Notary service to see the status of a notarization submission request",
 		Example: options.FormatPositionalArgsHelp(
@@ -57,50 +41,45 @@ func SubmissionStatus(app *application.Application) *cobra.Command {
 				return nil
 			},
 		),
-		PreRunE: app.Setup(opts),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return app.Run(cmd.Context(), async(func() error {
-				log.Infof("checking submission status for %q", opts.ID)
+			defer bus.Exit()
 
-				cfg := quill.NewNotarizeConfig(
-					opts.Notary.Issuer,
-					opts.Notary.PrivateKeyID,
-					opts.Notary.PrivateKey,
-				).WithStatusConfig(
-					notary.StatusConfig{
-						Timeout: time.Duration(int64(opts.TimeoutSeconds) * int64(time.Second)),
-						Poll:    time.Duration(int64(opts.PollSeconds) * int64(time.Second)),
-						Wait:    opts.Wait,
-					},
-				)
+			log.Infof("checking submission status for %q", opts.ID)
 
-				token, err := notary.NewSignedToken(cfg.TokenConfig)
-				if err != nil {
-					return err
-				}
+			cfg := quill.NewNotarizeConfig(
+				opts.Notary.Issuer,
+				opts.Notary.PrivateKeyID,
+				opts.Notary.PrivateKey,
+			).WithStatusConfig(
+				notary.StatusConfig{
+					Timeout: time.Duration(int64(opts.TimeoutSeconds) * int64(time.Second)),
+					Poll:    time.Duration(int64(opts.PollSeconds) * int64(time.Second)),
+					Wait:    opts.Wait,
+				},
+			)
 
-				a := notary.NewAPIClient(token, cfg.HTTPTimeout)
+			token, err := notary.NewSignedToken(cfg.TokenConfig)
+			if err != nil {
+				return err
+			}
 
-				sub := notary.ExistingSubmission(a, opts.ID)
+			a := notary.NewAPIClient(token, cfg.HTTPTimeout)
 
-				var status notary.SubmissionStatus
-				if opts.Wait {
-					status, err = notary.PollStatus(cmd.Context(), sub, cfg.StatusConfig)
-				} else {
-					status, err = sub.Status(cmd.Context())
-				}
-				if err != nil {
-					return err
-				}
+			sub := notary.ExistingSubmission(a, opts.ID)
 
-				bus.Report(string(status))
+			var status notary.SubmissionStatus
+			if opts.Wait {
+				status, err = notary.PollStatus(cmd.Context(), sub, cfg.StatusConfig)
+			} else {
+				status, err = sub.Status(cmd.Context())
+			}
+			if err != nil {
+				return err
+			}
 
-				return nil
-			}))
+			bus.Report(string(status))
+
+			return nil
 		},
-	}
-
-	commonConfiguration(app, cmd, opts)
-
-	return cmd
+	}, opts)
 }

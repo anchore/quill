@@ -10,9 +10,10 @@ import (
 	macholibre "github.com/anchore/go-macholibre"
 	"github.com/anchore/quill/internal/bus"
 	"github.com/anchore/quill/internal/log"
-	"github.com/anchore/quill/quill/event/monitor"
+	"github.com/anchore/quill/quill/event"
 	"github.com/anchore/quill/quill/macho"
 	"github.com/anchore/quill/quill/pki"
+	"github.com/anchore/quill/quill/pki/load"
 	"github.com/anchore/quill/quill/sign"
 )
 
@@ -40,8 +41,8 @@ func NewSigningConfigFromPEMs(binaryPath, certificate, privateKey, password stri
 	}, nil
 }
 
-func NewSigningConfigFromP12(binaryPath, p12, password string, failWithoutFullChain bool) (*SigningConfig, error) {
-	signingMaterial, err := pki.NewSigningMaterialFromP12(p12, password, failWithoutFullChain)
+func NewSigningConfigFromP12(binaryPath string, p12Content load.P12Contents, failWithoutFullChain bool) (*SigningConfig, error) {
+	signingMaterial, err := pki.NewSigningMaterialFromP12(p12Content, failWithoutFullChain)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +78,7 @@ func Sign(cfg SigningConfig) error {
 	}
 
 	mon := bus.PublishTask(
-		monitor.Title{
+		event.Title{
 			Default:      "Sign binary",
 			WhileRunning: "Signing binary",
 			OnSuccess:    "Signed binary",
@@ -112,7 +113,7 @@ func signMultiarchBinary(cfg SigningConfig) error {
 	defer os.RemoveAll(dir)
 
 	extractMon := bus.PublishTask(
-		monitor.Title{
+		event.Title{
 			Default:      "Extract universal binary",
 			WhileRunning: "Extracting universal binary",
 			OnSuccess:    "Extracted universal binary",
@@ -141,23 +142,13 @@ func signMultiarchBinary(cfg SigningConfig) error {
 	}
 
 	signMon := bus.PublishTask(
-		monitor.Title{
+		event.Title{
 			Default:      "Sign binaries",
 			WhileRunning: "Signing binaries",
 			OnSuccess:    "Signed binaries",
 		},
 		cfg.Path,
 		len(cfgs),
-	)
-
-	packMon := bus.PublishTask(
-		monitor.Title{
-			Default:      "Repack universal binary",
-			WhileRunning: "Repacking universal binary",
-			OnSuccess:    "Repacked universal binary",
-		},
-		cfg.Path,
-		-1,
 	)
 
 	defer signMon.SetCompleted()
@@ -178,7 +169,17 @@ func signMultiarchBinary(cfg SigningConfig) error {
 		paths = append(paths, c.Path)
 	}
 
-	log.WithFields("binary", cfg.Path, "arches", len(cfgs)).Debug("packaging signed binaries into single multi-arch binary")
+	log.WithFields("binary", cfg.Path, "arches", len(cfgs)).Info("packaging signed binaries into single multi-arch binary")
+
+	packMon := bus.PublishTask(
+		event.Title{
+			Default:      "Repack universal binary",
+			WhileRunning: "Repacking universal binary",
+			OnSuccess:    "Repacked universal binary",
+		},
+		cfg.Path,
+		-1,
+	)
 
 	defer packMon.SetCompleted()
 

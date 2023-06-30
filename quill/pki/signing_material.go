@@ -55,23 +55,18 @@ func NewSigningMaterialFromPEMs(certFile, privateKeyPath, password string, failW
 	}, nil
 }
 
-func NewSigningMaterialFromP12(p12Path, password string, failWithoutFullChain bool) (*SigningMaterial, error) {
-	privateKey, cert, certs, err := load.P12(p12Path, password)
-	if err != nil {
-		return nil, fmt.Errorf("unable to decode p12 file: %w", err)
-	}
-
-	if privateKey == nil {
+func NewSigningMaterialFromP12(p12Content load.P12Contents, failWithoutFullChain bool) (*SigningMaterial, error) {
+	if p12Content.PrivateKey == nil {
 		return nil, fmt.Errorf("no private key found in the p12")
 	}
 
-	if cert == nil {
+	if p12Content.Certificate == nil {
 		return nil, fmt.Errorf("no signing certificate found in the p12")
 	}
 
-	allCerts := append([]*x509.Certificate{cert}, certs...)
+	allCerts := append([]*x509.Certificate{p12Content.Certificate}, p12Content.Certificates...)
 
-	signer, ok := privateKey.(crypto.Signer)
+	signer, ok := p12Content.PrivateKey.(crypto.Signer)
 	if !ok {
 		return nil, fmt.Errorf("unable to derive signer from private key")
 	}
@@ -81,7 +76,7 @@ func NewSigningMaterialFromP12(p12Path, password string, failWithoutFullChain bo
 			store := certchain.NewCollection().WithStores(apple.GetEmbeddedCertStore())
 
 			// verification failed, try again but attempt to find more certs from the embedded certs in quill
-			remainingCerts, err := certchain.Find(store, cert)
+			remainingCerts, err := certchain.Find(store, p12Content.Certificate)
 			if err != nil {
 				return nil, fmt.Errorf("unable to find remaining chain certificates: %w", err)
 			}

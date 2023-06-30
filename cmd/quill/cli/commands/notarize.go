@@ -4,47 +4,35 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
 
-	"github.com/anchore/quill/cmd/quill/cli/application"
+	"github.com/anchore/clio"
+	"github.com/anchore/fangs"
 	"github.com/anchore/quill/cmd/quill/cli/options"
+	"github.com/anchore/quill/internal/bus"
 	"github.com/anchore/quill/internal/log"
 	"github.com/anchore/quill/quill"
 	"github.com/anchore/quill/quill/notary"
 )
 
-var _ options.Interface = &notarizeConfig{}
+var _ fangs.FlagAdder = (*notarizeConfig)(nil)
 
 type notarizeConfig struct {
-	Path           string `yaml:"path" json:"path" mapstructure:"path"`
+	Path           string `yaml:"path" json:"path" mapstructure:"-"`
 	options.Notary `yaml:"notary" json:"notary" mapstructure:"notary"`
 	options.Status `yaml:"status" json:"status" mapstructure:"status"`
 	DryRun         bool `yaml:"dry-run" json:"dry-run" mapstructure:"dry-run"`
 }
 
-func (o *notarizeConfig) Redact() {
-	options.RedactAll(&o.Notary, &o.Status)
+func (o *notarizeConfig) AddFlags(flags fangs.FlagSet) {
+	flags.BoolVarP(&o.DryRun, "dry-run", "", "dry run mode (do not actually notarize)")
 }
 
-func (o *notarizeConfig) AddFlags(flags *pflag.FlagSet) {
-	flags.BoolVar(&o.DryRun, "dry-run", o.DryRun, "dry run mode (do not actually notarize)")
-	options.AddAllFlags(flags, &o.Notary, &o.Status)
-}
-
-func (o *notarizeConfig) BindFlags(flags *pflag.FlagSet, v *viper.Viper) error {
-	if err := options.Bind(v, "dry-run", flags.Lookup("dry-run")); err != nil {
-		return err
-	}
-	return options.BindAllFlags(flags, v, &o.Notary, &o.Status)
-}
-
-func Notarize(app *application.Application) *cobra.Command {
+func Notarize(app clio.Application) *cobra.Command {
 	opts := &notarizeConfig{
 		Status: options.DefaultStatus(),
 	}
 
-	cmd := &cobra.Command{
+	return app.SetupCommand(&cobra.Command{
 		Use:   "notarize PATH",
 		Short: "notarize a signed a macho binary with Apple's Notary service",
 		Example: options.FormatPositionalArgsHelp(
@@ -59,24 +47,19 @@ func Notarize(app *application.Application) *cobra.Command {
 				return nil
 			},
 		),
-		PreRunE: app.Setup(opts),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return app.Run(cmd.Context(), async(func() error {
-				// TODO: verify path is a signed darwin binary
-				// ... however, we may want to allow notarization of other kinds of assets (zip with darwin binary, etc)
-				if opts.DryRun {
-					log.Warn("[DRY RUN] skipping notarization...")
-					return nil
-				}
-				_, err := notarize(opts.Path, opts.Notary, opts.Status)
-				return err
-			}))
+			defer bus.Exit()
+
+			// TODO: verify path is a signed darwin binary
+			// ... however, we may want to allow notarization of other kinds of assets (zip with darwin binary, etc)
+			if opts.DryRun {
+				log.Warn("[DRY RUN] skipping notarization...")
+				return nil
+			}
+			_, err := notarize(opts.Path, opts.Notary, opts.Status)
+			return err
 		},
-	}
-
-	commonConfiguration(app, cmd, opts)
-
-	return cmd
+	}, opts)
 }
 
 func notarize(binPath string, notaryCfg options.Notary, statusCfg options.Status) (notary.SubmissionStatus, error) {

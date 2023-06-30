@@ -8,7 +8,7 @@ import (
 
 	"github.com/anchore/quill/internal/bus"
 	"github.com/anchore/quill/internal/log"
-	"github.com/anchore/quill/quill/event/monitor"
+	"github.com/anchore/quill/quill/event"
 	"github.com/anchore/quill/quill/notary"
 )
 
@@ -83,7 +83,7 @@ func Notarize(path string, cfg NotarizeConfig) (notary.SubmissionStatus, error) 
 	log.WithFields("binary", path).Info("notarizing binary")
 
 	mon := bus.PublishTask(
-		monitor.Title{
+		event.Title{
 			Default:      "Notarize binary",
 			WhileRunning: "Notarizing binary",
 			OnSuccess:    "Notarized binary",

@@ -1,33 +1,53 @@
 package cli
 
 import (
+	"os"
+
 	"github.com/spf13/cobra"
 
-	"github.com/anchore/quill/cmd/quill/cli/application"
+	"github.com/anchore/clio"
 	"github.com/anchore/quill/cmd/quill/cli/commands"
+	"github.com/anchore/quill/cmd/quill/internal/ui"
+	"github.com/anchore/quill/internal/bus"
+	"github.com/anchore/quill/internal/log"
+	"github.com/anchore/quill/internal/redact"
 )
 
-type config struct {
-	app *application.Application
-}
+func New(id clio.Identification) *cobra.Command {
+	clioCfg := clio.NewSetupConfig(id).
+		WithGlobalConfigFlag().   // add persistent -c <path> for reading an application config from
+		WithGlobalLoggingFlags(). // add persistent -v and -q flags tied to the logging config
+		WithConfigInRootHelp().   // --help on the root command renders the full application config in the help text
+		WithUIConstructor(
+			// select a UI based on the logging configuration and state of stdin (if stdin is a tty)
+			func(cfg clio.Config) ([]clio.UI, error) {
+				noUI := ui.None()
+				if !cfg.Log.AllowUI(os.Stdin) {
+					return []clio.UI{noUI}, nil
+				}
 
-type Option func(*config)
+				return []clio.UI{
+					ui.New(false, cfg.Log.Quiet),
+					noUI,
+				}, nil
+			},
+		).
+		WithInitializers(
+			func(state *clio.State) error {
+				// clio is setting up and providing the bus, redact store, and logger to the application. Once loaded,
+				// we can hoist them into the internal packages for global use.
 
-func WithApplication(app *application.Application) Option {
-	return func(config *config) {
-		config.app = app
-	}
-}
+				bus.Set(state.Bus)
+				redact.Set(state.RedactStore)
+				log.Set(state.Logger)
 
-func New(opts ...Option) *cobra.Command {
-	cfg := &config{
-		app: application.New(),
-	}
-	for _, fn := range opts {
-		fn(cfg)
-	}
+				return nil
+			},
+		)
 
-	app := cfg.app
+	app := clio.New(*clioCfg)
+
+	root := commands.Root(app)
 
 	submission := commands.Submission(app)
 	submission.AddCommand(commands.SubmissionList(app))
@@ -41,8 +61,7 @@ func New(opts ...Option) *cobra.Command {
 	p12.AddCommand(commands.P12AttachChain(app))
 	p12.AddCommand(commands.P12Describe(app))
 
-	root := commands.Root(app)
-	root.AddCommand(commands.Version(app))
+	root.AddCommand(clio.VersionCommand(id))
 	root.AddCommand(commands.Sign(app))
 	root.AddCommand(commands.Notarize(app))
 	root.AddCommand(commands.SignAndNotarize(app))

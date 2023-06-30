@@ -1,27 +1,19 @@
 package options
 
 import (
-	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
+	"github.com/anchore/fangs"
 )
 
-var _ Interface = &Keychain{}
+var _ fangs.FlagAdder = (*Keychain)(nil)
 
 type Keychain struct {
 	Path string `yaml:"path" json:"path" mapstructure:"path"`
 }
 
-func (o *Keychain) Redact() {
-}
-
-func (o *Keychain) AddFlags(flags *pflag.FlagSet) {
+func (o *Keychain) AddFlags(flags fangs.FlagSet) {
 	flags.StringVarP(
 		&o.Path,
-		"keychain-path", "", o.Path,
+		"keychain-path", "",
 		"path to the mac system keychain",
 	)
-}
-
-func (o *Keychain) BindFlags(flags *pflag.FlagSet, v *viper.Viper) error {
-	return Bind(v, "keychain.path", flags.Lookup("keychain-path"))
 }

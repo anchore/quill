@@ -5,25 +5,24 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/anchore/quill/cmd/quill/cli/application"
+	"github.com/anchore/clio"
 	"github.com/anchore/quill/cmd/quill/cli/options"
+	"github.com/anchore/quill/internal/bus"
 	"github.com/anchore/quill/internal/log"
 	"github.com/anchore/quill/quill"
 )
 
-var _ options.Interface = &signConfig{}
-
 type signConfig struct {
-	Path            string `yaml:"path" json:"path" mapstructure:"path"`
+	Path            string `yaml:"path" json:"path" mapstructure:"-"`
 	options.Signing `yaml:"sign" json:"sign" mapstructure:"sign"`
 }
 
-func Sign(app *application.Application) *cobra.Command {
+func Sign(app clio.Application) *cobra.Command {
 	opts := &signConfig{
 		Signing: options.DefaultSigning(),
 	}
 
-	cmd := &cobra.Command{
+	return app.SetupCommand(&cobra.Command{
 		Use:   "sign PATH",
 		Short: "sign a macho (darwin) executable binary",
 		Example: options.FormatPositionalArgsHelp(
@@ -38,17 +37,12 @@ func Sign(app *application.Application) *cobra.Command {
 				return nil
 			},
 		),
-		PreRunE: app.Setup(opts),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return app.Run(cmd.Context(), async(func() error {
-				return sign(opts.Path, opts.Signing)
-			}))
+			defer bus.Exit()
+
+			return sign(opts.Path, opts.Signing)
 		},
-	}
-
-	commonConfiguration(app, cmd, opts)
-
-	return cmd
+	}, opts)
 }
 
 func sign(binPath string, opts options.Signing) error {
@@ -60,7 +54,15 @@ func sign(binPath string, opts options.Signing) error {
 		if opts.AdHoc {
 			log.Warn("ad-hoc signing is enabled, but a p12 file was also provided. The p12 file will be ignored.")
 		} else {
-			replacement, err := quill.NewSigningConfigFromP12(binPath, opts.P12, opts.Password, opts.FailWithoutFullChain)
+			p12Content, err := loadP12Interactively(opts.P12, opts.Password)
+			if err != nil {
+				return fmt.Errorf("unable to decode p12 file: %w", err)
+			}
+			if p12Content == nil {
+				return fmt.Errorf("no content found in the p12 file")
+			}
+
+			replacement, err := quill.NewSigningConfigFromP12(binPath, *p12Content, opts.FailWithoutFullChain)
 			if err != nil {
 				return fmt.Errorf("unable to read p12: %w", err)
 			}

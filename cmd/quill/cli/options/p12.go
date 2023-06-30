@@ -1,28 +1,24 @@
 package options
 
 import (
-	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
-
-	"github.com/anchore/quill/internal/log"
+	"github.com/anchore/fangs"
+	"github.com/anchore/quill/internal/redact"
 )
 
-var _ Interface = &P12{}
+var _ interface {
+	fangs.PostLoader
+	fangs.FieldDescriber
+} = (*P12)(nil)
 
 type P12 struct {
 	Password string `yaml:"password" json:"password" mapstructure:"password"`
 }
 
-func (o *P12) Redact() {
-	log.Redact(o.Password)
-}
-
-func (o *P12) AddFlags(_ *pflag.FlagSet) {
-}
-
-func (o *P12) BindFlags(_ *pflag.FlagSet, v *viper.Viper) error {
-	// set default values for non-bound struct items
-	v.SetDefault("p12.password", o.Password)
-
+func (o *P12) PostLoad() error {
+	redact.Add(o.Password)
 	return nil
+}
+
+func (o *P12) DescribeFields(d fangs.FieldDescriptionSet) {
+	d.Add(&o.Password, "password to decrypt the p12 file")
 }

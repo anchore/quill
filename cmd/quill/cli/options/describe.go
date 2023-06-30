@@ -1,27 +1,19 @@
 package options
 
 import (
-	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
+	"github.com/anchore/fangs"
 )
 
-var _ Interface = &Describe{}
+var _ fangs.FlagAdder = (*Describe)(nil)
 
 type Describe struct {
 	Detail bool `yaml:"detail" json:"detail" mapstructure:"detail"`
 }
 
-func (o *Describe) Redact() {
-}
-
-func (o *Describe) AddFlags(flags *pflag.FlagSet) {
+func (o *Describe) AddFlags(flags fangs.FlagSet) {
 	flags.BoolVarP(
 		&o.Detail,
-		"detail", "d", o.Detail,
+		"detail", "d",
 		"show additional detail of description",
 	)
-}
-
-func (o *Describe) BindFlags(flags *pflag.FlagSet, v *viper.Viper) error {
-	return Bind(v, "describe.detail", flags.Lookup("detail"))
 }

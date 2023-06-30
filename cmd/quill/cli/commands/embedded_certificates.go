@@ -7,41 +7,36 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/anchore/quill/cmd/quill/cli/application"
+	"github.com/anchore/clio"
 	"github.com/anchore/quill/internal/bus"
 	"github.com/anchore/quill/quill/pki/apple"
 )
 
-func EmbeddedCerts(app *application.Application) *cobra.Command {
-	cmd := &cobra.Command{
+func EmbeddedCerts(app clio.Application) *cobra.Command {
+	return app.SetupCommand(&cobra.Command{
 		Aliases: []string{
 			"embedded-certs",
 		},
-		Use:     "embedded-certificates",
-		Short:   "show the certificates embedded into quill (typically the Apple root and intermediate certs)",
-		Args:    cobra.NoArgs,
-		PreRunE: app.Setup(nil),
+		Use:   "embedded-certificates",
+		Short: "show the certificates embedded into quill (typically the Apple root and intermediate certs)",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return app.Run(cmd.Context(), async(func() error {
-				var err error
-				buf := &strings.Builder{}
+			defer bus.Exit()
 
-				err = showAppleCerts(buf)
+			var err error
+			buf := &strings.Builder{}
 
-				if err != nil {
-					return err
-				}
+			err = showAppleCerts(buf)
 
-				bus.Report(buf.String())
+			if err != nil {
+				return err
+			}
 
-				return nil
-			}))
+			bus.Report(buf.String())
+
+			return nil
 		},
-	}
-
-	commonConfiguration(app, cmd, nil)
-
-	return cmd
+	})
 }
 
 func showAppleCerts(buf io.Writer) error {

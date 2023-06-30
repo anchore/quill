@@ -3,7 +3,7 @@ package commands
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/anchore/quill/cmd/quill/cli/application"
+	"github.com/anchore/clio"
 	"github.com/anchore/quill/cmd/quill/cli/options"
 	"github.com/anchore/quill/internal/bus"
 	"github.com/anchore/quill/internal/log"
@@ -11,17 +11,15 @@ import (
 	"github.com/anchore/quill/quill/notary"
 )
 
-var _ options.Interface = &submissionLogsConfig{}
-
 type submissionLogsConfig struct {
-	ID             string `yaml:"id" json:"id" mapstructure:"id"`
+	ID             string `yaml:"id" json:"id" mapstructure:"-"`
 	options.Notary `yaml:"notary" json:"notary" mapstructure:"notary"`
 }
 
-func SubmissionLogs(app *application.Application) *cobra.Command {
+func SubmissionLogs(app clio.Application) *cobra.Command {
 	opts := &submissionLogsConfig{}
 
-	cmd := &cobra.Command{
+	return app.SetupCommand(&cobra.Command{
 		Use:   "logs SUBMISSION_ID",
 		Short: "fetch logs for an existing submission from Apple's Notary service",
 		Example: options.FormatPositionalArgsHelp(
@@ -36,39 +34,34 @@ func SubmissionLogs(app *application.Application) *cobra.Command {
 				return nil
 			},
 		),
-		PreRunE: app.Setup(opts),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return app.Run(cmd.Context(), async(func() error {
-				log.Infof("fetching submission logs for %q", opts.ID)
+			defer bus.Exit()
 
-				cfg := quill.NewNotarizeConfig(
-					opts.Notary.Issuer,
-					opts.Notary.PrivateKeyID,
-					opts.Notary.PrivateKey,
-				)
+			log.Infof("fetching submission logs for %q", opts.ID)
 
-				token, err := notary.NewSignedToken(cfg.TokenConfig)
-				if err != nil {
-					return err
-				}
+			cfg := quill.NewNotarizeConfig(
+				opts.Notary.Issuer,
+				opts.Notary.PrivateKeyID,
+				opts.Notary.PrivateKey,
+			)
 
-				a := notary.NewAPIClient(token, cfg.HTTPTimeout)
+			token, err := notary.NewSignedToken(cfg.TokenConfig)
+			if err != nil {
+				return err
+			}
 
-				sub := notary.ExistingSubmission(a, opts.ID)
+			a := notary.NewAPIClient(token, cfg.HTTPTimeout)
 
-				content, err := sub.Logs(cmd.Context())
-				if err != nil {
-					return err
-				}
+			sub := notary.ExistingSubmission(a, opts.ID)
 
-				bus.Report(content)
+			content, err := sub.Logs(cmd.Context())
+			if err != nil {
+				return err
+			}
 
-				return nil
-			}))
+			bus.Report(content)
+
+			return nil
 		},
-	}
-
-	commonConfiguration(app, cmd, opts)
-
-	return cmd
+	}, opts)
 }

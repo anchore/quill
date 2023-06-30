@@ -6,7 +6,7 @@ import (
 	"github.com/jedib0t/go-pretty/table"
 	"github.com/spf13/cobra"
 
-	"github.com/anchore/quill/cmd/quill/cli/application"
+	"github.com/anchore/clio"
 	"github.com/anchore/quill/cmd/quill/cli/options"
 	"github.com/anchore/quill/internal/bus"
 	"github.com/anchore/quill/internal/log"
@@ -14,63 +14,56 @@ import (
 	"github.com/anchore/quill/quill/notary"
 )
 
-var _ options.Interface = &submissionListConfig{}
-
 type submissionListConfig struct {
 	options.Notary `yaml:"notary" json:"notary" mapstructure:"notary"`
 }
 
-func SubmissionList(app *application.Application) *cobra.Command {
+func SubmissionList(app clio.Application) *cobra.Command {
 	opts := &submissionListConfig{}
 
-	cmd := &cobra.Command{
-		Use:     "list",
-		Short:   "list previous submissions to Apple's Notary service",
-		Args:    cobra.NoArgs,
-		PreRunE: app.Setup(opts),
+	return app.SetupCommand(&cobra.Command{
+		Use:   "list",
+		Short: "list previous submissions to Apple's Notary service",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return app.Run(cmd.Context(), async(func() error {
-				log.Info("fetching previous submissions")
+			defer bus.Exit()
 
-				cfg := quill.NewNotarizeConfig(
-					opts.Notary.Issuer,
-					opts.Notary.PrivateKeyID,
-					opts.Notary.PrivateKey,
-				)
+			log.Info("fetching previous submissions")
 
-				token, err := notary.NewSignedToken(cfg.TokenConfig)
-				if err != nil {
-					return err
-				}
+			cfg := quill.NewNotarizeConfig(
+				opts.Notary.Issuer,
+				opts.Notary.PrivateKeyID,
+				opts.Notary.PrivateKey,
+			)
 
-				a := notary.NewAPIClient(token, cfg.HTTPTimeout)
+			token, err := notary.NewSignedToken(cfg.TokenConfig)
+			if err != nil {
+				return err
+			}
 
-				sub := notary.ExistingSubmission(a, "")
+			a := notary.NewAPIClient(token, cfg.HTTPTimeout)
 
-				submissions, err := sub.List(context.Background())
-				if err != nil {
-					return err
-				}
+			sub := notary.ExistingSubmission(a, "")
 
-				// show list report
+			submissions, err := sub.List(context.Background())
+			if err != nil {
+				return err
+			}
 
-				t := table.NewWriter()
-				t.SetStyle(table.StyleLight)
+			// show list report
 
-				t.AppendHeader(table.Row{"ID", "Name", "Status", "Created"})
+			t := table.NewWriter()
+			t.SetStyle(table.StyleLight)
 
-				for _, item := range submissions {
-					t.AppendRow(table.Row{item.ID, item.Name, item.Status, item.CreatedDate})
-				}
+			t.AppendHeader(table.Row{"ID", "Name", "Status", "Created"})
 
-				bus.Report(t.Render())
+			for _, item := range submissions {
+				t.AppendRow(table.Row{item.ID, item.Name, item.Status, item.CreatedDate})
+			}
 
-				return nil
-			}))
+			bus.Report(t.Render())
+
+			return nil
 		},
-	}
-
-	commonConfiguration(app, cmd, opts)
-
-	return cmd
+	}, opts)
 }

@@ -7,24 +7,22 @@ import (
 	"github.com/scylladb/go-set/strset"
 	"github.com/spf13/cobra"
 
-	"github.com/anchore/quill/cmd/quill/cli/application"
+	"github.com/anchore/clio"
 	"github.com/anchore/quill/cmd/quill/cli/options"
 	"github.com/anchore/quill/internal/bus"
 	"github.com/anchore/quill/internal/log"
 	"github.com/anchore/quill/quill/extract"
 )
 
-var _ options.Interface = &extractCertificatesConfig{}
-
 type extractCertificatesConfig struct {
-	Path                        string `yaml:"path" json:"path" mapstructure:"path"`
+	Path                        string `yaml:"path" json:"path" mapstructure:"-"`
 	options.ExtractCertificates `yaml:"extract-certificates" json:"extract-certificates" mapstructure:"extract-certificates"`
 }
 
-func ExtractCertificates(app *application.Application) *cobra.Command {
+func ExtractCertificates(app clio.Application) *cobra.Command {
 	opts := &extractCertificatesConfig{}
 
-	cmd := &cobra.Command{
+	return app.SetupCommand(&cobra.Command{
 		Aliases: []string{
 			"certs",
 		},
@@ -42,25 +40,20 @@ func ExtractCertificates(app *application.Application) *cobra.Command {
 				return nil
 			},
 		),
-		PreRunE: app.Setup(opts),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return app.Run(cmd.Context(), async(func() error {
-				certs, err := extractCertificates(opts.Path, opts.Leaf)
-				if err != nil {
-					return err
-				}
+			defer bus.Exit()
 
-				bus.Report(certs)
-				bus.Notify("Try running 'openssl x509 -text -in <path-to-file-with-output>.pem' to view the certificate details")
+			certs, err := extractCertificates(opts.Path, opts.Leaf)
+			if err != nil {
+				return err
+			}
 
-				return nil
-			}))
+			bus.Report(certs)
+			bus.Notify("Try running 'openssl x509 -text -in <path-to-file-with-output>.pem' to view the certificate details")
+
+			return nil
 		},
-	}
-
-	commonConfiguration(app, cmd, opts)
-
-	return cmd
+	}, opts)
 }
 
 func extractCertificates(binPath string, leaf bool) (string, error) {

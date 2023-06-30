@@ -8,23 +8,20 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/anchore/quill/cmd/quill/cli/application"
+	"github.com/anchore/clio"
 	"github.com/anchore/quill/cmd/quill/cli/options"
 	"github.com/anchore/quill/internal/bus"
-	"github.com/anchore/quill/quill/pki/load"
 )
 
-var _ options.Interface = &p12DescribeConfig{}
-
 type p12DescribeConfig struct {
-	Path        string `yaml:"path" json:"path" mapstructure:"path"`
+	Path        string `yaml:"path" json:"path" mapstructure:"-"`
 	options.P12 `yaml:"p12" json:"p12" mapstructure:"p12"`
 }
 
-func P12Describe(app *application.Application) *cobra.Command {
+func P12Describe(app clio.Application) *cobra.Command {
 	opts := &p12DescribeConfig{}
 
-	cmd := &cobra.Command{
+	return app.SetupCommand(&cobra.Command{
 		Use:   "describe PATH",
 		Short: "describe the contents of a p12 file",
 		Example: options.FormatPositionalArgsHelp(
@@ -39,37 +36,32 @@ func P12Describe(app *application.Application) *cobra.Command {
 				return nil
 			},
 		),
-		PreRunE: app.Setup(opts),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return app.Run(cmd.Context(), async(func() error {
-				description, err := describeP12(opts.Path, opts.Password)
-				if err != nil {
-					return err
-				}
+			defer bus.Exit()
 
-				bus.Report(description)
+			description, err := describeP12(opts.Path, opts.Password)
+			if err != nil {
+				return err
+			}
 
-				return nil
-			}))
+			bus.Report(description)
+
+			return nil
 		},
-	}
-
-	commonConfiguration(app, cmd, opts)
-
-	return cmd
+	}, opts)
 }
 
 func describeP12(file, password string) (string, error) {
-	key, cert, certs, err := load.P12(file, password)
+	p12Contents, err := loadP12Interactively(file, password)
 	if err != nil {
 		return "", err
 	}
 
 	buf := strings.Builder{}
-	if key != nil {
+	if p12Contents.PrivateKey != nil {
 		buf.WriteString("Private Key:\n")
 
-		buf.WriteString(fmt.Sprintf("  - %+v exists\n", reflect.TypeOf(key).Elem().String()))
+		buf.WriteString(fmt.Sprintf("  - %+v exists\n", reflect.TypeOf(p12Contents.PrivateKey).Elem().String()))
 	} else {
 		buf.WriteString("Private Key: (none)\n")
 	}
@@ -80,15 +72,15 @@ func describeP12(file, password string) (string, error) {
 		buf.WriteString(fmt.Sprintf("    Authority-Key-ID: %x\n", c.AuthorityKeyId))
 	}
 
-	if cert != nil {
+	if p12Contents.Certificate != nil {
 		buf.WriteString("Signing Certificate:\n")
-		summarizeCert(cert)
+		summarizeCert(p12Contents.Certificate)
 	} else {
 		buf.WriteString("Signing Certificate: (none)\n")
 	}
 
-	buf.WriteString(fmt.Sprintf("Certificate Chain: (%d)\n", len(certs)))
-	for _, c := range certs {
+	buf.WriteString(fmt.Sprintf("Certificate Chain: (%d)\n", len(p12Contents.Certificates)))
+	for _, c := range p12Contents.Certificates {
 		summarizeCert(c)
 	}
 	return buf.String(), nil
