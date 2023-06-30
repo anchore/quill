@@ -6,7 +6,7 @@ require (
 	github.com/PuerkitoBio/goquery v1.8.1
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d
 	github.com/anchore/bubbly v0.0.0-20230518153401-87b6af8ccf22
-	github.com/anchore/clio v0.0.0-20230630145036-8c79eb7c59a2
+	github.com/anchore/clio v0.0.0-20230630150457-4697a1055ebf
 	github.com/anchore/fangs v0.0.0-20230628163043-a51c5a39b097
 	github.com/anchore/go-logger v0.0.0-20230531193951-db5ae83e7dbe
 	github.com/anchore/go-macholibre v0.0.0-20220308212642-53e6d0aaf6fb
@@ -24,7 +24,7 @@ require (
 	github.com/klauspost/compress v1.16.4
 	github.com/scylladb/go-set v1.0.2
 	github.com/spf13/cobra v1.7.0
-	github.com/stretchr/testify v1.8.3
+	github.com/stretchr/testify v1.8.4
 	github.com/wagoodman/go-partybus v0.0.0-20230516145632-8ccac152c651
 	github.com/wagoodman/go-progress v0.0.0-20220614130704-4b1c25a33c7c
 	software.sslmate.com/src/go-pkcs12 v0.2.0
@@ -86,8 +86,8 @@ require (
 	go.mongodb.org/mongo-driver v1.10.0 // indirect
 	golang.org/x/crypto v0.0.0-20221012134737-56aed061732a // indirect
 	golang.org/x/net v0.8.0 // indirect
-	golang.org/x/sys v0.8.0 // indirect
-	golang.org/x/term v0.8.0 // indirect
+	golang.org/x/sys v0.9.0 // indirect
+	golang.org/x/term v0.9.0 // indirect
 	golang.org/x/text v0.8.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
