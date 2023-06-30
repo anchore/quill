@@ -5,6 +5,11 @@ import "github.com/anchore/go-logger/adapter/redact"
 var store redact.Store
 
 func Set(s redact.Store) {
+	if store != nil {
+		// if someone is trying to set a redaction store and we already have one then something is wrong. The store
+		// that we're replacing might already have values in it, so we should never replace it.
+		panic("replace existing redaction store (probably unintentional)")
+	}
 	store = s
 }
 
