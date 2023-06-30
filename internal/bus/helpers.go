@@ -5,7 +5,7 @@ import (
 	"github.com/wagoodman/go-progress"
 
 	"github.com/anchore/bubbly"
-	"github.com/anchore/quill/internal/log"
+	"github.com/anchore/quill/internal/redact"
 	"github.com/anchore/quill/quill/event"
 )
 
@@ -41,22 +41,33 @@ func Exit() {
 }
 
 func Report(report string) {
-	report = log.Redactor.RedactString(report)
+	if publisher == nil {
+		// prevent any further actions taken on the report (such as redaction) since it won't be published anyway
+		return
+	}
 	publish(partybus.Event{
 		Type:  event.CLIReportType,
-		Value: report,
+		Value: redact.Apply(report),
 	})
 }
 
 func Notify(message string) {
+	if publisher == nil {
+		// prevent any further actions taken on the report (such as redaction) since it won't be published anyway
+		return
+	}
 	publish(partybus.Event{
 		Type:  event.CLINotificationType,
-		Value: message,
+		Value: redact.Apply(message),
 	})
 }
 
 func PromptForInput(message string, sensitive bool, validators ...func(string) error) *bubbly.Prompter {
-	p := bubbly.NewPrompter(message, sensitive, validators...)
+	if publisher == nil {
+		// prevent any further actions taken on the report (such as redaction) since it won't be published anyway
+		return nil
+	}
+	p := bubbly.NewPrompter(redact.Apply(message), sensitive, validators...)
 	publish(partybus.Event{
 		Type:  event.CLIInputPromptType,
 		Value: bubbly.PromptWriter(p),

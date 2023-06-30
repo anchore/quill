@@ -35,33 +35,33 @@ func SubmissionLogs(app clio.Application) *cobra.Command {
 			},
 		),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return app.Run(cmd.Context(), async(func() error {
-				log.Infof("fetching submission logs for %q", opts.ID)
+			defer bus.Exit()
 
-				cfg := quill.NewNotarizeConfig(
-					opts.Notary.Issuer,
-					opts.Notary.PrivateKeyID,
-					opts.Notary.PrivateKey,
-				)
+			log.Infof("fetching submission logs for %q", opts.ID)
 
-				token, err := notary.NewSignedToken(cfg.TokenConfig)
-				if err != nil {
-					return err
-				}
+			cfg := quill.NewNotarizeConfig(
+				opts.Notary.Issuer,
+				opts.Notary.PrivateKeyID,
+				opts.Notary.PrivateKey,
+			)
 
-				a := notary.NewAPIClient(token, cfg.HTTPTimeout)
+			token, err := notary.NewSignedToken(cfg.TokenConfig)
+			if err != nil {
+				return err
+			}
 
-				sub := notary.ExistingSubmission(a, opts.ID)
+			a := notary.NewAPIClient(token, cfg.HTTPTimeout)
 
-				content, err := sub.Logs(cmd.Context())
-				if err != nil {
-					return err
-				}
+			sub := notary.ExistingSubmission(a, opts.ID)
 
-				bus.Report(content)
+			content, err := sub.Logs(cmd.Context())
+			if err != nil {
+				return err
+			}
 
-				return nil
-			}))
+			bus.Report(content)
+
+			return nil
 		},
 	}, opts)
 }

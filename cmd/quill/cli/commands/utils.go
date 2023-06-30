@@ -9,7 +9,7 @@ import (
 	"software.sslmate.com/src/go-pkcs12"
 
 	"github.com/anchore/quill/internal/bus"
-	"github.com/anchore/quill/internal/log"
+	"github.com/anchore/quill/internal/redact"
 	"github.com/anchore/quill/quill/pki/load"
 )
 
@@ -34,7 +34,7 @@ func loadP12Interactively(p12Path, password string) (*load.P12Contents, error) {
 		return nil, fmt.Errorf("unable to get password from prompt: %w", err)
 	}
 
-	log.Redact(newPassword)
+	redact.Add(newPassword)
 
 	key, cert, certs, err := pkcs12.DecodeChain(by, newPassword)
 	if err != nil {
@@ -46,19 +46,6 @@ func loadP12Interactively(p12Path, password string) (*load.P12Contents, error) {
 		Certificate:  cert,
 		Certificates: certs,
 	}, nil
-}
-
-func async(f func() error) <-chan error {
-	errs := make(chan error)
-	go func() {
-		defer close(errs)
-		if err := f(); err != nil {
-			errs <- err
-		}
-		bus.Exit()
-	}()
-
-	return errs
 }
 
 func chainArgs(processors ...func(cmd *cobra.Command, args []string) error) func(cmd *cobra.Command, args []string) error {

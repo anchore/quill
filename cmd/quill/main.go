@@ -10,6 +10,7 @@ import (
 
 	"github.com/anchore/clio"
 	"github.com/anchore/quill/cmd/quill/cli"
+	"github.com/anchore/quill/internal"
 	"github.com/anchore/quill/internal/log"
 )
 
@@ -23,7 +24,8 @@ var buildDate = valueNotProvided
 
 func main() {
 	cmd := cli.New(
-		clio.Version{
+		clio.Identification{
+			Name:           internal.ApplicationName,
 			Version:        version,
 			GitCommit:      gitCommit,
 			GitDescription: gitDescription,

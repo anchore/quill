@@ -42,44 +42,44 @@ func SubmissionStatus(app clio.Application) *cobra.Command {
 			},
 		),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return app.Run(cmd.Context(), async(func() error {
-				log.Infof("checking submission status for %q", opts.ID)
+			defer bus.Exit()
 
-				cfg := quill.NewNotarizeConfig(
-					opts.Notary.Issuer,
-					opts.Notary.PrivateKeyID,
-					opts.Notary.PrivateKey,
-				).WithStatusConfig(
-					notary.StatusConfig{
-						Timeout: time.Duration(int64(opts.TimeoutSeconds) * int64(time.Second)),
-						Poll:    time.Duration(int64(opts.PollSeconds) * int64(time.Second)),
-						Wait:    opts.Wait,
-					},
-				)
+			log.Infof("checking submission status for %q", opts.ID)
 
-				token, err := notary.NewSignedToken(cfg.TokenConfig)
-				if err != nil {
-					return err
-				}
+			cfg := quill.NewNotarizeConfig(
+				opts.Notary.Issuer,
+				opts.Notary.PrivateKeyID,
+				opts.Notary.PrivateKey,
+			).WithStatusConfig(
+				notary.StatusConfig{
+					Timeout: time.Duration(int64(opts.TimeoutSeconds) * int64(time.Second)),
+					Poll:    time.Duration(int64(opts.PollSeconds) * int64(time.Second)),
+					Wait:    opts.Wait,
+				},
+			)
 
-				a := notary.NewAPIClient(token, cfg.HTTPTimeout)
+			token, err := notary.NewSignedToken(cfg.TokenConfig)
+			if err != nil {
+				return err
+			}
 
-				sub := notary.ExistingSubmission(a, opts.ID)
+			a := notary.NewAPIClient(token, cfg.HTTPTimeout)
 
-				var status notary.SubmissionStatus
-				if opts.Wait {
-					status, err = notary.PollStatus(cmd.Context(), sub, cfg.StatusConfig)
-				} else {
-					status, err = sub.Status(cmd.Context())
-				}
-				if err != nil {
-					return err
-				}
+			sub := notary.ExistingSubmission(a, opts.ID)
 
-				bus.Report(string(status))
+			var status notary.SubmissionStatus
+			if opts.Wait {
+				status, err = notary.PollStatus(cmd.Context(), sub, cfg.StatusConfig)
+			} else {
+				status, err = sub.Status(cmd.Context())
+			}
+			if err != nil {
+				return err
+			}
 
-				return nil
-			}))
+			bus.Report(string(status))
+
+			return nil
 		},
 	}, opts)
 }

@@ -42,26 +42,26 @@ func Describe(app clio.Application) *cobra.Command {
 			},
 		),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return app.Run(cmd.Context(), async(func() error {
-				var err error
-				buf := &strings.Builder{}
-				switch strings.ToLower(opts.Output) {
-				case "text":
-					err = extract.ShowText(opts.Path, buf, !opts.Detail)
-				case "json":
-					err = extract.ShowJSON(opts.Path, buf)
-				default:
-					err = fmt.Errorf("unknown format: %s", opts.Output)
-				}
+			defer bus.Exit()
 
-				if err != nil {
-					return err
-				}
+			var err error
+			buf := &strings.Builder{}
+			switch strings.ToLower(opts.Output) {
+			case "text":
+				err = extract.ShowText(opts.Path, buf, !opts.Detail)
+			case "json":
+				err = extract.ShowJSON(opts.Path, buf)
+			default:
+				err = fmt.Errorf("unknown format: %s", opts.Output)
+			}
 
-				bus.Report(buf.String())
+			if err != nil {
+				return err
+			}
 
-				return nil
-			}))
+			bus.Report(buf.String())
+
+			return nil
 		},
 	}, opts)
 }

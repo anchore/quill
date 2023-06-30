@@ -26,44 +26,44 @@ func SubmissionList(app clio.Application) *cobra.Command {
 		Short: "list previous submissions to Apple's Notary service",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return app.Run(cmd.Context(), async(func() error {
-				log.Info("fetching previous submissions")
+			defer bus.Exit()
 
-				cfg := quill.NewNotarizeConfig(
-					opts.Notary.Issuer,
-					opts.Notary.PrivateKeyID,
-					opts.Notary.PrivateKey,
-				)
+			log.Info("fetching previous submissions")
 
-				token, err := notary.NewSignedToken(cfg.TokenConfig)
-				if err != nil {
-					return err
-				}
+			cfg := quill.NewNotarizeConfig(
+				opts.Notary.Issuer,
+				opts.Notary.PrivateKeyID,
+				opts.Notary.PrivateKey,
+			)
 
-				a := notary.NewAPIClient(token, cfg.HTTPTimeout)
+			token, err := notary.NewSignedToken(cfg.TokenConfig)
+			if err != nil {
+				return err
+			}
 
-				sub := notary.ExistingSubmission(a, "")
+			a := notary.NewAPIClient(token, cfg.HTTPTimeout)
 
-				submissions, err := sub.List(context.Background())
-				if err != nil {
-					return err
-				}
+			sub := notary.ExistingSubmission(a, "")
 
-				// show list report
+			submissions, err := sub.List(context.Background())
+			if err != nil {
+				return err
+			}
 
-				t := table.NewWriter()
-				t.SetStyle(table.StyleLight)
+			// show list report
 
-				t.AppendHeader(table.Row{"ID", "Name", "Status", "Created"})
+			t := table.NewWriter()
+			t.SetStyle(table.StyleLight)
 
-				for _, item := range submissions {
-					t.AppendRow(table.Row{item.ID, item.Name, item.Status, item.CreatedDate})
-				}
+			t.AppendHeader(table.Row{"ID", "Name", "Status", "Created"})
 
-				bus.Report(t.Render())
+			for _, item := range submissions {
+				t.AppendRow(table.Row{item.ID, item.Name, item.Status, item.CreatedDate})
+			}
 
-				return nil
-			}))
+			bus.Report(t.Render())
+
+			return nil
 		},
 	}, opts)
 }

@@ -7,6 +7,7 @@ import (
 
 	"github.com/anchore/clio"
 	"github.com/anchore/quill/cmd/quill/cli/options"
+	"github.com/anchore/quill/internal/bus"
 	"github.com/anchore/quill/internal/log"
 	"github.com/anchore/quill/quill"
 )
@@ -37,9 +38,9 @@ func Sign(app clio.Application) *cobra.Command {
 			},
 		),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return app.Run(cmd.Context(), async(func() error {
-				return sign(opts.Path, opts.Signing)
-			}))
+			defer bus.Exit()
+
+			return sign(opts.Path, opts.Signing)
 		},
 	}, opts)
 }

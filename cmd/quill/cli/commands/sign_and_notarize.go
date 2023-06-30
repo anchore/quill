@@ -8,6 +8,7 @@ import (
 	"github.com/anchore/clio"
 	"github.com/anchore/fangs"
 	"github.com/anchore/quill/cmd/quill/cli/options"
+	"github.com/anchore/quill/internal/bus"
 	"github.com/anchore/quill/internal/log"
 )
 
@@ -47,24 +48,24 @@ func SignAndNotarize(app clio.Application) *cobra.Command {
 			},
 		),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return app.Run(cmd.Context(), async(func() error {
-				err := sign(opts.Path, opts.Signing)
-				if err != nil {
-					return fmt.Errorf("signing failed: %w", err)
-				}
+			defer bus.Exit()
 
-				if opts.DryRun {
-					log.Warn("[DRY RUN] skipping notarization...")
-					return nil
-				}
+			err := sign(opts.Path, opts.Signing)
+			if err != nil {
+				return fmt.Errorf("signing failed: %w", err)
+			}
 
-				_, err = notarize(opts.Path, opts.Notary, opts.Status)
-				if err != nil {
-					return fmt.Errorf("notarization failed: %w", err)
-				}
-
+			if opts.DryRun {
+				log.Warn("[DRY RUN] skipping notarization...")
 				return nil
-			}))
+			}
+
+			_, err = notarize(opts.Path, opts.Notary, opts.Status)
+			if err != nil {
+				return fmt.Errorf("notarization failed: %w", err)
+			}
+
+			return nil
 		},
 	}, opts)
 }

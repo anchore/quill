@@ -2,7 +2,7 @@ package options
 
 import (
 	"github.com/anchore/fangs"
-	"github.com/anchore/quill/internal/log"
+	"github.com/anchore/quill/internal/redact"
 )
 
 var _ interface {
@@ -15,7 +15,7 @@ type P12 struct {
 }
 
 func (o *P12) PostLoad() error {
-	log.Redact(o.Password)
+	redact.Add(o.Password)
 	return nil
 }
 

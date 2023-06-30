@@ -7,27 +7,25 @@ import (
 	"github.com/anchore/go-logger"
 	"github.com/anchore/go-logger/adapter/discard"
 	"github.com/anchore/go-logger/adapter/redact"
+	intRedact "github.com/anchore/quill/internal/redact"
 )
 
-var (
-	// log is the singleton used to facilitate logging internally within
-	log = discard.New()
-
-	store = redact.NewStore()
-
-	Redactor = store.(redact.Redactor)
-)
+var log = discard.New()
 
 func Set(l logger.Logger) {
-	log = redact.New(l, store)
+	// though quill the application will automatically have a redaction logger, library consumers may not be doing this.
+	// for this reason we additionally ensure there is a redaction logger configured for any logger passed. The
+	// source of truth for redaction values is still in the internal redact package. If the passed logger is already
+	// redacted, then this is a no-op.
+	store := intRedact.Get()
+	if store != nil {
+		l = redact.New(l, store)
+	}
+	log = l
 }
 
 func Get() logger.Logger {
 	return log
-}
-
-func Redact(values ...string) {
-	store.Add(values...)
 }
 
 // Errorf takes a formatted template string and template arguments for the error logging level.

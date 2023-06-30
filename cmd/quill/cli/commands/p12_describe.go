@@ -37,16 +37,16 @@ func P12Describe(app clio.Application) *cobra.Command {
 			},
 		),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return app.Run(cmd.Context(), async(func() error {
-				description, err := describeP12(opts.Path, opts.Password)
-				if err != nil {
-					return err
-				}
+			defer bus.Exit()
 
-				bus.Report(description)
+			description, err := describeP12(opts.Path, opts.Password)
+			if err != nil {
+				return err
+			}
 
-				return nil
-			}))
+			bus.Report(description)
+
+			return nil
 		},
 	}, opts)
 }

@@ -41,17 +41,17 @@ func ExtractCertificates(app clio.Application) *cobra.Command {
 			},
 		),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return app.Run(cmd.Context(), async(func() error {
-				certs, err := extractCertificates(opts.Path, opts.Leaf)
-				if err != nil {
-					return err
-				}
+			defer bus.Exit()
 
-				bus.Report(certs)
-				bus.Notify("Try running 'openssl x509 -text -in <path-to-file-with-output>.pem' to view the certificate details")
+			certs, err := extractCertificates(opts.Path, opts.Leaf)
+			if err != nil {
+				return err
+			}
 
-				return nil
-			}))
+			bus.Report(certs)
+			bus.Notify("Try running 'openssl x509 -text -in <path-to-file-with-output>.pem' to view the certificate details")
+
+			return nil
 		},
 	}, opts)
 }

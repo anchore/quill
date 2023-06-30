@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/anchore/quill/internal/log"
+	"github.com/anchore/quill/internal/redact"
 )
 
 func FormatPositionalArgsHelp(args map[string]string) string {
@@ -40,5 +40,5 @@ func redactNonFileOrEnvHint(value string) {
 		return
 	}
 	// path does not exist OR there was an access issue and we cannot verify... either way, redact
-	log.Redact(value)
+	redact.Add(value)
 }

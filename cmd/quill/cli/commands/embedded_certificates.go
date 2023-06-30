@@ -21,20 +21,20 @@ func EmbeddedCerts(app clio.Application) *cobra.Command {
 		Short: "show the certificates embedded into quill (typically the Apple root and intermediate certs)",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return app.Run(cmd.Context(), async(func() error {
-				var err error
-				buf := &strings.Builder{}
+			defer bus.Exit()
 
-				err = showAppleCerts(buf)
+			var err error
+			buf := &strings.Builder{}
 
-				if err != nil {
-					return err
-				}
+			err = showAppleCerts(buf)
 
-				bus.Report(buf.String())
+			if err != nil {
+				return err
+			}
 
-				return nil
-			}))
+			bus.Report(buf.String())
+
+			return nil
 		},
 	})
 }
