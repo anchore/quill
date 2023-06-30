@@ -41,6 +41,10 @@ func Exit() {
 }
 
 func Report(report string) {
+	if publisher == nil {
+		// prevent any further actions taken on the report (such as redaction) since it won't be published anyway
+		return
+	}
 	publish(partybus.Event{
 		Type:  event.CLIReportType,
 		Value: redact.Apply(report),
@@ -48,6 +52,10 @@ func Report(report string) {
 }
 
 func Notify(message string) {
+	if publisher == nil {
+		// prevent any further actions taken on the report (such as redaction) since it won't be published anyway
+		return
+	}
 	publish(partybus.Event{
 		Type:  event.CLINotificationType,
 		Value: redact.Apply(message),
@@ -55,6 +63,10 @@ func Notify(message string) {
 }
 
 func PromptForInput(message string, sensitive bool, validators ...func(string) error) *bubbly.Prompter {
+	if publisher == nil {
+		// prevent any further actions taken on the report (such as redaction) since it won't be published anyway
+		return nil
+	}
 	p := bubbly.NewPrompter(redact.Apply(message), sensitive, validators...)
 	publish(partybus.Event{
 		Type:  event.CLIInputPromptType,
