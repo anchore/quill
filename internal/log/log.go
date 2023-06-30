@@ -6,33 +6,16 @@ package log
 import (
 	"github.com/anchore/go-logger"
 	"github.com/anchore/go-logger/adapter/discard"
-	"github.com/anchore/go-logger/adapter/redact"
 )
 
-var (
-	// log is the singleton used to facilitate logging internally within
-	log = discard.New()
-
-	store = redact.NewStore()
-
-	Redactor redact.Redactor = store
-)
-
-func SetRedactStore(s redact.Store) {
-	store = s
-	Redactor = s
-}
+var log = discard.New()
 
 func Set(l logger.Logger) {
-	log = redact.New(l, store)
+	log = l
 }
 
 func Get() logger.Logger {
 	return log
-}
-
-func Redact(values ...string) {
-	store.Add(values...)
 }
 
 // Errorf takes a formatted template string and template arguments for the error logging level.

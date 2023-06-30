@@ -10,6 +10,7 @@ import (
 	"github.com/anchore/quill/cmd/quill/internal/ui"
 	"github.com/anchore/quill/internal/bus"
 	"github.com/anchore/quill/internal/log"
+	"github.com/anchore/quill/internal/redact"
 )
 
 func New(id clio.Identification) *cobra.Command {
@@ -30,12 +31,9 @@ func New(id clio.Identification) *cobra.Command {
 		WithInitializers(
 			func(state *clio.State) error {
 				bus.Set(state.Bus)
-				// must set the redact store before calling log.Set
-				log.SetRedactStore(state.RedactStore)
 				log.Set(state.Logger)
-				// note: we want to ensure that the clio application object has redaction capability
-				// so that the configuration (which has sensitive information) is redacted when printed to the screen
-				state.Logger = log.Get()
+				redact.Set(state.RedactStore)
+
 				return nil
 			},
 		).
