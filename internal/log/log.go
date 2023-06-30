@@ -15,8 +15,13 @@ var (
 
 	store = redact.NewStore()
 
-	Redactor = store.(redact.Redactor)
+	Redactor redact.Redactor = store
 )
+
+func SetRedactStore(s redact.Store) {
+	store = s
+	Redactor = s
+}
 
 func Set(l logger.Logger) {
 	log = redact.New(l, store)

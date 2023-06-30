@@ -6,8 +6,8 @@ require (
 	github.com/PuerkitoBio/goquery v1.8.1
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d
 	github.com/anchore/bubbly v0.0.0-20230518153401-87b6af8ccf22
-	github.com/anchore/clio v0.0.0-20230531204310-4a8bc623b049
-	github.com/anchore/fangs v0.0.0-20230531202914-48a718c6b4ba
+	github.com/anchore/clio v0.0.0-20230630145036-8c79eb7c59a2
+	github.com/anchore/fangs v0.0.0-20230628163043-a51c5a39b097
 	github.com/anchore/go-logger v0.0.0-20230531193951-db5ae83e7dbe
 	github.com/anchore/go-macholibre v0.0.0-20220308212642-53e6d0aaf6fb
 	github.com/aws/aws-sdk-go v1.44.114
