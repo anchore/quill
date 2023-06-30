@@ -2,12 +2,14 @@ package redact
 
 import "github.com/anchore/go-logger/adapter/redact"
 
-var (
-	store redact.Store
-)
+var store redact.Store
 
 func Set(s redact.Store) {
 	store = s
+}
+
+func Get() redact.Store {
+	return store
 }
 
 func Add(vs ...string) {

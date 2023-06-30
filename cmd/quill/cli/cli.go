@@ -31,8 +31,8 @@ func New(id clio.Identification) *cobra.Command {
 		WithInitializers(
 			func(state *clio.State) error {
 				bus.Set(state.Bus)
-				log.Set(state.Logger)
 				redact.Set(state.RedactStore)
+				log.Set(state.Logger)
 
 				return nil
 			},
