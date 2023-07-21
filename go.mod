@@ -19,7 +19,7 @@ require (
 	github.com/go-restruct/restruct v1.2.0-alpha
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/google/go-cmp v0.5.9
-	github.com/gookit/color v1.5.3
+	github.com/gookit/color v1.5.4
 	github.com/jedib0t/go-pretty v4.3.0+incompatible
 	github.com/klauspost/compress v1.16.7
 	github.com/scylladb/go-set v1.0.2
