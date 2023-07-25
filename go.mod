@@ -11,7 +11,7 @@ require (
 	github.com/anchore/go-logger v0.0.0-20230531193951-db5ae83e7dbe
 	github.com/anchore/go-macholibre v0.0.0-20220308212642-53e6d0aaf6fb
 	github.com/aws/aws-sdk-go v1.44.306
-	github.com/blacktop/go-macho v1.1.161
+	github.com/blacktop/go-macho v1.1.162
 	github.com/charmbracelet/bubbletea v0.22.1
 	github.com/charmbracelet/lipgloss v0.7.1
 	github.com/gabriel-vasile/mimetype v1.4.2
