@@ -3,8 +3,6 @@ package cli
 import (
 	"os"
 
-	"github.com/spf13/cobra"
-
 	"github.com/anchore/clio"
 	"github.com/anchore/quill/cmd/quill/cli/commands"
 	"github.com/anchore/quill/cmd/quill/internal/ui"
@@ -13,7 +11,7 @@ import (
 	"github.com/anchore/quill/internal/redact"
 )
 
-func New(id clio.Identification) *cobra.Command {
+func New(id clio.Identification) clio.Application {
 	clioCfg := clio.NewSetupConfig(id).
 		WithGlobalConfigFlag().   // add persistent -c <path> for reading an application config from
 		WithGlobalLoggingFlags(). // add persistent -v and -q flags tied to the logging config
@@ -71,5 +69,5 @@ func New(id clio.Identification) *cobra.Command {
 	root.AddCommand(extract)
 	root.AddCommand(p12)
 
-	return root
+	return app
 }
