@@ -29,7 +29,7 @@ func newHTTPClient(token string, httpTimeout time.Duration) *httpClient {
 }
 
 func (s httpClient) get(ctx context.Context, endpoint string, body io.Reader) (*http.Response, error) {
-	request, err := http.NewRequest("get", endpoint, body)
+	request, err := http.NewRequest(http.MethodGet, endpoint, body)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +38,7 @@ func (s httpClient) get(ctx context.Context, endpoint string, body io.Reader) (*
 }
 
 func (s httpClient) post(ctx context.Context, endpoint string, body io.Reader) (*http.Response, error) {
-	request, err := http.NewRequest("post", endpoint, body)
+	request, err := http.NewRequest(http.MethodPost, endpoint, body)
 	if err != nil {
 		return nil, err
 	}
