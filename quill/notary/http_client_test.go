@@ -13,7 +13,7 @@ import (
 
 func Test_httpClient_get(t *testing.T) {
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, "get", r.Method)
+		assert.Equal(t, "GET", r.Method)
 		return
 	}))
 	defer s.Close()
@@ -27,7 +27,7 @@ func Test_httpClient_get(t *testing.T) {
 
 func Test_httpClient_post(t *testing.T) {
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, "post", r.Method)
+		assert.Equal(t, "POST", r.Method)
 		return
 	}))
 	defer s.Close()
