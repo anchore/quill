@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -86,11 +87,26 @@ func (m *UI) Teardown(force bool) error {
 	if !force {
 		m.handler.State().Running.Wait()
 		m.program.Quit()
+		// typically in all cases we would want to wait for the UI to finish. However there are still error cases
+		// that are not accounted for, resulting in hangs. For now, we'll just wait for the UI to finish in the
+		// happy path only. There will always be an indication of the problem to the user via reporting the error
+		// string from the worker (outside of the UI after teardown).
+		m.running.Wait()
 	} else {
-		m.program.Kill()
-	}
+		_ = runWithTimeout(250*time.Millisecond, func() error {
+			m.handler.State().Running.Wait()
+			return nil
+		})
 
-	m.running.Wait()
+		// it may be tempting to use Kill() however it has been found that this can cause the terminal to be left in
+		// a bad state (where Ctrl+C and other control characters no longer works for future processes in that terminal).
+		m.program.Quit()
+
+		_ = runWithTimeout(250*time.Millisecond, func() error {
+			m.running.Wait()
+			return nil
+		})
+	}
 
 	// TODO: allow for writing out the full log output to the screen (only a partial log is shown currently)
 	// this needs coordination to know what the last frame event is to change the state accordingly (which isn't possible now)
@@ -199,4 +215,18 @@ func postUIEvents(quiet bool, events ...partybus.Event) {
 			}
 		}
 	}
+}
+
+func runWithTimeout(timeout time.Duration, fn func() error) (err error) {
+	c := make(chan struct{}, 1)
+	go func() {
+		err = fn()
+		c <- struct{}{}
+	}()
+	select {
+	case <-c:
+	case <-time.After(timeout):
+		return fmt.Errorf("timed out after %v", timeout)
+	}
+	return err
 }
