@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"crypto/rand"
 	"crypto/x509"
 	"fmt"
 	"os"
@@ -104,7 +103,7 @@ func writeP12WithChain(p12Path, password, keychainPath string, failWithoutFullCh
 	}
 	certs = append(certs, remainingCerts...)
 
-	p12Bytes, err := pkcs12.Encode(rand.Reader, p12Contents.PrivateKey, p12Contents.Certificate, certs, password)
+	p12Bytes, err := pkcs12.Modern2023.Encode(p12Contents.PrivateKey, p12Contents.Certificate, certs, password)
 	if err != nil {
 		return "", fmt.Errorf("unable to encode p12 file: %w", err)
 	}
