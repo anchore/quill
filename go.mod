@@ -21,7 +21,7 @@ require (
 	github.com/google/go-cmp v0.6.0
 	github.com/gookit/color v1.5.4
 	github.com/jedib0t/go-pretty v4.3.0+incompatible
-	github.com/klauspost/compress v1.17.2
+	github.com/klauspost/compress v1.17.3
 	github.com/scylladb/go-set v1.0.2
 	github.com/spf13/cobra v1.8.0
 	github.com/stretchr/testify v1.8.4
