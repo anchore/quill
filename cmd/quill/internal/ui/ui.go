@@ -59,7 +59,7 @@ func (m *UI) Setup(subscription partybus.Unsubscribable) error {
 
 	go func() {
 		defer m.running.Done()
-		if err := m.program.Start(); err != nil {
+		if _, err := m.program.Run(); err != nil {
 			log.Errorf("unable to start UI: %+v", err)
 			m.exit()
 		}
