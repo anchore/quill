@@ -17,9 +17,33 @@ jobs:
         uses: dependabot/fetch-metadata@c9c4182bf1b97f5224aee3906fd373f6b61b4526 # v1.6.0
         with:
           github-token: "${{ secrets.GITHUB_TOKEN }}"
+      - name: Check whether anyone besides dependabot has pushed
+        id: pr_author
+        run: |
+          EXTRA_AUTHORS=$(gh pr view "$PR_URL" --json commits --jq '.commits[] | .authors[] | .login' | sort | uniq | grep -v dependabot)
+          echo "Additional PR Authors: $EXTRA_AUTHORS"
+          echo "::set-output name=extra_pr_authors::$EXTRA_AUTHORS"
+          if [ -n "$EXTRA_AUTHORS" ]; then
+            echo "::set-output name=human_pushed::true"
+          else
+            echo "::set-output name=human_pushed::false"
+          fi
+        env:
+          PR_URL: ${{github.event.pull_request.html_url}}
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
       - name: Enable auto-merge for Dependabot PRs
-        if: steps.metadata.outputs.update-type == 'version-update:semver-patch' || steps.metadata.outputs.update-type == 'version-update:semver-minor'
+        if: >
+          ${{
+              !steps.pr_author.human_pushed &&
+              ( steps.metadata.outputs.update-type == 'version-update:semver-patch' || steps.metadata.outputs.update-type == 'version-update:semver-minor' )
+          }}
         run: gh pr merge --auto --squash "$PR_URL" && gh pr review --approve "$PR_URL"
+        env:
+          PR_URL: ${{github.event.pull_request.html_url}}
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+      - name: Disable auto-merge if human modified PR
+        if: steps.pr_author.human_pushed
+        run: gh pr merge --disable-auto "$PR_URL"
         env:
           PR_URL: ${{github.event.pull_request.html_url}}
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
