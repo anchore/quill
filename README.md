@@ -163,3 +163,4 @@ upwards of 20 minutes.
 Unlike docker, which inherently needs to run on a linux host (docker on a mac is a VM), there is nothing inherently
 mac-specific about signing a binary. This tool enables already cross-platform toolchains to run the signing step on
 any platform.
+
