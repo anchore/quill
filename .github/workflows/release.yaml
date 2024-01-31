@@ -96,7 +96,7 @@ jobs:
           QUILL_NOTARY_KEY: ${{ secrets.APPLE_NOTARY_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: anchore/sbom-action@c6aed38a4323b393d05372c58a74c39ae8386d02 #v0.15.6
+      - uses: anchore/sbom-action@767b08fd8822486ad890abb8f1d31721bebd651c #v0.15.7
         with:
           artifact-name: sbom.spdx.json
 
