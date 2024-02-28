@@ -5,7 +5,7 @@ type SuperBlobDetails struct {
 	Size            uint32                 `json:"size"`
 	CodeDirectories []CodeDirectoryDetails `json:"codeDirectories"`
 	Requirements    []RequirementDetails   `json:"requirements"`
-	Entitlements    []EntitlementDetails   `json:"entitlements"`
+	Entitlements    *EntitlementDetails    `json:"entitlements"`
 	Signatures      []SignatureDetails     `json:"signatures"`
 }
 
