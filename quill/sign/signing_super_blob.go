@@ -1,7 +1,6 @@
 package sign
 
 import (
-	"bytes"
 	"crypto/sha256"
 	"fmt"
 
@@ -10,6 +9,12 @@ import (
 	"github.com/anchore/quill/quill/macho"
 	"github.com/anchore/quill/quill/pki"
 )
+
+type SpecialSlot struct {
+	Type      macho.SlotType
+	Blob      *macho.Blob
+	HashBytes []byte
+}
 
 func GenerateSigningSuperBlob(id string, m *macho.File, signingMaterial pki.SigningMaterial, paddingTarget int) (int, []byte, error) {
 	var cdFlags macho.CdFlag
@@ -22,15 +27,19 @@ func GenerateSigningSuperBlob(id string, m *macho.File, signingMaterial pki.Sign
 		cdFlags = macho.Adhoc
 	}
 
-	requirementsBlob, requirementsHashBytes, err := generateRequirements(id, sha256.New(), signingMaterial)
+	specialSlots := []SpecialSlot{}
+
+	requirements, err := generateRequirements(id, sha256.New(), signingMaterial)
 	if err != nil {
 		return 0, nil, fmt.Errorf("unable to create requirements: %w", err)
 	}
+	if requirements != nil {
+		specialSlots = append(specialSlots, *requirements)
+	}
 
 	// TODO: add entitlements, for the meantime, don't include it
-	entitlementsHashBytes := bytes.Repeat([]byte{0}, sha256.New().Size())
 
-	cdBlob, err := generateCodeDirectory(id, sha256.New(), m, cdFlags, requirementsHashBytes, entitlementsHashBytes)
+	cdBlob, err := generateCodeDirectory(id, sha256.New(), m, cdFlags, specialSlots)
 	if err != nil {
 		return 0, nil, fmt.Errorf("unable to create code directory: %w", err)
 	}
@@ -41,9 +50,11 @@ func GenerateSigningSuperBlob(id string, m *macho.File, signingMaterial pki.Sign
 	}
 
 	sb := macho.NewSuperBlob(macho.MagicEmbeddedSignature)
-
 	sb.Add(macho.CsSlotCodedirectory, cdBlob)
-	sb.Add(macho.CsSlotRequirements, requirementsBlob)
+	for _, slot := range specialSlots {
+		sb.Add(slot.Type, slot.Blob)
+	}
+
 	sb.Add(macho.CsSlotCmsSignature, cmsBlob)
 
 	sb.Finalize(paddingTarget)
