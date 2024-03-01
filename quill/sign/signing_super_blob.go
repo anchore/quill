@@ -16,7 +16,7 @@ type SpecialSlot struct {
 	HashBytes []byte
 }
 
-func GenerateSigningSuperBlob(id string, m *macho.File, signingMaterial pki.SigningMaterial, paddingTarget int) (int, []byte, error) {
+func GenerateSigningSuperBlob(id string, m *macho.File, signingMaterial pki.SigningMaterial, entitlementsData string, paddingTarget int) (int, []byte, error) {
 	var cdFlags macho.CdFlag
 	if signingMaterial.Signer != nil {
 		// TODO: add options to enable more strict rules (such as macho.Hard)
@@ -29,6 +29,14 @@ func GenerateSigningSuperBlob(id string, m *macho.File, signingMaterial pki.Sign
 
 	specialSlots := []SpecialSlot{}
 
+	entitlements, err := generateEntitlements(sha256.New(), entitlementsData)
+	if err != nil {
+		return 0, nil, fmt.Errorf("unable to create entitlements: %w", err)
+	}
+	if entitlements != nil {
+		specialSlots = append(specialSlots, *entitlements)
+	}
+
 	requirements, err := generateRequirements(id, sha256.New(), signingMaterial)
 	if err != nil {
 		return 0, nil, fmt.Errorf("unable to create requirements: %w", err)
@@ -36,8 +44,6 @@ func GenerateSigningSuperBlob(id string, m *macho.File, signingMaterial pki.Sign
 	if requirements != nil {
 		specialSlots = append(specialSlots, *requirements)
 	}
-
-	// TODO: add entitlements, for the meantime, don't include it
 
 	cdBlob, err := generateCodeDirectory(id, sha256.New(), m, cdFlags, specialSlots)
 	if err != nil {
