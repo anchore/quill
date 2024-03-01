@@ -3,7 +3,7 @@ module github.com/anchore/quill
 go 1.18
 
 require (
-	github.com/PuerkitoBio/goquery v1.9.0
+	github.com/PuerkitoBio/goquery v1.9.1
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d
 	github.com/anchore/bubbly v0.0.0-20230518153401-87b6af8ccf22
 	github.com/anchore/clio v0.0.0-20230802135737-4778c80552e5
