@@ -24,7 +24,7 @@ require (
 	github.com/klauspost/compress v1.17.7
 	github.com/scylladb/go-set v1.0.2
 	github.com/spf13/cobra v1.8.0
-	github.com/stretchr/testify v1.8.4
+	github.com/stretchr/testify v1.9.0
 	github.com/wagoodman/go-partybus v0.0.0-20230516145632-8ccac152c651
 	github.com/wagoodman/go-progress v0.0.0-20220614130704-4b1c25a33c7c
 	software.sslmate.com/src/go-pkcs12 v0.4.0
