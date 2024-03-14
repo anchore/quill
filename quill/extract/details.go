@@ -35,9 +35,10 @@ func (d Details) String(hideVerboseData bool) (r string) {
 		for idx, req := range d.SuperBlob.Requirements {
 			r += fmt.Sprintf("\nRequirements (block %d):\n", idx+1) + doIndent(req.String(), "  ")
 		}
+		if d.SuperBlob.Entitlements != nil {
+			r += "\nEntitlements:\n" + doIndent(d.SuperBlob.Entitlements.String(), "  ")
+		}
 	}
-
-	// TODO: add entitlements
 
 	return r
 }

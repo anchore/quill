@@ -72,6 +72,7 @@ func sign(binPath string, opts options.Signing) error {
 
 	cfg.WithIdentity(opts.Identity)
 	cfg.WithTimestampServer(opts.TimestampServer)
+	cfg.WithEntitlements(opts.Entitlements)
 
 	return quill.Sign(cfg)
 }

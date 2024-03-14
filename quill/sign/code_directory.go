@@ -11,11 +11,12 @@ import (
 
 	"github.com/go-restruct/restruct"
 
+	"github.com/anchore/quill/internal/log"
 	"github.com/anchore/quill/quill/macho"
 )
 
-func generateCodeDirectory(id string, hasher hash.Hash, m *macho.File, flags macho.CdFlag, requirementsHashBytes, entitlementsHashBytes []byte) (*macho.Blob, error) {
-	cd, err := newCodeDirectoryFromMacho(id, hasher, m, flags, requirementsHashBytes, entitlementsHashBytes)
+func generateCodeDirectory(id string, hasher hash.Hash, m *macho.File, flags macho.CdFlag, specialSlots []SpecialSlot) (*macho.Blob, error) {
+	cd, err := newCodeDirectoryFromMacho(id, hasher, m, flags, specialSlots)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +39,7 @@ func packCodeDirectory(cd *macho.CodeDirectory, order binary.ByteOrder) (*macho.
 	return &blob, nil
 }
 
-func newCodeDirectoryFromMacho(id string, hasher hash.Hash, m *macho.File, flags macho.CdFlag, requirementsHashBytes, entitlementsHashBytes []byte) (*macho.CodeDirectory, error) {
+func newCodeDirectoryFromMacho(id string, hasher hash.Hash, m *macho.File, flags macho.CdFlag, specialSlots []SpecialSlot) (*macho.CodeDirectory, error) {
 	textSeg := m.Segment("__TEXT")
 
 	var codeSize uint32
@@ -58,14 +59,83 @@ func newCodeDirectoryFromMacho(id string, hasher hash.Hash, m *macho.File, flags
 		return nil, err
 	}
 
-	return newCodeDirectory(id, hasher, textSeg.Offset, textSeg.Filesz, codeSize, hashes, flags, requirementsHashBytes, entitlementsHashBytes)
+	return newCodeDirectory(id, hasher, textSeg.Offset, textSeg.Filesz, codeSize, hashes, flags, specialSlots)
 }
 
-func newCodeDirectory(id string, hasher hash.Hash, execOffset, execSize uint64, codeSize uint32, hashes [][]byte, flags macho.CdFlag, requirementsHashBytes, entitlementsHashBytes []byte) (*macho.CodeDirectory, error) {
+// SpecialSlotHashWriter writes the special slots in the right order and with the right content.
+// Special slots have a type defined in quill/macho/blob_index.go, their hashes must be written from higher
+// type to lower type.
+// All slot types between CsSlotInfoslot (1) and the higher valued type must be written to the file.
+// The hashes for the missing slots must be filled with 0s.
+//
+// newCodeDirectory() also needs to know how many slots are present (including
+// the 0-filled ones), and the total number of bytes which were written (to
+// maintain an offset). It can use maxSlotType and totalBytesWritten for this.
+type SpecialSlotHashWriter struct {
+	totalBytesWritten int // total number of bytes written by the Write method
+	// slot type with the higher int value. This corresponds to the number of slots which will be written
+	maxSlotType int
+	// used to detect inconsistencies in the provided hashes - they must all have the same size
+	hashSize int
+	// SpecialSlot map keyed by their type to easily detect which slot types are missing
+	slots map[int]SpecialSlot
+}
+
+// newSpecialSlotHashWriter creates a new SpecialSlotHashWriter for the slots defined in specialSlots.
+func newSpecialSlotHashWriter(specialSlots []SpecialSlot) (*SpecialSlotHashWriter, error) {
+	w := SpecialSlotHashWriter{}
+	w.slots = map[int]SpecialSlot{}
+
+	for _, slot := range specialSlots {
+		switch w.hashSize {
+		case 0:
+			w.hashSize = len(slot.HashBytes)
+		case len(slot.HashBytes):
+			// w.hashSize was set previously and has the right value, nothing to do
+		default:
+			return nil, fmt.Errorf("inconsistent hash size: %d != %d", w.hashSize, len(slot.HashBytes))
+		}
+
+		slotType := int(slot.Type)
+		if slotType > w.maxSlotType {
+			w.maxSlotType = slotType
+		}
+		w.slots[slotType] = slot
+	}
+
+	log.Debugf("SpecialSlotHashWriter: %d special slots", w.maxSlotType)
+
+	return &w, nil
+}
+
+// Write will write all the special slots hashes to w.buffer.
+func (w *SpecialSlotHashWriter) Write(buffer *bytes.Buffer) error {
+	nullHashBytes := bytes.Repeat([]byte{0}, w.hashSize)
+	w.totalBytesWritten = 0
+
+	for i := w.maxSlotType; i > 0; i-- {
+		log.Debugf("SpecialSlotHashWriter: writing slot %d", i)
+		hashBytes := nullHashBytes
+		slot, hasSlot := w.slots[i]
+		if hasSlot {
+			hashBytes = slot.HashBytes
+		} else {
+			log.Debugf("SpecialSlotHashWriter: slot %d is empty", i)
+		}
+		written, err := buffer.Write(hashBytes)
+		if err != nil {
+			return fmt.Errorf("unable to write plist hash to code directory: %w", err)
+		}
+		w.totalBytesWritten += written
+	}
+
+	return nil
+}
+
+func newCodeDirectory(id string, hasher hash.Hash, execOffset, execSize uint64, codeSize uint32, hashes [][]byte, flags macho.CdFlag, specialSlots []SpecialSlot) (*macho.CodeDirectory, error) {
 	cdSize := unsafe.Sizeof(macho.BlobHeader{}) + unsafe.Sizeof(macho.CodeDirectoryHeader{})
 	idOff := int32(cdSize)
 	// note: the hash offset starts at the first non-special hash (page hashes). Special hashes (e.g. requirements hash) are written before the page hashes.
-	hashOff := idOff + int32(len(id)+1) + int32(len(requirementsHashBytes)) + int32(len(entitlementsHashBytes))
 
 	var ht macho.HashType
 	switch hasher.Size() {
@@ -80,17 +150,25 @@ func newCodeDirectory(id string, hasher hash.Hash, execOffset, execSize uint64, 
 	buff := bytes.Buffer{}
 
 	// write the identifier
-	if _, err := buff.Write([]byte(id + "\000")); err != nil {
+	hashOff := int(idOff)
+	var (
+		written int
+		err     error
+	)
+	if written, err = buff.Write([]byte(id + "\000")); err != nil {
 		return nil, fmt.Errorf("unable to write ID to code directory: %w", err)
 	}
+	hashOff += written
 
 	// write hashes
-	if _, err := buff.Write(requirementsHashBytes); err != nil {
-		return nil, fmt.Errorf("unable to write requirements hash to code directory: %w", err)
+	specialSlotHashWriter, err := newSpecialSlotHashWriter(specialSlots)
+	if err != nil {
+		return nil, err
 	}
-	if _, err := buff.Write(entitlementsHashBytes); err != nil {
-		return nil, fmt.Errorf("unable to write plist hash to code directory: %w", err)
+	if err := specialSlotHashWriter.Write(&buff); err != nil {
+		return nil, err
 	}
+	hashOff += specialSlotHashWriter.totalBytesWritten
 
 	for idx, hBytes := range hashes {
 		_, err := buff.Write(hBytes)
@@ -105,7 +183,7 @@ func newCodeDirectory(id string, hasher hash.Hash, execOffset, execSize uint64, 
 			Flags:            flags,
 			HashOffset:       uint32(hashOff),
 			IdentOffset:      uint32(idOff),
-			NSpecialSlots:    uint32(2), // requirements + plist
+			NSpecialSlots:    uint32(specialSlotHashWriter.maxSlotType),
 			NCodeSlots:       uint32(len(hashes)),
 			CodeLimit:        codeSize,
 			HashSize:         uint8(hasher.Size()),
