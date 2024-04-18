@@ -37,7 +37,7 @@ func Sign(app clio.Application) *cobra.Command {
 				return nil
 			},
 		),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			defer bus.Exit()
 
 			return sign(opts.Path, opts.Signing)
