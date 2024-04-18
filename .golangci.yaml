@@ -21,7 +21,6 @@ linters:
   enable:
     - asciicheck
     - bodyclose
-    - depguard
     - dogsled
     - dupl
     - errcheck
@@ -70,3 +69,4 @@ linters:
 #    - deadcode     # deprecated (since v1.49.0) due to: The owner seems to have abandoned the linter.  Replaced by unused.
 #    - structcheck  # deprecated (since v1.49.0) due to: The owner seems to have abandoned the linter.  Replaced by unused.
 #    - rowserrcheck # we're not using sql.Rows at all in the codebase
+#    - depguard     # this requires additional configuration https://github.com/golangci/golangci-lint/issues/3877#issuecomment-1573760321
