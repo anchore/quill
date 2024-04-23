@@ -14,7 +14,7 @@ GLOW_CMD = $(TEMP_DIR)/glow
 
 # Tool versions #################################
 QUILL_VERSION = latest
-GOLANG_CI_VERSION = v1.52.2
+GOLANG_CI_VERSION = v1.57.2
 GOBOUNCER_VERSION = v0.4.0
 GORELEASER_VERSION = v1.17.0
 GOSIMPORTS_VERSION = v0.3.8

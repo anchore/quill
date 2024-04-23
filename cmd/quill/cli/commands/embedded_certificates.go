@@ -20,7 +20,7 @@ func EmbeddedCerts(app clio.Application) *cobra.Command {
 		Use:   "embedded-certificates",
 		Short: "show the certificates embedded into quill (typically the Apple root and intermediate certs)",
 		Args:  cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			defer bus.Exit()
 
 			var err error

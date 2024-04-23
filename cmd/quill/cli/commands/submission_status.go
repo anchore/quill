@@ -41,7 +41,7 @@ func SubmissionStatus(app clio.Application) *cobra.Command {
 				return nil
 			},
 		),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, _ []string) error {
 			defer bus.Exit()
 
 			log.Infof("checking submission status for %q", opts.ID)

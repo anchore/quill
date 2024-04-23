@@ -191,7 +191,7 @@ func extractCertLinks(selection *goquery.Selection, u string) []Link {
 	baseURL := parsedURL.Scheme + "://" + parsedURL.Host
 
 	// Find all <tr> elements in the selection
-	selection.Find("li").Each(func(i int, row *goquery.Selection) {
+	selection.Find("li").Each(func(_ int, row *goquery.Selection) {
 		// Find the <a> element in the first <td> in the row
 		link := row.Find("a")
 

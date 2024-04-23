@@ -61,7 +61,7 @@ const (
 	anchorCertIndex        = ^uint32(0) // index for anchor (last in chain), equiv to -1
 )
 
-func generateRequirements(id string, h hash.Hash, signingMaterial pki.SigningMaterial) (*macho.Blob, []byte, error) {
+func generateRequirements(id string, h hash.Hash, signingMaterial pki.SigningMaterial) (*SpecialSlot, error) {
 	var reqBytes []byte
 	if signingMaterial.Signer == nil {
 		log.Trace("skipping adding designated requirement because no signer was found")
@@ -69,12 +69,12 @@ func generateRequirements(id string, h hash.Hash, signingMaterial pki.SigningMat
 	} else {
 		req, err := newRequirements(id, signingMaterial)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 
 		reqBytes, err = restruct.Pack(macho.SigningOrder, req)
 		if err != nil {
-			return nil, nil, fmt.Errorf("unable to encode requirement: %w", err)
+			return nil, fmt.Errorf("unable to encode requirement: %w", err)
 		}
 	}
 
@@ -82,16 +82,16 @@ func generateRequirements(id string, h hash.Hash, signingMaterial pki.SigningMat
 
 	blobBytes, err := restruct.Pack(macho.SigningOrder, &blob)
 	if err != nil {
-		return nil, nil, fmt.Errorf("unable to encode requirements blob: %w", err)
+		return nil, fmt.Errorf("unable to encode requirements blob: %w", err)
 	}
 
 	// the requirements hash is against the entire blob, not just the payload
 	_, err = h.Write(blobBytes)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	return &blob, h.Sum(nil), nil
+	return &SpecialSlot{macho.CsSlotRequirements, &blob, h.Sum(nil)}, nil
 }
 
 func newRequirements(id string, signingMaterial pki.SigningMaterial) (*macho.Requirements, error) {

@@ -87,7 +87,16 @@ func Test_newCodeDirectoryFromMacho(t *testing.T) {
 			pListBytes, err := hex.DecodeString(tt.pListHash)
 			require.NoError(t, err)
 
-			actualCD, err := newCodeDirectoryFromMacho(tt.id, tt.hasher, m, tt.flags, reqBytes, pListBytes)
+			reqSlot := SpecialSlot{
+				Type:      macho.CsSlotRequirements,
+				HashBytes: reqBytes,
+			}
+			plistSlot := SpecialSlot{
+				Type:      macho.CsSlotInfoslot,
+				HashBytes: pListBytes,
+			}
+
+			actualCD, err := newCodeDirectoryFromMacho(tt.id, tt.hasher, m, tt.flags, []SpecialSlot{reqSlot, plistSlot})
 			require.NoError(t, err)
 
 			// make certain the headers match
@@ -184,7 +193,16 @@ func Test_generateCodeDirectory(t *testing.T) {
 			pListBytes, err := hex.DecodeString(tt.pListHash)
 			require.NoError(t, err)
 
-			cdBlob, err := generateCodeDirectory(tt.id, tt.hasher, m, tt.flags, reqBytes, pListBytes)
+			reqSlot := SpecialSlot{
+				Type:      macho.CsSlotRequirements,
+				HashBytes: reqBytes,
+			}
+			plistSlot := SpecialSlot{
+				Type:      macho.CsSlotInfoslot,
+				HashBytes: pListBytes,
+			}
+
+			cdBlob, err := generateCodeDirectory(tt.id, tt.hasher, m, tt.flags, []SpecialSlot{reqSlot, plistSlot})
 			require.NoError(t, err)
 
 			cdBytes, err := cdBlob.Pack()

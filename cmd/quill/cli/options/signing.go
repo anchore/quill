@@ -20,7 +20,8 @@ type Signing struct {
 	FailWithoutFullChain bool   `yaml:"fail-without-full-chain" json:"fail-without-full-chain" mapstructure:"fail-without-full-chain"`
 
 	// unbound options
-	Password string `yaml:"password" json:"password" mapstructure:"password"`
+	Password     string `yaml:"password" json:"password" mapstructure:"password"`
+	Entitlements string `yaml:"entitlements" json:"entitlements" mapstructure:"entitlements"`
 }
 
 func DefaultSigning() Signing {
@@ -59,6 +60,12 @@ func (o *Signing) AddFlags(flags fangs.FlagSet) {
 		&o.AdHoc,
 		"ad-hoc", "",
 		"perform ad-hoc signing. No cryptographic signature is included and --p12 key and certificate input are not needed. Do NOT use this option for production builds.",
+	)
+
+	flags.StringVarP(
+		&o.Entitlements,
+		"entitlements", "",
+		"path to an XML file containing the entitlements for the binary being signed",
 	)
 }
 
