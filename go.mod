@@ -10,8 +10,8 @@ require (
 	github.com/anchore/fangs v0.0.0-20230628163043-a51c5a39b097
 	github.com/anchore/go-logger v0.0.0-20230725134548-c21dafa1ec5a
 	github.com/anchore/go-macholibre v0.0.0-20220308212642-53e6d0aaf6fb
-	github.com/aws/aws-sdk-go v1.51.21
-	github.com/blacktop/go-macho v1.1.199
+	github.com/aws/aws-sdk-go v1.51.26
+	github.com/blacktop/go-macho v1.1.203
 	github.com/charmbracelet/bubbletea v0.25.0
 	github.com/charmbracelet/lipgloss v0.10.0
 	github.com/gabriel-vasile/mimetype v1.4.3
@@ -22,7 +22,7 @@ require (
 	github.com/gookit/color v1.5.4
 	github.com/jedib0t/go-pretty v4.3.0+incompatible
 	github.com/klauspost/compress v1.17.8
-	github.com/scylladb/go-set v1.0.2
+	github.com/scylladb/go-set v1.0.3-0.20200225121959-cc7b2070d91e
 	github.com/spf13/cobra v1.8.0
 	github.com/stretchr/testify v1.9.0
 	github.com/wagoodman/go-partybus v0.0.0-20230516145632-8ccac152c651
