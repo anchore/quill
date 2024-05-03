@@ -12,7 +12,7 @@ require (
 	github.com/anchore/go-macholibre v0.0.0-20220308212642-53e6d0aaf6fb
 	github.com/aws/aws-sdk-go v1.52.1
 	github.com/blacktop/go-macho v1.1.210
-	github.com/charmbracelet/bubbletea v0.26.0
+	github.com/charmbracelet/bubbletea v0.26.1
 	github.com/charmbracelet/lipgloss v0.10.0
 	github.com/gabriel-vasile/mimetype v1.4.3
 	github.com/github/smimesign v0.2.0
