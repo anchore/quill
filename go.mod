@@ -13,7 +13,7 @@ require (
 	github.com/aws/aws-sdk-go v1.53.10
 	github.com/blacktop/go-macho v1.1.210
 	github.com/charmbracelet/bubbletea v0.26.2
-	github.com/charmbracelet/lipgloss v0.10.0
+	github.com/charmbracelet/lipgloss v0.11.0
 	github.com/gabriel-vasile/mimetype v1.4.4
 	github.com/github/smimesign v0.2.0
 	github.com/go-restruct/restruct v1.2.0-alpha
@@ -39,6 +39,7 @@ require (
 	github.com/blacktop/go-dwarf v1.0.10 // indirect
 	github.com/charmbracelet/bubbles v0.11.0 // indirect
 	github.com/charmbracelet/harmonica v0.2.0 // indirect
+	github.com/charmbracelet/x/ansi v0.1.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/erikgeiser/coninput v0.0.0-20211004153227-1c3628e74d0f // indirect
 	github.com/erikgeiser/promptkit v0.7.0 // indirect
@@ -57,7 +58,7 @@ require (
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
-	github.com/mattn/go-isatty v0.0.18 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-localereader v0.0.1 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
