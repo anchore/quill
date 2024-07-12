@@ -13,7 +13,7 @@ require (
 	github.com/aws/aws-sdk-go v1.54.18
 	github.com/blacktop/go-macho v1.1.225
 	github.com/charmbracelet/bubbletea v0.26.6
-	github.com/charmbracelet/lipgloss v0.11.1
+	github.com/charmbracelet/lipgloss v0.12.0
 	github.com/gabriel-vasile/mimetype v1.4.4
 	github.com/github/smimesign v0.2.0
 	github.com/go-restruct/restruct v1.2.0-alpha
