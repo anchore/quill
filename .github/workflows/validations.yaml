@@ -63,7 +63,7 @@ jobs:
       # why not use actions/upload-artifact? It is very slow (3 minutes to upload ~600MB of data, vs 10 seconds with this approach).
       # see https://github.com/actions/upload-artifact/issues/199 for more info
       - name: Upload snapshot artifacts
-        uses: actions/cache/save@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 #v4.0.2
+        uses: actions/cache/save@3624ceb22c1c5a301c8db4169662070a689d9ea8 #v4.1.1
         with:
           path: snapshot
           key: snapshot-build-${{ github.run_id }}
@@ -77,14 +77,14 @@ jobs:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 #v4.1.7
 
       - name: Download snapshot build
-        uses: actions/cache/restore@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 #v4.0.2
+        uses: actions/cache/restore@3624ceb22c1c5a301c8db4169662070a689d9ea8 #v4.1.1
         with:
           path: snapshot
           key: snapshot-build-${{ github.run_id }}
 
       - name: Restore install.sh test image cache
         id: install-test-image-cache
-        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 #v4.0.2
+        uses: actions/cache@3624ceb22c1c5a301c8db4169662070a689d9ea8 #v4.1.1
         with:
           path: ${{ github.workspace }}/test/install/cache
           key: ${{ runner.os }}-install-test-image-cache-${{ hashFiles('test/install/cache.fingerprint') }}
@@ -120,7 +120,7 @@ jobs:
         uses: ./.github/actions/bootstrap
 
       - name: Download snapshot build
-        uses: actions/cache/restore@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 #v4.0.2
+        uses: actions/cache/restore@3624ceb22c1c5a301c8db4169662070a689d9ea8 #v4.1.1
         with:
           path: snapshot
           key: snapshot-build-${{ github.run_id }}
