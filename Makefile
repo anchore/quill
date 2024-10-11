@@ -14,11 +14,11 @@ GLOW_CMD = $(TEMP_DIR)/glow
 
 # Tool versions #################################
 QUILL_VERSION = latest
-GOLANG_CI_VERSION = v1.57.2
+GOLANG_CI_VERSION = v1.61.0
 GOBOUNCER_VERSION = v0.4.0
-GORELEASER_VERSION = v1.17.0
+GORELEASER_VERSION = v2.3.2
 GOSIMPORTS_VERSION = v0.3.8
-CHRONICLE_VERSION = v0.6.0
+CHRONICLE_VERSION = v0.8.0
 GLOW_VERSION := v1.5.0
 
 # Formatting variables #################################
@@ -98,7 +98,7 @@ bootstrap-tools: $(TEMP_DIR)
 	curl -sSfL https://raw.githubusercontent.com/anchore/chronicle/main/install.sh | sh -s -- -b $(TEMP_DIR)/ $(CHRONICLE_VERSION)
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(TEMP_DIR)/ $(GOLANG_CI_VERSION)
 	curl -sSfL https://raw.githubusercontent.com/wagoodman/go-bouncer/master/bouncer.sh | sh -s -- -b $(TEMP_DIR)/ $(GOBOUNCER_VERSION)
-	GOBIN="$(realpath $(TEMP_DIR))" go install github.com/goreleaser/goreleaser@$(GORELEASER_VERSION)
+	GOBIN="$(realpath $(TEMP_DIR))" go install github.com/goreleaser/goreleaser/v2@$(GORELEASER_VERSION)
 	GOBIN="$(realpath $(TEMP_DIR))" go install github.com/rinchsan/gosimports/cmd/gosimports@$(GOSIMPORTS_VERSION)
 	GOBIN="$(realpath $(TEMP_DIR))" go install github.com/charmbracelet/glow@$(GLOW_VERSION)
 
