@@ -137,10 +137,10 @@ func TestSign(t *testing.T) {
 			assertions: []test.OutputAssertion{
 				test.AssertContains("CodeDirectory v=20500 size=208904 flags=0x10000(runtime) hashes=6523+2 location=embedded"),
 				test.AssertContains("Hash type=sha256 size=32"),
-				test.AssertContains("CandidateCDHash sha256=d7273a0be24e8badeae7de4b7979418e82862ca5"),
-				test.AssertContains("CandidateCDHashFull sha256=d7273a0be24e8badeae7de4b7979418e82862ca5b9998d25927d33ba1b827fc6"),
-				test.AssertContains("CDHash=d7273a0be24e8badeae7de4b7979418e82862ca5"),
-				test.AssertContains("CMSDigest=d7273a0be24e8badeae7de4b7979418e82862ca5b9998d25927d33ba1b827fc6"),
+				test.AssertContains("CandidateCDHash sha256=f08da6b0d99061c280b0c530648896f0f0cf5625"),
+				test.AssertContains("CandidateCDHashFull sha256=f08da6b0d99061c280b0c530648896f0f0cf562527cbf1e2cebfc514452a24c3"),
+				test.AssertContains("CDHash=f08da6b0d99061c280b0c530648896f0f0cf5625"),
+				test.AssertContains("CMSDigest=f08da6b0d99061c280b0c530648896f0f0cf562527cbf1e2cebfc514452a24c3"),
 				test.AssertContains("CMSDigestType=2"),
 				test.AssertContains("Signature size="), // assert not adhoc
 				test.AssertContains("Authority=quill-test-leaf"),
@@ -165,10 +165,10 @@ func TestSign(t *testing.T) {
 			assertions: []test.OutputAssertion{
 				test.AssertContains("CodeDirectory v=20500 size=208904 flags=0x10000(runtime) hashes=6523+2 location=embedded"),
 				test.AssertContains("Hash type=sha256 size=32"),
-				test.AssertContains("CandidateCDHash sha256=a1c1c60573a81e780c5cd11d3b17b252291a5739"),
-				test.AssertContains("CandidateCDHashFull sha256=a1c1c60573a81e780c5cd11d3b17b252291a573915fa47e8927a00b1a877af1c"),
-				test.AssertContains("CDHash=a1c1c60573a81e780c5cd11d3b17b252291a5739"),
-				test.AssertContains("CMSDigest=a1c1c60573a81e780c5cd11d3b17b252291a573915fa47e8927a00b1a877af1c"),
+				test.AssertContains("CandidateCDHash sha256=6ff0e1e29bc047b941d768a1cf4cd38adcdda30a"),
+				test.AssertContains("CandidateCDHashFull sha256=6ff0e1e29bc047b941d768a1cf4cd38adcdda30aaf879f0b6b77654e2e4f3261"),
+				test.AssertContains("CDHash=6ff0e1e29bc047b941d768a1cf4cd38adcdda30a"),
+				test.AssertContains("CMSDigest=6ff0e1e29bc047b941d768a1cf4cd38adcdda30aaf879f0b6b77654e2e4f3261"),
 				test.AssertContains("CMSDigestType=2"),
 				test.AssertContains("Signature size="),         // assert not adhoc
 				test.AssertContains("Authority=(unavailable)"), // since the cert is not trusted by the system
@@ -190,12 +190,12 @@ func TestSign(t *testing.T) {
 				failWithoutFullChain: true,
 			},
 			assertions: []test.OutputAssertion{
-				test.AssertContains("CodeDirectory v=20500 size=643 flags=0x10000(runtime) hashes=15+2 location=embedded"),
+				test.AssertContains("CodeDirectory v=20500 size=771 flags=0x10000(runtime) hashes=19+2 location=embedded"),
 				test.AssertContains("Hash type=sha256 size=32"),
-				test.AssertContains("CandidateCDHash sha256=a4cd4a5f49f232086ba698ec3bba3f086f432dea"),
-				test.AssertContains("CandidateCDHashFull sha256=a4cd4a5f49f232086ba698ec3bba3f086f432deae7d6ba648895e935b5098307"),
-				test.AssertContains("CDHash=a4cd4a5f49f232086ba698ec3bba3f086f432dea"),
-				test.AssertContains("CMSDigest=a4cd4a5f49f232086ba698ec3bba3f086f432deae7d6ba648895e935b5098307"),
+				test.AssertContains("CandidateCDHash sha256=6d103445e8b004b078ec736b029868522e40d22d"),
+				test.AssertContains("CandidateCDHashFull sha256=6d103445e8b004b078ec736b029868522e40d22daf33a010dde0c0cb61a2fdae"),
+				test.AssertContains("CDHash=6d103445e8b004b078ec736b029868522e40d22d"),
+				test.AssertContains("CMSDigest=6d103445e8b004b078ec736b029868522e40d22daf33a010dde0c0cb61a2fdae"),
 				test.AssertContains("CMSDigestType=2"),
 				test.AssertContains("Signature size="), // assert not adhoc
 				test.AssertContains("Authority=quill-test-leaf"),

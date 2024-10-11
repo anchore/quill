@@ -62,11 +62,10 @@ $(CERT_FILE): $(KEY_FILE) $(CA_KEY_FILE) $(CA_CERT_FILE) $(DOMAIN_FILE) ## creat
 	# create the certificate
 	openssl x509 \
 		-req \
-		-days 10000 \
+		-days 100000 \
 		-in $(CSR_FILE) \
 		-signkey $(KEY_FILE) \
 		-out $(CERT_FILE) \
-		-CA $(CA_CERT_FILE) \
 		-CAkey $(CA_KEY_FILE) \
 		-extfile $(DOMAIN_FILE) \
 		-CAcreateserial \
@@ -95,7 +94,7 @@ $(CA_CERT_FILE): $(CA_KEY_FILE) $(DOMAIN_FILE) ## create a self-signed certifica
 	# create the certificate
 	openssl x509 \
 		-req \
-		-days 10000 \
+		-days 100000 \
 		-in $(CA_CSR_FILE) \
 		-signkey $(CA_KEY_FILE) \
 		-out $(CA_CERT_FILE) \
