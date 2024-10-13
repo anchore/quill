@@ -54,11 +54,13 @@ func VerifyForCodeSigning(certs []*x509.Certificate, failWithoutFullChain bool) 
 		},
 	}
 
-	// ignore "devid_execute" critical extension
+	// ignore "devid_execute" and "devid_kernel" critical extensions
 	temp := leaf.UnhandledCriticalExtensions[:0]
 	for _, ex := range leaf.UnhandledCriticalExtensions {
 		switch ex.String() {
-		case "1.2.840.113635.100.6.1.13":
+		case "1.2.840.113635.100.6.1.13": // devid_execute
+			continue
+		case "1.2.840.113635.100.6.1.18": // devid_kernel
 			continue
 		default:
 			temp = append(temp, ex)
