@@ -23,6 +23,7 @@ CHANGELOG.md
 .tmp/
 coverage.txt
 bin/
+cmd/quill/quill
 
 # Binaries for programs and plugins
 *.exe
