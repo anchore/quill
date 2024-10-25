@@ -12,8 +12,8 @@ require (
 	github.com/anchore/go-macholibre v0.0.0-20220308212642-53e6d0aaf6fb
 	github.com/aws/aws-sdk-go v1.55.5
 	github.com/blacktop/go-macho v1.1.231
-	github.com/charmbracelet/bubbletea v0.26.6
-	github.com/charmbracelet/lipgloss v0.12.1
+	github.com/charmbracelet/bubbletea v1.1.2
+	github.com/charmbracelet/lipgloss v0.13.0
 	github.com/gabriel-vasile/mimetype v1.4.5
 	github.com/github/smimesign v0.2.0
 	github.com/go-restruct/restruct v1.2.0-alpha
@@ -39,10 +39,8 @@ require (
 	github.com/blacktop/go-dwarf v1.0.10 // indirect
 	github.com/charmbracelet/bubbles v0.11.0 // indirect
 	github.com/charmbracelet/harmonica v0.2.0 // indirect
-	github.com/charmbracelet/x/ansi v0.1.4 // indirect
-	github.com/charmbracelet/x/input v0.1.0 // indirect
-	github.com/charmbracelet/x/term v0.1.1 // indirect
-	github.com/charmbracelet/x/windows v0.1.0 // indirect
+	github.com/charmbracelet/x/ansi v0.4.0 // indirect
+	github.com/charmbracelet/x/term v0.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/erikgeiser/coninput v0.0.0-20211004153227-1c3628e74d0f // indirect
 	github.com/erikgeiser/promptkit v0.7.0 // indirect
@@ -90,8 +88,8 @@ require (
 	go.mongodb.org/mongo-driver v1.10.0 // indirect
 	golang.org/x/crypto v0.25.0 // indirect
 	golang.org/x/net v0.27.0 // indirect
-	golang.org/x/sync v0.7.0 // indirect
-	golang.org/x/sys v0.22.0 // indirect
+	golang.org/x/sync v0.8.0 // indirect
+	golang.org/x/sys v0.26.0 // indirect
 	golang.org/x/term v0.22.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
