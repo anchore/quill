@@ -48,21 +48,21 @@ func (m *Handler) State() *State {
 	return m.state
 }
 
-func (m *Handler) handleInputPrompt(e partybus.Event) []tea.Model {
+func (m *Handler) handleInputPrompt(e partybus.Event) ([]tea.Model, tea.Cmd) {
 	writer, err := event.ParseCLIInputPromptType(e)
 	if err != nil {
 		log.Warnf("unable to parse event: %+v", err)
-		return nil
+		return nil, nil
 	}
 
-	return []tea.Model{prompt.New(writer)}
+	return []tea.Model{prompt.New(writer)}, nil
 }
 
-func (m *Handler) handleTask(e partybus.Event) []tea.Model {
+func (m *Handler) handleTask(e partybus.Event) ([]tea.Model, tea.Cmd) {
 	cmd, prog, err := event.ParseTaskType(e)
 	if err != nil {
 		log.Warnf("unable to parse event: %+v", err)
-		return nil
+		return nil, nil
 	}
 
 	return m.handleStagedProgressable(prog, taskprogress.Title{
@@ -70,7 +70,7 @@ func (m *Handler) handleTask(e partybus.Event) []tea.Model {
 		Running: cmd.Title.WhileRunning,
 		Success: cmd.Title.OnSuccess,
 		Failed:  cmd.Title.OnFail,
-	}, cmd.Context)
+	}, cmd.Context), nil
 }
 
 func (m *Handler) handleStagedProgressable(prog progress.StagedProgressable, title taskprogress.Title, context ...string) []tea.Model {

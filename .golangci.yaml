@@ -53,7 +53,7 @@ linters-settings:
   gocritic:
     enabled-checks:
       - deferInLoop
-      - ruleguard
+
   gosec:
     excludes:
       - G115

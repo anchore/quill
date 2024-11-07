@@ -154,7 +154,11 @@ func (m *UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
-		for _, newModel := range m.handler.Handle(msg) {
+		newModels, cmd := m.handler.Handle(msg)
+		if cmd != nil {
+			cmds = append(cmds, cmd)
+		}
+		for _, newModel := range newModels {
 			if newModel == nil {
 				continue
 			}

@@ -85,7 +85,6 @@ func extractCertificates(binPath string, leaf bool) (string, error) {
 	buf := strings.Builder{}
 	certSet := strset.New()
 	for _, b := range decodedCerts {
-		b := b
 		singleBuf := strings.Builder{}
 		if err := pem.Encode(&singleBuf, &b); err != nil {
 			return "", err
