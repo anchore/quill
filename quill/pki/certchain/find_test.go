@@ -60,9 +60,8 @@ func TestFindRemainingChainCertsWithinQuill(t *testing.T) {
 				"quill-test-root-ca",
 			},
 			wantKeyIds: []string{
-				// test fixture has no id's (other than the leaf)
-				"",
-				"",
+				"1cddf1376f0c658b3b9245350170c493b523e1ca",
+				"c8ced12b0e65c8d7435569f1499926971fd43239",
 			},
 		},
 		{
@@ -136,8 +135,7 @@ func TestFindRemainingChainCertsWithinQuill(t *testing.T) {
 				"quill-test-intermediate-ca",
 			},
 			wantKeyIds: []string{
-				// test fixture has no id's (other than the leaf)
-				"",
+				"1cddf1376f0c658b3b9245350170c493b523e1ca",
 			},
 			wantErr: require.Error,
 		},

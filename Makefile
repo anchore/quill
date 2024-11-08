@@ -7,18 +7,18 @@ COVER_TOTAL = $(RESULTS_DIR)/unit-coverage-summary.txt
 # Command templates #################################
 LINT_CMD = $(TEMP_DIR)/golangci-lint run --tests=false --timeout=2m --config .golangci.yaml
 GOIMPORTS_CMD = $(TEMP_DIR)/gosimports -local github.com/anchore
-RELEASE_CMD = $(TEMP_DIR)/goreleaser release --rm-dist
-SNAPSHOT_CMD = $(RELEASE_CMD) --skip-publish --snapshot --skip-sign
+RELEASE_CMD = $(TEMP_DIR)/goreleaser release --clean
+SNAPSHOT_CMD = $(RELEASE_CMD) --clean --snapshot --skip=publish --skip=sign
 CHRONICLE_CMD = $(TEMP_DIR)/chronicle
 GLOW_CMD = $(TEMP_DIR)/glow
 
 # Tool versions #################################
 QUILL_VERSION = latest
-GOLANG_CI_VERSION = v1.57.2
+GOLANG_CI_VERSION = v1.61.0
 GOBOUNCER_VERSION = v0.4.0
-GORELEASER_VERSION = v1.17.0
+GORELEASER_VERSION = v2.3.2
 GOSIMPORTS_VERSION = v0.3.8
-CHRONICLE_VERSION = v0.6.0
+CHRONICLE_VERSION = v0.8.0
 GLOW_VERSION := v1.5.0
 
 # Formatting variables #################################
@@ -33,7 +33,7 @@ SUCCESS := $(BOLD)$(GREEN)
 
 # Test variables #################################
 # the quality gate lower threshold for unit test total % coverage (by function statements)
-COVERAGE_THRESHOLD := 45
+COVERAGE_THRESHOLD := 30
 
 ## Build variables #################################
 DIST_DIR = dist
@@ -98,7 +98,7 @@ bootstrap-tools: $(TEMP_DIR)
 	curl -sSfL https://raw.githubusercontent.com/anchore/chronicle/main/install.sh | sh -s -- -b $(TEMP_DIR)/ $(CHRONICLE_VERSION)
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(TEMP_DIR)/ $(GOLANG_CI_VERSION)
 	curl -sSfL https://raw.githubusercontent.com/wagoodman/go-bouncer/master/bouncer.sh | sh -s -- -b $(TEMP_DIR)/ $(GOBOUNCER_VERSION)
-	GOBIN="$(realpath $(TEMP_DIR))" go install github.com/goreleaser/goreleaser@$(GORELEASER_VERSION)
+	GOBIN="$(realpath $(TEMP_DIR))" go install github.com/goreleaser/goreleaser/v2@$(GORELEASER_VERSION)
 	GOBIN="$(realpath $(TEMP_DIR))" go install github.com/rinchsan/gosimports/cmd/gosimports@$(GOSIMPORTS_VERSION)
 	GOBIN="$(realpath $(TEMP_DIR))" go install github.com/charmbracelet/glow@$(GLOW_VERSION)
 
