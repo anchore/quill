@@ -7,8 +7,8 @@ COVER_TOTAL = $(RESULTS_DIR)/unit-coverage-summary.txt
 # Command templates #################################
 LINT_CMD = $(TEMP_DIR)/golangci-lint run --tests=false --timeout=2m --config .golangci.yaml
 GOIMPORTS_CMD = $(TEMP_DIR)/gosimports -local github.com/anchore
-RELEASE_CMD = $(TEMP_DIR)/goreleaser release --rm-dist
-SNAPSHOT_CMD = $(RELEASE_CMD) --skip-publish --snapshot --skip-sign
+RELEASE_CMD = $(TEMP_DIR)/goreleaser release --clean
+SNAPSHOT_CMD = $(RELEASE_CMD) --clean --snapshot --skip=publish --skip=sign
 CHRONICLE_CMD = $(TEMP_DIR)/chronicle
 GLOW_CMD = $(TEMP_DIR)/glow
 
