@@ -2,10 +2,9 @@ package notary
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
-	"math/rand"
 	"path/filepath"
-	"time"
 
 	"github.com/anchore/quill/internal/log"
 )
@@ -143,8 +142,7 @@ func (s Submission) List(ctx context.Context) ([]SubmissionList, error) {
 }
 
 func randomString(length int) string {
-	rand.Seed(time.Now().UnixNano())
 	b := make([]byte, length)
-	rand.Read(b) //nolint:gosec
+	_, _ = rand.Read(b)
 	return fmt.Sprintf("%x", b)[:length]
 }
