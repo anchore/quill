@@ -18,16 +18,16 @@ func New(id clio.Identification) clio.Application {
 		WithConfigInRootHelp().   // --help on the root command renders the full application config in the help text
 		WithUIConstructor(
 			// select a UI based on the logging configuration and state of stdin (if stdin is a tty)
-			func(cfg clio.Config) ([]clio.UI, error) {
+			func(cfg clio.Config) (*clio.UICollection, error) {
 				noUI := ui.None()
 				if !cfg.Log.AllowUI(os.Stdin) {
-					return []clio.UI{noUI}, nil
+					return clio.NewUICollection(noUI), nil
 				}
 
-				return []clio.UI{
+				return clio.NewUICollection(
 					ui.New(false, cfg.Log.Quiet),
 					noUI,
-				}, nil
+				), nil
 			},
 		).
 		WithInitializers(

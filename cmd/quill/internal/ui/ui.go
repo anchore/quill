@@ -84,6 +84,13 @@ func (m *UI) Handle(e partybus.Event) error {
 }
 
 func (m *UI) Teardown(force bool) error {
+	defer func() {
+		// allow for traditional logging to resume now that the UI is shutting down
+		if logWrapper, ok := log.Get().(logger.Controller); ok {
+			logWrapper.SetOutput(os.Stderr)
+		}
+	}()
+
 	if !force {
 		m.handler.State().Running.Wait()
 		m.program.Quit()
@@ -154,7 +161,11 @@ func (m *UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
-		for _, newModel := range m.handler.Handle(msg) {
+		newModels, cmd := m.handler.Handle(msg)
+		if cmd != nil {
+			cmds = append(cmds, cmd)
+		}
+		for _, newModel := range newModels {
 			if newModel == nil {
 				continue
 			}
