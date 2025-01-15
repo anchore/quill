@@ -190,7 +190,7 @@ func TestSign(t *testing.T) {
 				failWithoutFullChain: true,
 			},
 			assertions: []test.OutputAssertion{
-				test.AssertContains("CodeDirectory v=20500 size=643 flags=0x10000(runtime) hashes=15+2 location=embedded"),
+				test.AssertContains("CodeDirectory v=20500 size=771 flags=0x10000(runtime) hashes=19+2 location=embedded"),
 				test.AssertContains("Hash type=sha256 size=32"),
 				test.AssertContains("CandidateCDHash sha256=13d846da55c5a1eaddbe8a7a5ca2774b46026b7f"),
 				test.AssertContains("CandidateCDHashFull sha256=13d846da55c5a1eaddbe8a7a5ca2774b46026b7f979029faac974668f0d97c6a"),
