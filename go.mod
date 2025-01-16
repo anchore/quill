@@ -1,17 +1,16 @@
 module github.com/anchore/quill
 
-go 1.22.0
-toolchain go1.23.3
+go 1.23.4
 
 require (
-	github.com/PuerkitoBio/goquery v1.10.0
+	github.com/PuerkitoBio/goquery v1.10.1
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d
 	github.com/anchore/bubbly v0.0.0-20241107060245-f2a5536f366a
 	github.com/anchore/clio v0.0.0-20241029130133-ceccbddab86f
 	github.com/anchore/fangs v0.0.0-20241031222233-81506aed5251
 	github.com/anchore/go-logger v0.0.0-20241005132348-65b4486fbb28
 	github.com/anchore/go-macholibre v0.0.0-20220308212642-53e6d0aaf6fb
-	github.com/aws/aws-sdk-go v1.55.5
+	github.com/aws/aws-sdk-go v1.55.6
 	github.com/blacktop/go-macho v1.1.233
 	github.com/charmbracelet/bubbletea v1.2.4
 	github.com/charmbracelet/lipgloss v1.0.0
@@ -34,7 +33,7 @@ require (
 require (
 	dario.cat/mergo v1.0.1 // indirect
 	github.com/adrg/xdg v0.5.3 // indirect
-	github.com/andybalholm/cascadia v1.3.2 // indirect
+	github.com/andybalholm/cascadia v1.3.3 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20200907205600-7a23bdc65eef // indirect
 	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
@@ -90,13 +89,13 @@ require (
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	go.mongodb.org/mongo-driver v1.10.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/crypto v0.27.0 // indirect
+	golang.org/x/crypto v0.31.0 // indirect
 	golang.org/x/exp v0.0.0-20241009180824-f66d83c29e7c // indirect
-	golang.org/x/net v0.29.0 // indirect
-	golang.org/x/sync v0.9.0 // indirect
-	golang.org/x/sys v0.27.0 // indirect
-	golang.org/x/term v0.26.0 // indirect
-	golang.org/x/text v0.19.0 // indirect
+	golang.org/x/net v0.33.0 // indirect
+	golang.org/x/sync v0.10.0 // indirect
+	golang.org/x/sys v0.28.0 // indirect
+	golang.org/x/term v0.27.0 // indirect
+	golang.org/x/text v0.21.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
