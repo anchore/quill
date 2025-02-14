@@ -34,8 +34,8 @@ github.com/blacktop/go-macho v1.1.238/go.mod h1:dtlW2AJKQpFzImBVPWiUKZ6OxrQ2MLfW
 github.com/certifi/gocertifi v0.0.0-20180118203423-deb3ae2ef261/go.mod h1:GJKEexRPVJrBSOjoqN5VNOIKJ5Q3RViH6eu3puDRwx4=
 github.com/charmbracelet/bubbles v0.20.0 h1:jSZu6qD8cRQ6k9OMfR1WlM+ruM8fkPWkHvQWD9LIutE=
 github.com/charmbracelet/bubbles v0.20.0/go.mod h1:39slydyswPy+uVOHZ5x/GjwVAFkCsV8IIVy+4MhzwwU=
-github.com/charmbracelet/bubbletea v1.3.0 h1:fPMyirm0u3Fou+flch7hlJN9krlnVURrkUVDwqXjoAc=
-github.com/charmbracelet/bubbletea v1.3.0/go.mod h1:eTaHfqbIwvBhFQM/nlT1NsGc4kp8jhF8LfUK67XiTDM=
+github.com/charmbracelet/bubbletea v1.3.3 h1:WpU6fCY0J2vDWM3zfS3vIDi/ULq3SYphZhkAGGvmEUY=
+github.com/charmbracelet/bubbletea v1.3.3/go.mod h1:dtcUCyCGEX3g9tosuYiut3MXgY/Jsv9nKVdibKKRRXo=
 github.com/charmbracelet/harmonica v0.2.0 h1:8NxJWRWg/bzKqqEaaeFNipOu77YR5t8aSwG4pgaUBiQ=
 github.com/charmbracelet/harmonica v0.2.0/go.mod h1:KSri/1RMQOZLbw7AHqgcBycp8pgJnQMYYT8QZRqZ1Ao=
 github.com/charmbracelet/lipgloss v1.0.0 h1:O7VkGDvqEdGi93X+DeqsQ7PKHDgtQfF8j8/O2qFMQNg=
