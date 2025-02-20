@@ -21,7 +21,7 @@ usage() (
 $this: download go binaries for anchore/${PROJECT_NAME}
 
 Usage: $this [-b] dir [-d] [tag]
-  -b  the installation directory (dDefaults to ./bin)
+  -b  the installation directory (defaults to ./bin)
   -d  turns on debug logging
   -dd turns on trace logging
   [tag] the specific release to use (if missing, then the latest will be used)
