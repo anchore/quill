@@ -17,7 +17,7 @@ require (
 	github.com/gabriel-vasile/mimetype v1.4.8
 	github.com/github/smimesign v0.2.0
 	github.com/go-restruct/restruct v1.2.0-alpha
-	github.com/golang-jwt/jwt/v4 v4.5.1
+	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/google/go-cmp v0.6.0
 	github.com/gookit/color v1.5.4
 	github.com/jedib0t/go-pretty v4.3.0+incompatible
