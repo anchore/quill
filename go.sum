@@ -29,8 +29,8 @@ github.com/aymanbagabas/go-osc52/v2 v2.0.1 h1:HwpRHbFMcZLEVr42D4p7XBqjyuxQH5SMiE
 github.com/aymanbagabas/go-osc52/v2 v2.0.1/go.mod h1:uYgXzlJ7ZpABp8OJ+exZzJJhRNQ2ASbcXHWsFqH8hp8=
 github.com/blacktop/go-dwarf v1.0.14 h1:OjmzfSgg/qAKckn2tWFebcgKgJ7HOqCj7bS+CiE1lrY=
 github.com/blacktop/go-dwarf v1.0.14/go.mod h1:4W2FKgSFYcZLDwnR7k+apv5i3nrau4NGl9N6VQ9DSTo=
-github.com/blacktop/go-macho v1.1.245 h1:RxZc/yvau+W63/rK5Ag6zpYDHj241HEbToyb9Iw9blI=
-github.com/blacktop/go-macho v1.1.245/go.mod h1:qtWG1+TBJfq/8fs2Jg50v0P3LxzAZC1yLmT/rPXxuz8=
+github.com/blacktop/go-macho v1.1.246 h1:AamZt8ovd9JGgyyJGRsEJPA+KdB6PLoONZ+75kcxkTs=
+github.com/blacktop/go-macho v1.1.246/go.mod h1:qtWG1+TBJfq/8fs2Jg50v0P3LxzAZC1yLmT/rPXxuz8=
 github.com/certifi/gocertifi v0.0.0-20180118203423-deb3ae2ef261/go.mod h1:GJKEexRPVJrBSOjoqN5VNOIKJ5Q3RViH6eu3puDRwx4=
 github.com/charmbracelet/bubbles v0.20.0 h1:jSZu6qD8cRQ6k9OMfR1WlM+ruM8fkPWkHvQWD9LIutE=
 github.com/charmbracelet/bubbles v0.20.0/go.mod h1:39slydyswPy+uVOHZ5x/GjwVAFkCsV8IIVy+4MhzwwU=
