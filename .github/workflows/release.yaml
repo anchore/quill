@@ -5,19 +5,29 @@ on:
       version:
         description: tag the latest commit on main with the given version (prefixed with v)
         required: true
+        pattern: '^v[0-9]+\.[0-9]+\.[0-9]+.*$'
+
+permissions:
+  contents: read
 
 jobs:
   quality-gate:
     environment: release
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 #v4.2.2
+        with:
+          persist-credentials: false
 
       - name: Check if tag already exists
         # note: this will fail if the tag already exists
+        env:
+          VERSION: ${{ github.event.inputs.version }}
         run: |
-          [[ "${{ github.event.inputs.version }}" == v* ]] || (echo "version '${{ github.event.inputs.version }}' does not have a 'v' prefix" && exit 1)
-          git tag ${{ github.event.inputs.version }}
+          [[ "$VERSION" == v* ]] || (echo "version '$VERSION' does not have a 'v' prefix" && exit 1)
+          git tag "$VERSION"
 
       - name: Check static analysis results
         uses: fountainhead/action-wait-for-check@5a908a24814494009c4bb27c242ea38c93c593be #v1.2.0
@@ -57,11 +67,16 @@ jobs:
 
       - name: Quality gate
         if: steps.static-analysis.outputs.conclusion != 'success' || steps.unit.outputs.conclusion != 'success' || steps.acceptance-linux.outputs.conclusion != 'success' || steps.cli.outputs.conclusion != 'success'
+        env:
+          STATIC_ANALYSIS_STATUS: ${{ steps.static-analysis.outputs.conclusion }}
+          UNIT_TEST_STATUS: ${{ steps.unit.outputs.conclusion }}
+          ACCEPTANCE_TEST_STATUS: ${{ steps.acceptance-linux.outputs.conclusion }}
+          CLI_TEST_STATUS: ${{ steps.cli.outputs.conclusion }}
         run: |
-          echo "Static Analysis Status: ${{ steps.static-analysis.conclusion }}"
-          echo "Unit Test Status: ${{ steps.unit.outputs.conclusion }}"
-          echo "Acceptance Test (Linux) Status: ${{ steps.acceptance-linux.outputs.conclusion }}"
-          echo "CLI test Status: ${{ steps.cli.conclusion }}"
+          echo "Static Analysis Status: $STATIC_ANALYSIS_STATUS"
+          echo "Unit Test Status: $UNIT_TEST_STATUS"
+          echo "Acceptance Test (Linux) Status: $ACCEPTANCE_TEST_STATUS"
+          echo "CLI test Status: $CLI_TEST_STATUS"
           false
 
   release:
@@ -75,16 +90,18 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 #v4.2.2
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Bootstrap environment
         uses: ./.github/actions/bootstrap
 
       - name: Tag release
-        run: |
-          git tag ${{ github.event.inputs.version }}
-          git push origin --tags
         env:
+          VERSION: ${{ github.event.inputs.version }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git tag "$VERSION"
+          git push origin --tags
 
       - name: Build & publish release artifacts
         run: make ci-release

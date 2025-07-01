@@ -6,6 +6,8 @@ on:
       - main
   pull_request:
 
+permissions:
+  contents: read
 
 jobs:
 
@@ -13,8 +15,12 @@ jobs:
     # Note: changing this job name requires making the same update in the .github/workflows/release.yaml pipeline
     name: "Static analysis"
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 #v4.2.2
+        with:
+          persist-credentials: false
 
       - name: Bootstrap environment
         uses: ./.github/actions/bootstrap
@@ -26,12 +32,15 @@ jobs:
     # Note: changing this job name requires making the same update in the .github/workflows/release.yaml pipeline
     name: "Unit tests"
     runs-on: macOS-15
+    permissions:
+      contents: read
     steps:
 
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 #v4.2.2
         with:
           # this downloads and initializes LFS, but does not pull the objects
           lfs: true
+          persist-credentials: false
 
       - name: Checkout LFS objects
         # lfs pull does a lfs fetch and lfs checkout, this is NOT the same as "git pull"
@@ -51,8 +60,12 @@ jobs:
   Build-Snapshot-Artifacts:
     name: "Build snapshot artifacts"
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 #v4.2.2
+        with:
+          persist-credentials: false
 
       - name: Bootstrap environment
         uses: ./.github/actions/bootstrap
@@ -73,8 +86,12 @@ jobs:
     name: "Acceptance tests (Linux)"
     needs: [Build-Snapshot-Artifacts]
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 #v4.2.2
+        with:
+          persist-credentials: false
 
       - name: Download snapshot build
         uses: actions/cache/restore@5a3ec84eff668545956fd18022155c47e93e2684 #v4.2.3
@@ -105,12 +122,15 @@ jobs:
     name: "CLI tests"
     needs: [Build-Snapshot-Artifacts]
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     steps:
 
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 #v4.2.2
         with:
           # this downloads and initializes LFS, but does not pull the objects
           lfs: true
+          persist-credentials: false
 
       - name: Checkout LFS objects
         # lfs pull does a lfs fetch and lfs checkout, this is NOT the same as "git pull"
