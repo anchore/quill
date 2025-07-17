@@ -8,6 +8,9 @@ on:
       - transferred
       - labeled
 
+permissions:
+  issues: read
+
 jobs:
 
   run:

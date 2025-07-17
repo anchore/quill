@@ -4,6 +4,10 @@ on:
   issue_comment:
     types: [created]
 
+permissions:
+  issues: write
+  pull-requests: write
+
 jobs:
   run:
     uses: "anchore/workflows/.github/workflows/remove-awaiting-response-label.yaml@main"
