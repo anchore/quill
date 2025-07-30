@@ -11,13 +11,13 @@ $ quill sign-and-notarize --p12 [path-to-p12] [path-to-unsigned-binary]
 ## Installation
 
 ```bash
-curl -sSfL https://raw.githubusercontent.com/anchore/quill/main/install.sh | sh -s -- -b /usr/local/bin
+curl -sSfL https://get.anchore.io/quill | sudo sh -s -- -b /usr/local/bin
 ```
 
 ... or, you can specify a release version and destination directory for the installation:
 
 ```
-curl -sSfL https://raw.githubusercontent.com/anchore/quill/main/install.sh | sh -s -- -b <DESTINATION_DIR> <RELEASE_VERSION>
+curl -sSfL https://get.anchore.io/quill | sudo sh -s -- -b <DESTINATION_DIR> <RELEASE_VERSION>
 ```
 
 

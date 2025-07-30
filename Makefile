@@ -95,7 +95,7 @@ $(TEMP_DIR):
 bootstrap-tools: $(TEMP_DIR)
 	#GOBIN="$(realpath $(TEMP_DIR))" go install github.com/anchore/quill/cmd/quill@$(QUILL_VERSION)
 	GOBIN="$(realpath $(TEMP_DIR))" go install ./cmd/quill
-	curl -sSfL https://raw.githubusercontent.com/anchore/chronicle/main/install.sh | sh -s -- -b $(TEMP_DIR)/ $(CHRONICLE_VERSION)
+	curl -sSfL https://get.anchore.io/chronicle | sh -s -- -b $(TEMP_DIR)/ $(CHRONICLE_VERSION)
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(TEMP_DIR)/ $(GOLANG_CI_VERSION)
 	curl -sSfL https://raw.githubusercontent.com/wagoodman/go-bouncer/master/bouncer.sh | sh -s -- -b $(TEMP_DIR)/ $(GOBOUNCER_VERSION)
 	GOBIN="$(realpath $(TEMP_DIR))" go install github.com/goreleaser/goreleaser/v2@$(GORELEASER_VERSION)
