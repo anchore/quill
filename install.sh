@@ -6,11 +6,12 @@ PROJECT_NAME="quill"
 OWNER=anchore
 REPO="${PROJECT_NAME}"
 GITHUB_DOWNLOAD_PREFIX=https://github.com/${OWNER}/${REPO}/releases/download
-INSTALL_SH_BASE_URL=https://raw.githubusercontent.com/${OWNER}/${PROJECT_NAME}
+INSTALL_SH_BASE_URL=https://get.anchore.io/${PROJECT_NAME}
+LEGACY_INSTALL_SH_BASE_URL=https://raw.githubusercontent.com/${OWNER}/${PROJECT_NAME}
 PROGRAM_ARGS=$@
 
 # do not change the name of this parameter (this must always be backwards compatible)
-DOWNLOAD_TAG_INSTALL_SCRIPT=${DOWNLOAD_TAG_INSTALL_SCRIPT:-false}
+DOWNLOAD_TAG_INSTALL_SCRIPT=${DOWNLOAD_TAG_INSTALL_SCRIPT:-true}
 
 #
 # usage [script-name]
@@ -667,7 +668,11 @@ main() (
   if [ "${DOWNLOAD_TAG_INSTALL_SCRIPT}" = "true" ]; then
       export DOWNLOAD_TAG_INSTALL_SCRIPT=false
       log_info "fetching release script for tag='${tag}'"
-      http_copy "${INSTALL_SH_BASE_URL}/${tag}/install.sh" "" | sh -s -- ${PROGRAM_ARGS}
+      if ! install_script=$(http_copy "${INSTALL_SH_BASE_URL}/${tag}/install.sh" ""); then
+          log_warn "failed to fetch from ${INSTALL_SH_BASE_URL}, trying fallback URL"
+          install_script=$(http_copy "${LEGACY_INSTALL_SH_BASE_URL}/${tag}/install.sh" "")
+      fi
+      echo "${install_script}" | sh -s -- ${PROGRAM_ARGS}
       exit $?
   fi
 
