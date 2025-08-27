@@ -1,0 +1,34 @@
+# Quill
+
+Quill is a cross-platform tool for macOS binary signing and notarization, developed by Anchore. It replaces the macOS-specific `codesign` utility for simple use cases and enables code signing from any platform.
+
+## Key Features
+- Sign macOS binaries on any platform (Linux, Windows, macOS)
+- Notarize signed binaries with Apple's Notary service
+- P12 certificate management and chain attachment
+- Cross-platform support for CI/CD pipelines
+- Integration with tools like GoReleaser
+
+## Technology Stack
+- **Language**: Go 1.24
+- **Dependencies**: Uses libraries for macOS binary parsing, Apple certificate handling, JWT tokens, and CLI interfaces
+- **Platforms**: Runs on Linux, Windows, and macOS
+
+## Main Commands
+- `sign` - Sign a macOS binary
+- `notarize` - Notarize a signed binary with Apple
+- `sign-and-notarize` - Combined signing and notarization
+- `describe` - Show binary details
+- `p12` - Manage P12 certificates and chains
+
+## Architecture
+- Go-based CLI tool
+- Handles Apple certificate chains and intermediate certificates
+- Interfaces with Apple's Notary API
+- Parses and modifies Mach-O binaries for signing
+
+## Use Cases
+- Cross-platform CI/CD pipelines needing macOS app signing
+- GoReleaser integration for automated releases
+- Alternative to macOS-only codesign utility
+- Enterprise software distribution requiring Apple notarization
