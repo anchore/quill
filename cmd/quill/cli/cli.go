@@ -63,6 +63,7 @@ func New(id clio.Identification) clio.Application {
 	root.AddCommand(commands.Sign(app))
 	root.AddCommand(commands.Notarize(app))
 	root.AddCommand(commands.SignAndNotarize(app))
+	root.AddCommand(commands.TestAuth(app))
 	root.AddCommand(commands.Describe(app))
 	root.AddCommand(commands.EmbeddedCerts(app))
 	root.AddCommand(submission)
