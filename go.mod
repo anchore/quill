@@ -10,7 +10,7 @@ require (
 	github.com/anchore/fangs v0.0.0-20241031222233-81506aed5251
 	github.com/anchore/go-logger v0.0.0-20241005132348-65b4486fbb28
 	github.com/anchore/go-macholibre v0.0.0-20220308212642-53e6d0aaf6fb
-	github.com/aws/aws-sdk-go v1.55.7
+	github.com/aws/aws-sdk-go v1.55.8
 	github.com/blacktop/go-macho v1.1.249
 	github.com/charmbracelet/bubbletea v1.3.6
 	github.com/charmbracelet/lipgloss v1.1.0
