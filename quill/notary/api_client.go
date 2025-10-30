@@ -12,10 +12,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	awsSession "github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 
 	"github.com/anchore/quill/internal/log"
 )
@@ -66,17 +67,24 @@ func (s APIClient) uploadBinary(ctx context.Context, response submissionResponse
 	attrs := response.Data.Attributes
 	log.WithFields("bucket", attrs.Bucket, "object", attrs.Object).Trace("uploading binary to S3")
 
-	s3Config := &aws.Config{
-		Region:      aws.String("us-west-2"),
-		Credentials: credentials.NewStaticCredentials(attrs.AwsAccessKeyID, attrs.AwsSecretAccessKey, attrs.AwsSessionToken),
-	}
-	s3Session, err := awsSession.NewSession(s3Config)
+	// create AWS config with static credentials
+	cfg, err := config.LoadDefaultConfig(ctx,
+		config.WithRegion("us-west-2"),
+		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
+			attrs.AwsAccessKeyID,
+			attrs.AwsSecretAccessKey,
+			attrs.AwsSessionToken,
+		)),
+	)
 	if err != nil {
 		return err
 	}
 
-	uploader := s3manager.NewUploader(s3Session)
-	input := &s3manager.UploadInput{
+	// create S3 client and uploader
+	client := s3.NewFromConfig(cfg)
+	uploader := manager.NewUploader(client)
+
+	input := &s3.PutObjectInput{
 		Bucket: aws.String(attrs.Bucket),
 		Key:    aws.String(attrs.Object),
 		Body: &monitoredReader{
@@ -86,7 +94,7 @@ func (s APIClient) uploadBinary(ctx context.Context, response submissionResponse
 		ContentType: aws.String("application/zip"),
 	}
 
-	_, err = uploader.UploadWithContext(ctx, input)
+	_, err = uploader.Upload(ctx, input)
 	if err != nil {
 		return err
 	}
