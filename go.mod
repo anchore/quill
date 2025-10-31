@@ -15,7 +15,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/credentials v1.18.19
 	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.20.1
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.89.0
-	github.com/blacktop/go-macho v1.1.252
+	github.com/blacktop/go-macho v1.1.253
 	github.com/charmbracelet/bubbletea v1.3.10
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/gabriel-vasile/mimetype v1.4.10
