@@ -42,3 +42,6 @@ cmd/quill/quill
 .DS_STORE
 
 *.profile
+
+# Generated test binary for notarization testing
+cmd/quill/cli/commands/test_notarize_hello.b64

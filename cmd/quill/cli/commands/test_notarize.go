@@ -16,27 +16,29 @@ import (
 	"github.com/anchore/quill/internal/log"
 )
 
-//go:embed test_auth_hello.b64
+//go:generate ./testdata/generate.sh
+
+//go:embed test_notarize_hello.b64
 var embeddedTestBinary string
 
-var _ fangs.FlagAdder = (*testAuthConfig)(nil)
+var _ fangs.FlagAdder = (*testNotarizeConfig)(nil)
 
-type testAuthConfig struct {
+type testNotarizeConfig struct {
 	options.Signing `yaml:"sign" json:"sign" mapstructure:"sign"`
 	options.Notary  `yaml:"notary" json:"notary" mapstructure:"notary"`
 }
 
-func (o *testAuthConfig) AddFlags(flags fangs.FlagSet) {
-	// No additional flags needed beyond what Signing and Notary provide
+func (o *testNotarizeConfig) AddFlags(flags fangs.FlagSet) {
+	// All flags provided by embedded Signing and Notary options
 }
 
-func TestAuth(app clio.Application) *cobra.Command {
-	opts := &testAuthConfig{
+func TestNotarize(app clio.Application) *cobra.Command {
+	opts := &testNotarizeConfig{
 		Signing: options.DefaultSigning(),
 	}
 
 	return app.SetupCommand(&cobra.Command{
-		Use:   "test-auth",
+		Use:   "test-notarize",
 		Short: "test Apple notarization credentials by signing and notarizing a minimal test binary",
 		Long: `Test Apple notarization credentials by signing and notarizing a minimal test binary.
 
@@ -48,23 +50,40 @@ command helps identify:
 - Invalid credentials (authentication errors)
 - Expired certificates or keys
 
-The test runs quickly (30 second timeout) since it only checks initial submission, not full
-notarization completion.`,
+The test waits for full notarization completion (5 minute timeout) to validate the entire
+end-to-end workflow.`,
 		Args: cobra.NoArgs,
 		RunE: func(_ *cobra.Command, _ []string) error {
 			defer bus.Exit()
-			return runTestAuth(opts)
+			return runTestNotarize(opts)
 		},
 	}, opts)
 }
 
-func runTestAuth(opts *testAuthConfig) error {
+func runTestNotarize(opts *testNotarizeConfig) error {
 	log.Info("Starting Apple notarization credential test...")
+
+	// Validate required credentials early
+	if opts.Notary.Issuer == "" || opts.Notary.PrivateKeyID == "" || opts.Notary.PrivateKey == "" {
+		return fmt.Errorf("notarization credentials required: provide --notary-issuer, --notary-key-id, and --notary-key")
+	}
+
+	if opts.Signing.AdHoc {
+		return fmt.Errorf("ad-hoc signing cannot be used for notarization; provide a valid p12 certificate via --p12")
+	}
+
+	if opts.Signing.P12 == "" {
+		return fmt.Errorf("signing certificate required: provide a valid p12 certificate via --p12")
+	}
 
 	// Decode the embedded test binary
 	decoded, err := base64.StdEncoding.DecodeString(strings.TrimSpace(embeddedTestBinary))
 	if err != nil {
 		return fmt.Errorf("failed to decode embedded test binary: %w", err)
+	}
+
+	if len(decoded) == 0 {
+		return fmt.Errorf("embedded test binary is empty")
 	}
 
 	// Create temporary file for the test binary
@@ -74,13 +93,17 @@ func runTestAuth(opts *testAuthConfig) error {
 	}
 	tmpPath := tmpFile.Name()
 	defer os.Remove(tmpPath)
+	defer tmpFile.Close()
 
 	// Write the test binary
 	if _, err := tmpFile.Write(decoded); err != nil {
-		tmpFile.Close()
 		return fmt.Errorf("failed to write test binary: %w", err)
 	}
-	tmpFile.Close()
+
+	// Close file explicitly before chmod to ensure write is flushed
+	if err := tmpFile.Close(); err != nil {
+		return fmt.Errorf("failed to close test binary: %w", err)
+	}
 
 	// Make it executable
 	if err := os.Chmod(tmpPath, 0755); err != nil {
@@ -95,12 +118,12 @@ func runTestAuth(opts *testAuthConfig) error {
 		return fmt.Errorf("failed to sign test binary: %w", err)
 	}
 
-	// Attempt notarization with short timeout
-	log.Info("Submitting test binary to Apple notary service...")
+	// Notarize and wait for completion
+	log.Info("Submitting test binary to Apple notary service and waiting for completion...")
 	statusCfg := options.Status{
-		Wait:           false, // Don't wait for completion, just check submission
+		Wait:           true, // Wait for full notarization completion
 		PollSeconds:    5,
-		TimeoutSeconds: 30,
+		TimeoutSeconds: 300, // 5 minutes timeout for full notarization
 	}
 
 	_, err = notarize(tmpPath, opts.Notary, statusCfg)
@@ -109,25 +132,25 @@ func runTestAuth(opts *testAuthConfig) error {
 		errStr := err.Error()
 
 		if strings.Contains(errStr, "FORBIDDEN.REQUIRED_AGREEMENTS_MISSING_OR_EXPIRED") {
-			fmt.Println("\n❌ Authorization test FAILED")
-			fmt.Println("\n╭─────────────────────────────────────────────────────────────╮")
-			fmt.Println("│ Apple Developer Agreement Required                          │")
-			fmt.Println("╰─────────────────────────────────────────────────────────────╯")
-			fmt.Println("\nA required agreement is missing or has expired.")
-			fmt.Println("\nAction required:")
-			fmt.Println("  1. Visit https://appstoreconnect.apple.com/")
-			fmt.Println("  2. Sign in with your Apple Developer account")
-			fmt.Println("  3. Accept any pending agreements")
-			fmt.Println("  4. Run this command again to verify")
+			fmt.Fprintln(os.Stderr, "\n❌ Authorization test FAILED")
+			fmt.Fprintln(os.Stderr, "\n╭─────────────────────────────────────────────────────────────╮")
+			fmt.Fprintln(os.Stderr, "│ Apple Developer Agreement Required                          │")
+			fmt.Fprintln(os.Stderr, "╰─────────────────────────────────────────────────────────────╯")
+			fmt.Fprintln(os.Stderr, "\nA required agreement is missing or has expired.")
+			fmt.Fprintln(os.Stderr, "\nAction required:")
+			fmt.Fprintln(os.Stderr, "  1. Visit https://appstoreconnect.apple.com/")
+			fmt.Fprintln(os.Stderr, "  2. Sign in with your Apple Developer account")
+			fmt.Fprintln(os.Stderr, "  3. Accept any pending agreements")
+			fmt.Fprintln(os.Stderr, "  4. Run this command again to verify")
 			return fmt.Errorf("Apple Developer agreement must be accepted")
 		}
 
 		if strings.Contains(errStr, "403") || strings.Contains(errStr, "401") {
-			fmt.Println("\n❌ Authorization test FAILED")
-			fmt.Println("\nAuthentication error occurred. Please verify:")
-			fmt.Println("  • App Store Connect API Issuer ID is correct")
-			fmt.Println("  • App Store Connect API Key ID is correct")
-			fmt.Println("  • App Store Connect API private key is valid")
+			fmt.Fprintln(os.Stderr, "\n❌ Authorization test FAILED")
+			fmt.Fprintln(os.Stderr, "\nAuthentication error occurred. Please verify:")
+			fmt.Fprintln(os.Stderr, "  • App Store Connect API Issuer ID is correct")
+			fmt.Fprintln(os.Stderr, "  • App Store Connect API Key ID is correct")
+			fmt.Fprintln(os.Stderr, "  • App Store Connect API private key is valid")
 			return fmt.Errorf("authentication failed: %w", err)
 		}
 
