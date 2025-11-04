@@ -80,39 +80,19 @@ func validateNotarizeCredentials(opts *testNotarizeConfig) error {
 	return nil
 }
 
-func prepareTestBinary(decoded []byte) (tmpPath string, cleanup func(), err error) {
-	if len(decoded) == 0 {
-		return "", nil, fmt.Errorf("embedded test binary is empty")
-	}
-
+func prepareTestBinary(decoded []byte) (string, error) {
 	tmpFile, err := os.CreateTemp("", "quill-test-*.macho")
 	if err != nil {
-		return "", nil, fmt.Errorf("failed to create temporary file: %w", err)
+		return "", fmt.Errorf("failed to create temporary file: %w", err)
 	}
-	tmpPath = tmpFile.Name()
+	defer tmpFile.Close()
 
 	if _, err := tmpFile.Write(decoded); err != nil {
-		tmpFile.Close()
-		os.Remove(tmpPath)
-		return "", nil, fmt.Errorf("failed to write test binary: %w", err)
+		return "", fmt.Errorf("failed to write test binary: %w", err)
 	}
 
-	if err := tmpFile.Close(); err != nil {
-		os.Remove(tmpPath)
-		return "", nil, fmt.Errorf("failed to close test binary: %w", err)
-	}
-
-	if err := os.Chmod(tmpPath, 0755); err != nil {
-		os.Remove(tmpPath)
-		return "", nil, fmt.Errorf("failed to make test binary executable: %w", err)
-	}
-
-	cleanup = func() {
-		os.Remove(tmpPath)
-	}
-
-	log.WithFields("path", tmpPath).Debug("created temporary test binary")
-	return tmpPath, cleanup, nil
+	log.WithFields("path", tmpFile.Name()).Debug("created temporary test binary")
+	return tmpFile.Name(), nil
 }
 
 func handleNotarizationError(err error) error {
@@ -136,11 +116,11 @@ func runTestNotarize(opts *testNotarizeConfig) error {
 		return err
 	}
 
-	tmpPath, cleanup, err := prepareTestBinary(embeddedTestBinary)
+	tmpPath, err := prepareTestBinary(embeddedTestBinary)
 	if err != nil {
 		return err
 	}
-	defer cleanup()
+	defer os.Remove(tmpPath)
 
 	if err := sign(tmpPath, opts.Signing); err != nil {
 		return fmt.Errorf("failed to sign test binary: %w", err)
