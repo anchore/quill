@@ -107,7 +107,7 @@ bootstrap-go:
 	go mod download
 
 .PHONY: bootstrap
-bootstrap: $(RESULTS_DIR) bootstrap-go bootstrap-tools ## Download and install all go dependencies (+ prep tooling in the ./tmp dir)
+bootstrap: $(RESULTS_DIR) bootstrap-go bootstrap-tools generate ## Download and install all go dependencies (+ prep tooling in the ./tmp dir)
 	$(call title,Bootstrapping dependencies)
 
 
@@ -188,10 +188,13 @@ install-test-cache-load: $(SNAPSHOT_DIR)
 
 ## Code generation targets #################################
 
-.PHONY: update-apple-certs
-update-apple-certs:  ## Update the apple certs checked into the repo
-	$(call title,Updating Apple certs)
+.PHONY: generate
+generate:  ## Run all code generation
+	$(call title,Running code generation)
 	go generate ./...
+
+.PHONY: update-apple-certs
+update-apple-certs: generate  ## Update the apple certs checked into the repo
 
 
 ## Build-related targets #################################

@@ -44,4 +44,4 @@ cmd/quill/quill
 *.profile
 
 # Generated test binary for notarization testing
-cmd/quill/cli/commands/test_notarize_hello.b64
+cmd/quill/cli/commands/test_notarize_hello.macho

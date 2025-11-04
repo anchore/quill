@@ -2,7 +2,6 @@ package commands
 
 import (
 	_ "embed"
-	"encoding/base64"
 	"fmt"
 	"os"
 	"strings"
@@ -18,8 +17,13 @@ import (
 
 //go:generate ./testdata/generate.sh
 
-//go:embed test_notarize_hello.b64
-var embeddedTestBinary string
+//go:embed test_notarize_hello.macho
+var embeddedTestBinary []byte
+
+const (
+	testNotarizePollSeconds    = 5
+	testNotarizeTimeoutSeconds = 300 // 5 minutes
+)
 
 var _ fangs.FlagAdder = (*testNotarizeConfig)(nil)
 
@@ -86,24 +90,25 @@ func prepareTestBinary(decoded []byte) (tmpPath string, cleanup func(), err erro
 		return "", nil, fmt.Errorf("failed to create temporary file: %w", err)
 	}
 	tmpPath = tmpFile.Name()
-	cleanup = func() {
-		os.Remove(tmpPath)
-		tmpFile.Close()
-	}
 
 	if _, err := tmpFile.Write(decoded); err != nil {
-		cleanup()
+		tmpFile.Close()
+		os.Remove(tmpPath)
 		return "", nil, fmt.Errorf("failed to write test binary: %w", err)
 	}
 
 	if err := tmpFile.Close(); err != nil {
-		cleanup()
+		os.Remove(tmpPath)
 		return "", nil, fmt.Errorf("failed to close test binary: %w", err)
 	}
 
 	if err := os.Chmod(tmpPath, 0755); err != nil {
-		cleanup()
+		os.Remove(tmpPath)
 		return "", nil, fmt.Errorf("failed to make test binary executable: %w", err)
+	}
+
+	cleanup = func() {
+		os.Remove(tmpPath)
 	}
 
 	log.WithFields("path", tmpPath).Debug("created temporary test binary")
@@ -114,59 +119,37 @@ func handleNotarizationError(err error) error {
 	errStr := err.Error()
 
 	if strings.Contains(errStr, "FORBIDDEN.REQUIRED_AGREEMENTS_MISSING_OR_EXPIRED") {
-		fmt.Fprintln(os.Stderr, "\n❌ Authorization test FAILED")
-		fmt.Fprintln(os.Stderr, "\n╭─────────────────────────────────────────────────────────────╮")
-		fmt.Fprintln(os.Stderr, "│ Apple Developer Agreement Required                          │")
-		fmt.Fprintln(os.Stderr, "╰─────────────────────────────────────────────────────────────╯")
-		fmt.Fprintln(os.Stderr, "\nA required agreement is missing or has expired.")
-		fmt.Fprintln(os.Stderr, "\nAction required:")
-		fmt.Fprintln(os.Stderr, "  1. Visit https://appstoreconnect.apple.com/")
-		fmt.Fprintln(os.Stderr, "  2. Sign in with your Apple Developer account")
-		fmt.Fprintln(os.Stderr, "  3. Accept any pending agreements")
-		fmt.Fprintln(os.Stderr, "  4. Run this command again to verify")
-		return fmt.Errorf("required Apple Developer agreement must be accepted")
+		return fmt.Errorf("required Apple Developer agreement must be accepted: visit https://appstoreconnect.apple.com/ to accept pending agreements: %w", err)
 	}
 
 	if strings.Contains(errStr, "403") || strings.Contains(errStr, "401") {
-		fmt.Fprintln(os.Stderr, "\n❌ Authorization test FAILED")
-		fmt.Fprintln(os.Stderr, "\nAuthentication error occurred. Please verify:")
-		fmt.Fprintln(os.Stderr, "  • App Store Connect API Issuer ID is correct")
-		fmt.Fprintln(os.Stderr, "  • App Store Connect API Key ID is correct")
-		fmt.Fprintln(os.Stderr, "  • App Store Connect API private key is valid")
-		return fmt.Errorf("authentication failed: %w", err)
+		return fmt.Errorf("authentication failed (check --notary-issuer, --notary-key-id, and --notary-key): %w", err)
 	}
 
 	return fmt.Errorf("notarization test failed: %w", err)
 }
 
 func runTestNotarize(opts *testNotarizeConfig) error {
-	log.Info("Starting Apple notarization credential test...")
+	log.Info("testing Apple notarization credentials")
 
 	if err := validateNotarizeCredentials(opts); err != nil {
 		return err
 	}
 
-	decoded, err := base64.StdEncoding.DecodeString(strings.TrimSpace(embeddedTestBinary))
-	if err != nil {
-		return fmt.Errorf("failed to decode embedded test binary: %w", err)
-	}
-
-	tmpPath, cleanup, err := prepareTestBinary(decoded)
+	tmpPath, cleanup, err := prepareTestBinary(embeddedTestBinary)
 	if err != nil {
 		return err
 	}
 	defer cleanup()
 
-	log.Info("Signing test binary...")
 	if err := sign(tmpPath, opts.Signing); err != nil {
 		return fmt.Errorf("failed to sign test binary: %w", err)
 	}
 
-	log.Info("Submitting test binary to Apple notary service and waiting for completion...")
 	statusCfg := options.Status{
-		Wait:           true, // Wait for full notarization completion
-		PollSeconds:    5,
-		TimeoutSeconds: 300, // 5 minutes timeout for full notarization
+		Wait:           true,
+		PollSeconds:    testNotarizePollSeconds,
+		TimeoutSeconds: testNotarizeTimeoutSeconds,
 	}
 
 	_, err = notarize(tmpPath, opts.Notary, statusCfg)
@@ -174,13 +157,12 @@ func runTestNotarize(opts *testNotarizeConfig) error {
 		return handleNotarizationError(err)
 	}
 
-	// Success!
-	fmt.Println("\n✅ Authorization test PASSED")
-	fmt.Println("\n╭─────────────────────────────────────────────────────────────╮")
-	fmt.Println("│ Apple Notarization Credentials Verified                    │")
-	fmt.Println("╰─────────────────────────────────────────────────────────────╯")
-	fmt.Println("\nYour credentials are valid and all required agreements are")
-	fmt.Println("signed. You can proceed with notarizing your releases.")
+	successMsg := `
+Apple notarization credentials verified successfully.
 
+Your credentials are valid and all required agreements are signed.
+You can proceed with notarizing your releases.`
+
+	bus.Report(strings.TrimSpace(successMsg))
 	return nil
 }
