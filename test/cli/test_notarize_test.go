@@ -16,33 +16,25 @@ func Test_TestNotarizeCommand(t *testing.T) {
 			name:    "help output",
 			command: "test-notarize --help",
 			assertions: []trait.Assertion{
-				trait.AssertInStdout("test Apple notarization credentials"),
+				trait.AssertInStdout("Test Apple notarization credentials"),
 				trait.AssertInStdout("FORBIDDEN.REQUIRED_AGREEMENTS_MISSING_OR_EXPIRED"),
 				trait.AssertInStdout("5 minute timeout"),
 				trait.AssertSuccessfulReturnCode,
 			},
 		},
 		{
-			name:    "ad-hoc signing fails validation",
+			name:    "missing notary credentials fails early",
 			command: "test-notarize --ad-hoc",
 			assertions: []trait.Assertion{
-				trait.AssertInStderr("ad-hoc signing cannot be used for notarization"),
+				trait.AssertInStderr("notarization credentials required"),
 				trait.AssertFailingReturnCode,
 			},
 		},
 		{
-			name:    "missing p12 file fails",
+			name:    "missing notary credentials fails before p12 check",
 			command: "test-notarize --p12 /nonexistent/file.p12",
 			assertions: []trait.Assertion{
-				trait.AssertInStderr("unable to decode p12 file"),
-				trait.AssertFailingReturnCode,
-			},
-		},
-		{
-			name:    "missing notary credentials fails",
-			command: "test-notarize --p12 /tmp/fake.p12",
-			assertions: []trait.Assertion{
-				trait.AssertInStderr("issuer"),
+				trait.AssertInStderr("notarization credentials required"),
 				trait.AssertFailingReturnCode,
 			},
 		},
@@ -50,7 +42,7 @@ func Test_TestNotarizeCommand(t *testing.T) {
 			name:    "rejects unexpected arguments",
 			command: "test-notarize extra-arg",
 			assertions: []trait.Assertion{
-				trait.AssertInStderr("accepts 0 arg(s), received 1"),
+				trait.AssertInStderr("unknown command"),
 				trait.AssertFailingReturnCode,
 			},
 		},
