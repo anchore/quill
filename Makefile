@@ -187,14 +187,23 @@ install-test-cache-load: $(SNAPSHOT_DIR)
 
 
 ## Code generation targets #################################
+#
+# Note: generate and update-apple-certs are intentionally separate targets.
+# - generate: Creates test fixtures/binaries (used by bootstrap and goreleaser)
+# - update-apple-certs: Downloads fresh Apple certs (run manually when Apple releases new CAs)
+#
+# Apple certs are checked into git and rarely change. Release builds should use
+# committed certs for reproducibility, not download fresh ones as a side effect.
 
 .PHONY: generate
-generate:  ## Run all code generation
+generate:  ## Generate test fixtures and binaries (does not update Apple certs)
 	$(call title,Running code generation)
-	go generate ./...
+	go generate ./cmd/quill/cli/commands
 
 .PHONY: update-apple-certs
-update-apple-certs: generate  ## Update the apple certs checked into the repo
+update-apple-certs:  ## Update the apple certs checked into the repo
+	$(call title,Updating Apple certs)
+	go generate ./quill/pki/apple
 
 
 ## Build-related targets #################################

@@ -1,6 +1,6 @@
 before:
   hooks:
-    - go generate ./...
+    - go generate ./cmd/quill/cli/commands
 
 release:
   # If set to auto, will mark the release as not ready for production in case there is an indicator for this in the
