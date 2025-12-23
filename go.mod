@@ -31,7 +31,7 @@ require (
 	github.com/stretchr/testify v1.11.1
 	github.com/wagoodman/go-partybus v0.0.0-20230516145632-8ccac152c651
 	github.com/wagoodman/go-progress v0.0.0-20230925121702-07e42b3cdba0
-	software.sslmate.com/src/go-pkcs12 v0.6.0
+	software.sslmate.com/src/go-pkcs12 v0.7.0
 )
 
 require (
