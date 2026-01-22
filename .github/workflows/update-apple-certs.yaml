@@ -1,0 +1,54 @@
+name: "Update Apple Certificates"
+
+on:
+  schedule:
+    - cron: '0 0 * * 1'  # Weekly on Monday at midnight UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  update-certs:
+    name: "Update embedded Apple certificates"
+    runs-on: ubuntu-24.04
+    if: github.repository == 'anchore/quill' # only run for main repo
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 #v6.0.1
+        with:
+          persist-credentials: false
+
+      - name: Bootstrap environment
+        uses: ./.github/actions/bootstrap
+
+      - name: Update Apple certificates
+        run: make update-apple-certs
+
+      - name: Generate GitHub token
+        uses: actions/create-github-app-token@67018539274d69449ef7c02e8e71183d1719ab42 #v2.1.4
+        id: generate-token
+        with:
+          app-id: ${{ secrets.TOKEN_APP_ID }}
+          private-key: ${{ secrets.TOKEN_APP_PRIVATE_KEY }}
+
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@98357b18bf14b5342f975ff684046ec3b2a07725 #v8.0.0
+        with:
+          signoff: true
+          delete-branch: true
+          branch: auto/update-certs
+          labels: automated
+          commit-message: 'chore: update embedded Apple certificates'
+          title: 'Update embedded Apple certificates'
+          body: |
+            This is an auto-generated pull request to update the embedded Apple root and intermediate certificates.
+
+            Certificates are fetched from Apple's Certificate Authority page and saved to:
+            - `quill/pki/apple/certs/root/*.pem`
+            - `quill/pki/apple/certs/intermediate/*.pem`
+
+            Please review the changes to ensure all certificates are valid and properly formatted.
+          token: ${{ steps.generate-token.outputs.token }}

@@ -41,7 +41,7 @@ func New(_, quiet bool) *UI {
 	h := handler.New()
 	return &UI{
 		handler: h,
-		frame:   *frame.New(),
+		frame:   frame.New(),
 		running: &sync.WaitGroup{},
 		quiet:   quiet,
 	}
@@ -50,7 +50,7 @@ func New(_, quiet bool) *UI {
 func (m *UI) Setup(subscription partybus.Unsubscribable) error {
 	// we still want to collect log messages, however, we also the logger shouldn't write to the screen directly
 	if logWrapper, ok := log.Get().(logger.Controller); ok {
-		logWrapper.SetOutput(m.frame.(frame.Frame).Footer())
+		logWrapper.SetOutput(m.frame.(*frame.Frame).Footer())
 	}
 
 	m.subscription = subscription
@@ -170,7 +170,7 @@ func (m *UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				continue
 			}
 			cmds = append(cmds, newModel.Init())
-			f := m.frame.(frame.Frame)
+			f := m.frame.(*frame.Frame)
 			f.AppendModel(newModel)
 			m.frame = f
 		}

@@ -95,7 +95,7 @@ func Sign(cfg SigningConfig) error {
 
 	err = signSingleBinary(cfg)
 	if err != nil {
-		mon.Err = err
+		mon.SetError(err)
 	} else {
 		mon.SetCompleted()
 	}
@@ -130,7 +130,7 @@ func signMultiarchBinary(cfg SigningConfig) error {
 
 	extractedFiles, err := macholibre.Extract(f, dir)
 	if err != nil {
-		extractMon.Err = err
+		extractMon.SetError(err)
 		return fmt.Errorf("unable to extract multi-arch binary: %w", err)
 	}
 
@@ -162,10 +162,10 @@ func signMultiarchBinary(cfg SigningConfig) error {
 	for _, c := range cfgs {
 		signMon.Stage.Current = path.Base(c.Path)
 		if err := signSingleBinary(c); err != nil {
-			signMon.Err = err
+			signMon.SetError(err)
 			return err
 		}
-		signMon.N++
+		signMon.Increment()
 	}
 
 	signMon.Stage.Current = ""
@@ -190,7 +190,7 @@ func signMultiarchBinary(cfg SigningConfig) error {
 	defer packMon.SetCompleted()
 
 	if err := macholibre.Package(cfg.Path, paths...); err != nil {
-		packMon.Err = err
+		packMon.SetError(err)
 		return err
 	}
 

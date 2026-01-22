@@ -1,5 +1,6 @@
 go.work
 go.work.sum
+mise.toml
 
 CHANGELOG.md
 /VERSION
