@@ -1,3 +1,4 @@
+// Package macho provides functionality for reading and modifying Mach-O binaries.
 package macho
 
 import (
@@ -24,6 +25,45 @@ const (
 
 	PageSizeBits = 12
 	PageSize     = 1 << PageSizeBits
+
+	// The below constants control security limits for parsing untrusted Mach-O binaries.
+	//
+	// A malicious binary can claim to have huge data sections (e.g., 4GB) to trick us into
+	// allocating massive amounts of memory. These limits cap how much memory we'll allocate
+	// based on values read from the binary. We also verify that claimed data ranges actually
+	// fit within the file.
+	//
+	// How code signing data is structured:
+	//
+	//   - The signature lives in a container called a "superblob"
+	//   - The superblob holds multiple smaller pieces called "blobs"
+	//   - Most blobs are small (under 100KB): entitlements, requirements, the signature itself
+	//   - One blob is large: the "code directory" which stores a hash of every 4KB page
+	//
+	// The code directory grows with binary size (roughly: binary_size / 4KB × 32 bytes):
+	//
+	//     83MB binary  → ~630KB code directory
+	//    500MB binary  → ~4MB code directory
+	//      2GB binary  → ~16MB code directory
+	//
+	// The number of blobs does NOT grow with binary size. Real binaries tend to have 4-8 blobs
+	// regardless of size. These limits support binaries up to ~2GB with plenty of headroom.
+
+	// maxSuperBlobSize caps the total signature container size.
+	// Real-world superblobs are under 1MB; 50MB allows for very large binaries.
+	maxSuperBlobSize = 50 * 1024 * 1024 // 50 MB
+
+	// maxBlobCount caps how many blobs can be in the container.
+	// Real binaries have 4-8 blobs; 25 is generous while blocking absurd values.
+	maxBlobCount = 25
+
+	// maxBlobLength caps the size of any single blob.
+	// The code directory is the largest blob; 16MB supports binaries up to ~2GB.
+	maxBlobLength = 16 * 1024 * 1024 // 16 MB
+
+	// maxLoaderCmdSize caps the size of loader command structures.
+	// The code signature command is 16 bytes; 128 bytes is plenty of headroom.
+	maxLoaderCmdSize = 128
 )
 
 type File struct {
@@ -32,11 +72,13 @@ type File struct {
 	io.ReaderAt
 	io.WriterAt
 	*macho.File
+	fileSize int64 // cached file size, -1 if not determined
 }
 
 func NewFile(path string) (*File, error) {
 	m := &File{
-		path: path,
+		path:     path,
+		fileSize: -1,
 	}
 
 	return m, m.refresh(true)
@@ -44,7 +86,8 @@ func NewFile(path string) (*File, error) {
 
 func NewReadOnlyFile(path string) (*File, error) {
 	m := &File{
-		path: path,
+		path:     path,
+		fileSize: -1,
 	}
 
 	return m, m.refresh(false)
@@ -97,6 +140,7 @@ func (m *File) refresh(withWrite bool) error {
 		m.WriterAt = f
 	}
 	m.File = o
+	m.fileSize = -1 // invalidate cached file size
 
 	return nil
 }
@@ -108,6 +152,47 @@ func (m *File) Close() error {
 	return m.File.Close()
 }
 
+// getFileSize returns the size of the underlying file (cached).
+func (m *File) getFileSize() (int64, error) {
+	if m.fileSize >= 0 {
+		return m.fileSize, nil
+	}
+
+	currentPos, err := m.Seek(0, io.SeekCurrent)
+	if err != nil {
+		return 0, fmt.Errorf("unable to get current file position: %w", err)
+	}
+
+	size, err := m.Seek(0, io.SeekEnd)
+	if err != nil {
+		return 0, fmt.Errorf("unable to seek to end of file: %w", err)
+	}
+
+	if _, err := m.Seek(currentPos, io.SeekStart); err != nil {
+		return 0, fmt.Errorf("unable to restore file position: %w", err)
+	}
+
+	m.fileSize = size
+	return size, nil
+}
+
+// validateDataRange checks offset + size doesn't overflow and fits in file.
+func (m *File) validateDataRange(offset, size uint32, description string) error {
+	end := uint64(offset) + uint64(size)
+
+	fileSize, err := m.getFileSize()
+	if err != nil {
+		return fmt.Errorf("%s: unable to determine file size: %w", description, err)
+	}
+
+	if int64(end) > fileSize {
+		return fmt.Errorf("%s: data extends beyond file (offset=%d, size=%d, file_size=%d)",
+			description, offset, size, fileSize)
+	}
+
+	return nil
+}
+
 func (m *File) Patch(content []byte, size int, offset uint64) (err error) {
 	if m.WriterAt == nil {
 		return fmt.Errorf("writes not allowed")
@@ -116,6 +201,7 @@ func (m *File) Patch(content []byte, size int, offset uint64) (err error) {
 	if err != nil {
 		return fmt.Errorf("unable to patch macho binary: %w", err)
 	}
+	m.fileSize = -1 // invalidate cached file size before refresh
 	return m.refresh(true)
 }
 
@@ -244,6 +330,17 @@ func (m *File) RemoveSigningContent() error {
 		return fmt.Errorf("unable to extract existing code signing cmd: %w", err)
 	}
 
+	// validate command sizes before allocation
+	if cmd.Size > maxLoaderCmdSize {
+		return fmt.Errorf("loader command size exceeds maximum (%d > %d)", cmd.Size, maxLoaderCmdSize)
+	}
+	if cmd.DataSize > maxSuperBlobSize {
+		return fmt.Errorf("superblob size exceeds maximum (%d > %d)", cmd.DataSize, maxSuperBlobSize)
+	}
+	if err := m.validateDataRange(cmd.DataOffset, cmd.DataSize, "code signing data"); err != nil {
+		return err
+	}
+
 	if !m.isSigningCommandLastLoader() {
 		return fmt.Errorf("code signing command is not the last loader command, so cannot remove it (easily) without corrupting the binary")
 	}
@@ -319,6 +416,11 @@ func (m *File) HashPages(hasher hash.Hash) (hashes [][]byte, err error) {
 		return nil, fmt.Errorf("LcCodeSignature is not present, any generated page hashes will be wrong. Bailing")
 	}
 
+	// validate DataOffset is within file bounds before allocating memory via io.ReadAll
+	if err := m.validateDataRange(0, cmd.DataOffset, "code signing data offset"); err != nil {
+		return nil, err
+	}
+
 	if _, err = m.Seek(0, io.SeekStart); err != nil {
 		return nil, fmt.Errorf("unable to seek within macho binary: %w", err)
 	}
@@ -337,122 +439,116 @@ func (m *File) HashPages(hasher hash.Hash) (hashes [][]byte, err error) {
 }
 
 func (m *File) CDBytes(order binary.ByteOrder, ith int) (cd []byte, err error) {
-	cmd, _, err := m.CodeSigningCmd()
+	csBlob, superBlobReader, err := m.readSuperBlob()
 	if err != nil {
-		return nil, fmt.Errorf("unable to extract code signing cmd: %w", err)
-	}
-
-	superBlobBytes := make([]byte, cmd.DataSize)
-	if _, err := m.ReadAt(superBlobBytes, int64(cmd.DataOffset)); err != nil {
-		return nil, fmt.Errorf("unable to extract code signing block from macho binary: %w", err)
-	}
-
-	superBlobReader := bytes.NewReader(superBlobBytes)
-
-	csBlob := SuperBlob{}
-	if err := binary.Read(superBlobReader, SigningOrder, &csBlob.SuperBlobHeader); err != nil {
-		return nil, fmt.Errorf("unable to extract superblob header from macho binary: %w", err)
-	}
-
-	csBlob.Index = make([]BlobIndex, csBlob.Count)
-	if err := binary.Read(superBlobReader, SigningOrder, &csBlob.Index); err != nil {
 		return nil, err
 	}
 
 	var found int
-blobIndex:
 	for _, index := range csBlob.Index {
-		if _, err := superBlobReader.Seek(int64(index.Offset), io.SeekStart); err != nil {
-			return nil, fmt.Errorf("unable to seek to code signing blob index=%d: %w", index.Offset, err)
+		if index.Type != CsSlotCodedirectory && index.Type != CsSlotAlternateCodedirectories {
+			continue
 		}
 
-		switch index.Type {
-		case CsSlotCodedirectory, CsSlotAlternateCodedirectories:
-			found++
-			if found <= ith {
-				continue blobIndex
-			}
-
-			var cdBlobHeader BlobHeader
-			// read the header
-			if err := binary.Read(superBlobReader, SigningOrder, &cdBlobHeader); err != nil {
-				return nil, err
-			}
-
-			var cdHeader CodeDirectoryHeader
-			if err := binary.Read(superBlobReader, SigningOrder, &cdHeader); err != nil {
-				return nil, err
-			}
-
-			// head back to the beginning of the CD
-			if _, err := superBlobReader.Seek(int64(index.Offset), io.SeekStart); err != nil {
-				return nil, fmt.Errorf("unable to seek to code directory: %w", err)
-			}
-
-			cdBytes := make([]byte, cdBlobHeader.Length)
-			// note: though the binary may be LE or BE, for hashing we always use LE
-			// note: the entire blob is encoded, not just the code directory (which is only the blob payload)
-			if err := binary.Read(superBlobReader, order, &cdBytes); err != nil {
-				return nil, err
-			}
-
-			return cdBytes, nil
+		found++
+		if found <= ith {
+			continue
 		}
+
+		return m.readBlobBytes(superBlobReader, index, order, "code directory")
 	}
 	return nil, ErrNoCodeDirectory
+}
+
+// readSuperBlob reads and validates the code signing superblob, returning the parsed blob and a reader.
+func (m *File) readSuperBlob() (*SuperBlob, *bytes.Reader, error) {
+	cmd, _, err := m.CodeSigningCmd()
+	if err != nil {
+		return nil, nil, fmt.Errorf("unable to extract code signing cmd: %w", err)
+	}
+
+	if cmd == nil {
+		return nil, nil, fmt.Errorf("no code signing command found")
+	}
+
+	if cmd.DataSize > maxSuperBlobSize {
+		return nil, nil, fmt.Errorf("superblob size exceeds maximum (%d > %d)", cmd.DataSize, maxSuperBlobSize)
+	}
+	if err := m.validateDataRange(cmd.DataOffset, cmd.DataSize, "code signing superblob"); err != nil {
+		return nil, nil, err
+	}
+
+	superBlobBytes := make([]byte, cmd.DataSize)
+	if _, err := m.ReadAt(superBlobBytes, int64(cmd.DataOffset)); err != nil {
+		return nil, nil, fmt.Errorf("unable to extract code signing block from macho binary: %w", err)
+	}
+
+	superBlobReader := bytes.NewReader(superBlobBytes)
+
+	csBlob := &SuperBlob{}
+	if err := binary.Read(superBlobReader, SigningOrder, &csBlob.SuperBlobHeader); err != nil {
+		return nil, nil, fmt.Errorf("unable to extract superblob header from macho binary: %w", err)
+	}
+
+	if csBlob.Count > maxBlobCount {
+		return nil, nil, fmt.Errorf("blob count exceeds maximum (%d > %d)", csBlob.Count, maxBlobCount)
+	}
+
+	csBlob.Index = make([]BlobIndex, csBlob.Count)
+	if err := binary.Read(superBlobReader, SigningOrder, &csBlob.Index); err != nil {
+		return nil, nil, err
+	}
+
+	return csBlob, superBlobReader, nil
+}
+
+// readBlobBytes reads and returns the raw bytes of a blob at the given index.
+func (m *File) readBlobBytes(reader *bytes.Reader, index BlobIndex, order binary.ByteOrder, blobName string) ([]byte, error) {
+	if _, err := reader.Seek(int64(index.Offset), io.SeekStart); err != nil {
+		return nil, fmt.Errorf("unable to seek to %s blob: %w", blobName, err)
+	}
+
+	var blobHeader BlobHeader
+	if err := binary.Read(reader, SigningOrder, &blobHeader); err != nil {
+		return nil, err
+	}
+
+	if blobHeader.Length > maxBlobLength {
+		return nil, fmt.Errorf("%s blob size exceeds maximum (%d > %d)", blobName, blobHeader.Length, maxBlobLength)
+	}
+
+	// validate that the blob fits within the superblob buffer (defense in depth against malicious length values)
+	superBlobSize := reader.Size()
+	if int64(index.Offset)+int64(blobHeader.Length) > superBlobSize {
+		return nil, fmt.Errorf("%s blob extends beyond superblob (offset=%d + length=%d > %d)", blobName, index.Offset, blobHeader.Length, superBlobSize)
+	}
+
+	// seek back to the beginning of the blob to read the full content
+	if _, err := reader.Seek(int64(index.Offset), io.SeekStart); err != nil {
+		return nil, fmt.Errorf("unable to seek to %s: %w", blobName, err)
+	}
+
+	blobBytes := make([]byte, blobHeader.Length)
+	if err := binary.Read(reader, order, &blobBytes); err != nil {
+		return nil, err
+	}
+
+	return blobBytes, nil
 }
 
 var ErrNoCodeDirectory = fmt.Errorf("unable to find code directory")
 
 func (m *File) CMSBlobBytes(order binary.ByteOrder) (cd []byte, err error) {
-	cmd, _, err := m.CodeSigningCmd()
+	csBlob, superBlobReader, err := m.readSuperBlob()
 	if err != nil {
-		return nil, fmt.Errorf("unable to extract code signing cmd: %w", err)
-	}
-
-	superBlobBytes := make([]byte, cmd.DataSize)
-	if _, err := m.ReadAt(superBlobBytes, int64(cmd.DataOffset)); err != nil {
-		return nil, fmt.Errorf("unable to extract code signing block from macho binary: %w", err)
-	}
-
-	superBlobReader := bytes.NewReader(superBlobBytes)
-
-	csBlob := SuperBlob{}
-	if err := binary.Read(superBlobReader, SigningOrder, &csBlob.SuperBlobHeader); err != nil {
-		return nil, fmt.Errorf("unable to extract superblob header from macho binary: %w", err)
-	}
-
-	csBlob.Index = make([]BlobIndex, csBlob.Count)
-	if err := binary.Read(superBlobReader, SigningOrder, &csBlob.Index); err != nil {
 		return nil, err
 	}
 
 	for _, index := range csBlob.Index {
-		if _, err := superBlobReader.Seek(int64(index.Offset), io.SeekStart); err != nil {
-			return nil, fmt.Errorf("unable to seek to code signing blob index=%d: %w", index.Offset, err)
+		if index.Type != CsSlotCmsSignature {
+			continue
 		}
-
-		switch index.Type { //nolint:gocritic
-		case CsSlotCmsSignature:
-
-			var blobHeader BlobHeader
-			// read the header
-			if err := binary.Read(superBlobReader, SigningOrder, &blobHeader); err != nil {
-				return nil, err
-			}
-
-			// head back to the beginning of the CD
-			if _, err := superBlobReader.Seek(int64(index.Offset), io.SeekStart); err != nil {
-				return nil, fmt.Errorf("unable to seek to CMS bob: %w", err)
-			}
-
-			b := make([]byte, blobHeader.Length)
-			if err := binary.Read(superBlobReader, order, &b); err != nil {
-				return nil, err
-			}
-
-			return b, nil
-		}
+		return m.readBlobBytes(superBlobReader, index, order, "CMS")
 	}
 	return nil, fmt.Errorf("unable to find CMS blob")
 }

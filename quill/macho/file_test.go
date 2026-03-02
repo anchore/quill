@@ -2,7 +2,10 @@ package macho
 
 import (
 	"crypto/sha256"
+	"encoding/binary"
 	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -353,6 +356,339 @@ func TestFile_HashCD(t *testing.T) {
 			gotHashBytes, err := m.HashCD(sha256.New())
 			require.NoError(t, err)
 			assert.Equal(t, tt.wantHexHash, fmt.Sprintf("%x", gotHashBytes))
+		})
+	}
+}
+
+// createMaliciousMachO creates a minimal Mach-O file with a malicious code signing command.
+// The dataSize and dataOffset parameters control the values in the LC_CODE_SIGNATURE command.
+func createMaliciousMachO(t *testing.T, dataSize, dataOffset uint32) string {
+	t.Helper()
+
+	// create a minimal 64-bit Mach-O header
+	dir := t.TempDir()
+	path := filepath.Join(dir, "malicious")
+
+	f, err := os.Create(path)
+	require.NoError(t, err)
+	defer f.Close()
+
+	// Mach-O 64-bit magic
+	require.NoError(t, binary.Write(f, binary.LittleEndian, uint32(0xFEEDFACF))) // MH_MAGIC_64
+	require.NoError(t, binary.Write(f, binary.LittleEndian, uint32(0x01000007))) // CPU_TYPE_X86_64
+	require.NoError(t, binary.Write(f, binary.LittleEndian, uint32(0x80000003))) // CPU_SUBTYPE_X86_64_ALL
+	require.NoError(t, binary.Write(f, binary.LittleEndian, uint32(0x00000002))) // MH_EXECUTE
+	require.NoError(t, binary.Write(f, binary.LittleEndian, uint32(1)))          // ncmds = 1
+	require.NoError(t, binary.Write(f, binary.LittleEndian, uint32(16)))         // sizeofcmds = 16
+	require.NoError(t, binary.Write(f, binary.LittleEndian, uint32(0)))          // flags
+	require.NoError(t, binary.Write(f, binary.LittleEndian, uint32(0)))          // reserved (64-bit padding)
+
+	// LC_CODE_SIGNATURE command (cmd = 0x1D = 29)
+	require.NoError(t, binary.Write(f, binary.LittleEndian, uint32(0x1D))) // cmd
+	require.NoError(t, binary.Write(f, binary.LittleEndian, uint32(16)))   // cmdsize
+	require.NoError(t, binary.Write(f, binary.LittleEndian, dataOffset))   // dataoff
+	require.NoError(t, binary.Write(f, binary.LittleEndian, dataSize))     // datasize
+
+	return path
+}
+
+// createMaliciousSuperBlob creates a Mach-O file with a valid superblob but malicious count value.
+func createMaliciousSuperBlob(t *testing.T, blobCount uint32) string {
+	t.Helper()
+
+	dir := t.TempDir()
+	path := filepath.Join(dir, "malicious_superblob")
+
+	f, err := os.Create(path)
+	require.NoError(t, err)
+	defer f.Close()
+
+	superBlobOffset := uint32(48) // after header + load command
+	superBlobSize := uint32(12)   // just the header
+
+	// Mach-O 64-bit header
+	require.NoError(t, binary.Write(f, binary.LittleEndian, uint32(0xFEEDFACF)))
+	require.NoError(t, binary.Write(f, binary.LittleEndian, uint32(0x01000007)))
+	require.NoError(t, binary.Write(f, binary.LittleEndian, uint32(0x80000003)))
+	require.NoError(t, binary.Write(f, binary.LittleEndian, uint32(0x00000002)))
+	require.NoError(t, binary.Write(f, binary.LittleEndian, uint32(1)))
+	require.NoError(t, binary.Write(f, binary.LittleEndian, uint32(16)))
+	require.NoError(t, binary.Write(f, binary.LittleEndian, uint32(0)))
+	require.NoError(t, binary.Write(f, binary.LittleEndian, uint32(0)))
+
+	// LC_CODE_SIGNATURE
+	require.NoError(t, binary.Write(f, binary.LittleEndian, uint32(0x1D)))
+	require.NoError(t, binary.Write(f, binary.LittleEndian, uint32(16)))
+	require.NoError(t, binary.Write(f, binary.LittleEndian, superBlobOffset))
+	require.NoError(t, binary.Write(f, binary.LittleEndian, superBlobSize))
+
+	// SuperBlob header (big endian as per code signing format)
+	require.NoError(t, binary.Write(f, binary.BigEndian, uint32(0xFADE0CC0))) // magic
+	require.NoError(t, binary.Write(f, binary.BigEndian, superBlobSize))      // length
+	require.NoError(t, binary.Write(f, binary.BigEndian, blobCount))          // count
+
+	return path
+}
+
+// createMaliciousBlobLength creates a Mach-O file with a superblob containing a blob that claims
+// an oversized length value. This tests the maxBlobLength validation.
+func createMaliciousBlobLength(t *testing.T, blobLength uint32, slotType SlotType) string {
+	t.Helper()
+
+	dir := t.TempDir()
+	path := filepath.Join(dir, "malicious_blob_length")
+
+	f, err := os.Create(path)
+	require.NoError(t, err)
+	defer f.Close()
+
+	superBlobOffset := uint32(48) // after header + load command
+	// superblob header (12) + 1 blob index (8) + blob header (8) = 28 bytes minimum
+	superBlobSize := uint32(28)
+
+	// Mach-O 64-bit header
+	require.NoError(t, binary.Write(f, binary.LittleEndian, uint32(0xFEEDFACF)))
+	require.NoError(t, binary.Write(f, binary.LittleEndian, uint32(0x01000007)))
+	require.NoError(t, binary.Write(f, binary.LittleEndian, uint32(0x80000003)))
+	require.NoError(t, binary.Write(f, binary.LittleEndian, uint32(0x00000002)))
+	require.NoError(t, binary.Write(f, binary.LittleEndian, uint32(1)))
+	require.NoError(t, binary.Write(f, binary.LittleEndian, uint32(16)))
+	require.NoError(t, binary.Write(f, binary.LittleEndian, uint32(0)))
+	require.NoError(t, binary.Write(f, binary.LittleEndian, uint32(0)))
+
+	// LC_CODE_SIGNATURE
+	require.NoError(t, binary.Write(f, binary.LittleEndian, uint32(0x1D)))
+	require.NoError(t, binary.Write(f, binary.LittleEndian, uint32(16)))
+	require.NoError(t, binary.Write(f, binary.LittleEndian, superBlobOffset))
+	require.NoError(t, binary.Write(f, binary.LittleEndian, superBlobSize))
+
+	// SuperBlob header (big endian as per code signing format)
+	require.NoError(t, binary.Write(f, binary.BigEndian, uint32(0xFADE0CC0))) // magic
+	require.NoError(t, binary.Write(f, binary.BigEndian, superBlobSize))      // length
+	require.NoError(t, binary.Write(f, binary.BigEndian, uint32(1)))          // count = 1 blob
+
+	// BlobIndex entry: type + offset
+	require.NoError(t, binary.Write(f, binary.BigEndian, uint32(slotType))) // slot type
+	require.NoError(t, binary.Write(f, binary.BigEndian, uint32(20)))       // offset within superblob (after header + index)
+
+	// Blob header with malicious length
+	require.NoError(t, binary.Write(f, binary.BigEndian, uint32(0xFADE0C02))) // magic (code directory)
+	require.NoError(t, binary.Write(f, binary.BigEndian, blobLength))         // malicious length
+
+	return path
+}
+
+func TestFile_CDBytes_ValidationOversizedBlobLength(t *testing.T) {
+	// create a malicious binary with a blob claiming length > maxBlobLength
+	path := createMaliciousBlobLength(t, maxBlobLength+1, CsSlotCodedirectory)
+
+	m, err := NewReadOnlyFile(path)
+	require.NoError(t, err)
+	defer m.Close()
+
+	_, err = m.CDBytes(binary.LittleEndian, 0)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "blob size exceeds maximum")
+}
+
+func TestFile_CDBytes_ValidationBlobExtendsBeyondSuperBlob(t *testing.T) {
+	// create a malicious binary with a blob length that exceeds superblob bounds
+	// (but is under maxBlobLength)
+	path := createMaliciousBlobLength(t, 1000, CsSlotCodedirectory) // 1000 > 28 byte superblob
+
+	m, err := NewReadOnlyFile(path)
+	require.NoError(t, err)
+	defer m.Close()
+
+	_, err = m.CDBytes(binary.LittleEndian, 0)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "extends beyond superblob")
+}
+
+func TestFile_CMSBlobBytes_ValidationOversizedBlobLength(t *testing.T) {
+	// create a malicious binary with a CMS blob claiming length > maxBlobLength
+	path := createMaliciousBlobLength(t, maxBlobLength+1, CsSlotCmsSignature)
+
+	m, err := NewReadOnlyFile(path)
+	require.NoError(t, err)
+	defer m.Close()
+
+	_, err = m.CMSBlobBytes(binary.LittleEndian)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "blob size exceeds maximum")
+}
+
+func TestFile_CMSBlobBytes_ValidationBlobExtendsBeyondSuperBlob(t *testing.T) {
+	// create a malicious binary with a CMS blob length that exceeds superblob bounds
+	path := createMaliciousBlobLength(t, 1000, CsSlotCmsSignature) // 1000 > 28 byte superblob
+
+	m, err := NewReadOnlyFile(path)
+	require.NoError(t, err)
+	defer m.Close()
+
+	_, err = m.CMSBlobBytes(binary.LittleEndian)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "extends beyond superblob")
+}
+
+func TestFile_CDBytes_ValidationOversizedSuperBlob(t *testing.T) {
+	// create a malicious binary with a DataSize larger than maxSuperBlobSize
+	path := createMaliciousMachO(t, maxSuperBlobSize+1, 48)
+
+	m, err := NewReadOnlyFile(path)
+	require.NoError(t, err)
+	defer m.Close()
+
+	_, err = m.CDBytes(binary.LittleEndian, 0)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "superblob size exceeds maximum")
+}
+
+func TestFile_CDBytes_ValidationDataBeyondFile(t *testing.T) {
+	// create a malicious binary where offset + size extends beyond file
+	path := createMaliciousMachO(t, 1000, 48)
+
+	m, err := NewReadOnlyFile(path)
+	require.NoError(t, err)
+	defer m.Close()
+
+	_, err = m.CDBytes(binary.LittleEndian, 0)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "data extends beyond file")
+}
+
+func TestFile_CDBytes_ValidationOversizedBlobCount(t *testing.T) {
+	// create a malicious binary with too many blob indices
+	path := createMaliciousSuperBlob(t, maxBlobCount+1)
+
+	m, err := NewReadOnlyFile(path)
+	require.NoError(t, err)
+	defer m.Close()
+
+	_, err = m.CDBytes(binary.LittleEndian, 0)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "blob count exceeds maximum")
+}
+
+func TestFile_CMSBlobBytes_ValidationOversizedSuperBlob(t *testing.T) {
+	path := createMaliciousMachO(t, maxSuperBlobSize+1, 48)
+
+	m, err := NewReadOnlyFile(path)
+	require.NoError(t, err)
+	defer m.Close()
+
+	_, err = m.CMSBlobBytes(binary.LittleEndian)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "superblob size exceeds maximum")
+}
+
+func TestFile_CMSBlobBytes_ValidationDataBeyondFile(t *testing.T) {
+	path := createMaliciousMachO(t, 1000, 48)
+
+	m, err := NewReadOnlyFile(path)
+	require.NoError(t, err)
+	defer m.Close()
+
+	_, err = m.CMSBlobBytes(binary.LittleEndian)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "data extends beyond file")
+}
+
+func TestFile_CMSBlobBytes_ValidationOversizedBlobCount(t *testing.T) {
+	path := createMaliciousSuperBlob(t, maxBlobCount+1)
+
+	m, err := NewReadOnlyFile(path)
+	require.NoError(t, err)
+	defer m.Close()
+
+	_, err = m.CMSBlobBytes(binary.LittleEndian)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "blob count exceeds maximum")
+}
+
+// Note: Testing oversized loader command size (cmd.Size) is not possible because the Go
+// standard library's macho.NewFile() validates command block sizes during parsing and
+// rejects malformed binaries before our validation runs. This provides defense-in-depth.
+
+func TestFile_RemoveSigningContent_ValidationOversizedDataSize(t *testing.T) {
+	// use a copy of a real signed binary and patch it with oversized DataSize
+	originalPath := test.AssetCopy(t, "hello_adhoc_signed")
+
+	m, err := NewFile(originalPath)
+	require.NoError(t, err)
+
+	// patch the code signing command to have oversized DataSize
+	cmd, offset, err := m.CodeSigningCmd()
+	require.NoError(t, err)
+	require.NotNil(t, cmd)
+
+	cmd.DataSize = maxSuperBlobSize + 1
+
+	// write patched command back
+	var buf [16]byte
+	binary.LittleEndian.PutUint32(buf[0:4], uint32(cmd.Cmd))
+	binary.LittleEndian.PutUint32(buf[4:8], cmd.Size)
+	binary.LittleEndian.PutUint32(buf[8:12], cmd.DataOffset)
+	binary.LittleEndian.PutUint32(buf[12:16], cmd.DataSize)
+
+	_, err = m.WriteAt(buf[:], int64(offset))
+	require.NoError(t, err)
+	m.Close()
+
+	// reopen and test
+	m2, err := NewFile(originalPath)
+	require.NoError(t, err)
+	defer m2.Close()
+
+	err = m2.RemoveSigningContent()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "superblob size exceeds maximum")
+}
+
+func TestFile_HashPages_ValidationDataBeyondFile(t *testing.T) {
+	// create a malicious binary where DataOffset extends beyond file size
+	// DataOffset is used by HashPages to read everything up to that point
+	path := createMaliciousMachO(t, 100, 0xFFFFFFFF) // huge offset beyond file
+
+	m, err := NewReadOnlyFile(path)
+	require.NoError(t, err)
+	defer m.Close()
+
+	_, err = m.HashPages(sha256.New())
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "data extends beyond file")
+}
+
+func TestFile_ValidDataRangePassing(t *testing.T) {
+	// test that legitimate signed binaries still work
+	tests := []struct {
+		name       string
+		binaryPath string
+	}{
+		{
+			name:       "adhoc signed binary",
+			binaryPath: test.Asset(t, "hello_adhoc_signed"),
+		},
+		{
+			name:       "signed binary",
+			binaryPath: test.Asset(t, "syft_signed"),
+		},
+		{
+			name:       "signed binary extracted from universal binary",
+			binaryPath: test.Asset(t, "ls_x86_64_signed"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m, err := NewReadOnlyFile(tt.binaryPath)
+			require.NoError(t, err)
+			defer m.Close()
+
+			// CDBytes should work
+			cdBytes, err := m.CDBytes(binary.LittleEndian, 0)
+			require.NoError(t, err)
+			assert.NotEmpty(t, cdBytes)
 		})
 	}
 }
