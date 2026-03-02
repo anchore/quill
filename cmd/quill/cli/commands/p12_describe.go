@@ -61,15 +61,15 @@ func describeP12(file, password string) (string, error) {
 	if p12Contents.PrivateKey != nil {
 		buf.WriteString("Private Key:\n")
 
-		buf.WriteString(fmt.Sprintf("  - %+v exists\n", reflect.TypeOf(p12Contents.PrivateKey).Elem().String()))
+		fmt.Fprintf(&buf, "  - %+v exists\n", reflect.TypeOf(p12Contents.PrivateKey).Elem().String())
 	} else {
 		buf.WriteString("Private Key: (none)\n")
 	}
 
 	summarizeCert := func(c *x509.Certificate) {
-		buf.WriteString(fmt.Sprintf("  - Subject:          CN=%q O=%q OU=%q\n", c.Subject.CommonName, strings.Join(c.Subject.Organization, ","), strings.Join(c.Subject.OrganizationalUnit, ",")))
-		buf.WriteString(fmt.Sprintf("    Subject-Key-ID:   %x\n", c.SubjectKeyId))
-		buf.WriteString(fmt.Sprintf("    Authority-Key-ID: %x\n", c.AuthorityKeyId))
+		fmt.Fprintf(&buf, "  - Subject:          CN=%q O=%q OU=%q\n", c.Subject.CommonName, strings.Join(c.Subject.Organization, ","), strings.Join(c.Subject.OrganizationalUnit, ","))
+		fmt.Fprintf(&buf, "    Subject-Key-ID:   %x\n", c.SubjectKeyId)
+		fmt.Fprintf(&buf, "    Authority-Key-ID: %x\n", c.AuthorityKeyId)
 	}
 
 	if p12Contents.Certificate != nil {
@@ -79,7 +79,7 @@ func describeP12(file, password string) (string, error) {
 		buf.WriteString("Signing Certificate: (none)\n")
 	}
 
-	buf.WriteString(fmt.Sprintf("Certificate Chain: (%d)\n", len(p12Contents.Certificates)))
+	fmt.Fprintf(&buf, "Certificate Chain: (%d)\n", len(p12Contents.Certificates))
 	for _, c := range p12Contents.Certificates {
 		summarizeCert(c)
 	}

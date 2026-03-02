@@ -40,9 +40,9 @@ func SubmissionLogs(app clio.Application) *cobra.Command {
 			log.Infof("fetching submission logs for %q", opts.ID)
 
 			cfg := quill.NewNotarizeConfig(
-				opts.Notary.Issuer,
-				opts.Notary.PrivateKeyID,
-				opts.Notary.PrivateKey,
+				opts.Issuer,
+				opts.PrivateKeyID,
+				opts.PrivateKey,
 			)
 
 			token, err := notary.NewSignedToken(cfg.TokenConfig)

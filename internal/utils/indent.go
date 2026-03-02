@@ -1,4 +1,4 @@
-package utils
+package utils //nolint:revive // existing package name
 
 import "strings"
 

@@ -55,12 +55,12 @@ func P12AttachChain(app clio.Application) *cobra.Command {
 		RunE: func(_ *cobra.Command, _ []string) error {
 			defer bus.Exit()
 
-			newFilename, err := writeP12WithChain(opts.Path, opts.P12.Password, opts.Keychain.Path, true)
+			newFilename, err := writeP12WithChain(opts.Path, opts.Password, opts.Keychain.Path, true)
 			if err != nil {
 				return fmt.Errorf("unable to write new p12 with chain attached file=%q : %w", opts.Path, err)
 			}
 
-			description, err := describeP12(newFilename, opts.P12.Password)
+			description, err := describeP12(newFilename, opts.Password)
 			if err != nil {
 				return fmt.Errorf("unable to describe p12 file=%q : %w", newFilename, err)
 			}
