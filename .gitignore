@@ -1,7 +1,12 @@
+# local workflow
 go.work
 go.work.sum
 mise.toml
+.claude
+.conductor
+specs
 
+# release assets
 CHANGELOG.md
 /VERSION
 /test/results
