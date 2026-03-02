@@ -26,14 +26,19 @@ test_positive_snapshot_install_asset() {
   expected_path="${install_dir}/${binary}"
   assertFileExists "${expected_path}" "install_asset os=${os} arch=${arch} format=${format}"
 
-  # directory structure for arch has been updated as of go 1.18
-  # https://goreleaser.com/customization/build/#why-is-there-a-_v1-suffix-on-amd64-buildsjk
-  if [ $arch == "amd64" ]; then
-	  arch="amd64_v1"
+  # goreleaser build directories include GOAMD64/GOARM64/GOPPC64 version suffixes
+  # https://goreleaser.com/customization/build/#why-is-there-a-_v1-suffix-on-amd64-builds
+  build_arch="${arch}"
+  if [ "$arch" == "amd64" ]; then
+	  build_arch="amd64_v1"
+  elif [ "$arch" == "arm64" ]; then
+	  build_arch="arm64_v8.0"
+  elif [ "$arch" == "ppc64le" ]; then
+	  build_arch="ppc64le_power8"
   fi
 
   assertFilesEqual \
-    "$(snapshot_dir)/${os}-build_${os}_${arch}/${binary}" \
+    "$(snapshot_dir)/${os}-build_${os}_${build_arch}/${binary}" \
     "${expected_path}" \
     "unable to verify installation of os=${os} arch=${arch} format=${format}"
 
