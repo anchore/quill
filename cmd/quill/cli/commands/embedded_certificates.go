@@ -43,13 +43,13 @@ func showAppleCerts(buf io.Writer) error {
 	store := apple.GetEmbeddedCertStore()
 
 	for _, cert := range store.RootPEMs() {
-		if _, err := buf.Write([]byte(fmt.Sprintln(string(cert)))); err != nil {
+		if _, err := fmt.Fprintln(buf, string(cert)); err != nil {
 			return fmt.Errorf("unable to write certificate: %w", err)
 		}
 	}
 
 	for _, cert := range store.IntermediatePEMs() {
-		if _, err := buf.Write([]byte(fmt.Sprintln(string(cert)))); err != nil {
+		if _, err := fmt.Fprintln(buf, string(cert)); err != nil {
 			return fmt.Errorf("unable to write certificate: %w", err)
 		}
 	}

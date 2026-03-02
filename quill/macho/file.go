@@ -128,7 +128,7 @@ func (m *File) firstCmdOffset() uint64 {
 }
 
 func (m *File) nextCmdOffset() uint64 {
-	return m.firstCmdOffset() + uint64(m.FileHeader.Cmdsz)
+	return m.firstCmdOffset() + uint64(m.Cmdsz)
 }
 
 func (m *File) hasRoomForNewCmd() bool {
