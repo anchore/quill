@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"path"
@@ -22,6 +21,12 @@ import (
 	"github.com/anchore/quill/internal/log"
 	"github.com/anchore/quill/internal/redact"
 	"github.com/anchore/quill/internal/urlvalidate"
+	"github.com/anchore/quill/internal/utils"
+)
+
+const (
+	maxAPIResponseSize = 5 * 1024 * 1024  // 5 MB for API JSON responses
+	maxLogResponseSize = 50 * 1024 * 1024 // 50 MB for log files
 )
 
 type api interface {
@@ -63,7 +68,7 @@ func (s APIClient) submissionRequest(ctx context.Context, request submissionRequ
 		return nil, err
 	}
 
-	response, err := s.http.post(ctx, s.api, bytes.NewReader(requestBytes))
+	response, err := s.http.post(ctx, s.api, bytes.NewReader(requestBytes)) //nolint:bodyclose // body is closed in handleResponse
 	body, err := s.handleResponse(response, err)
 	if err != nil {
 		return nil, err
@@ -119,7 +124,7 @@ func (s APIClient) uploadBinary(ctx context.Context, response submissionResponse
 }
 
 func (s APIClient) submissionStatusRequest(ctx context.Context, id string) (*submissionStatusResponse, error) {
-	response, err := s.http.get(ctx, joinURL(s.api, id), nil)
+	response, err := s.http.get(ctx, joinURL(s.api, id), nil) //nolint:bodyclose // body is closed in handleResponse
 	body, err := s.handleResponse(response, err)
 	if err != nil {
 		return nil, err
@@ -133,7 +138,7 @@ func (s APIClient) submissionStatusRequest(ctx context.Context, id string) (*sub
 }
 
 func (s APIClient) submissionList(ctx context.Context) (*submissionListResponse, error) {
-	response, err := s.http.get(ctx, s.api, nil)
+	response, err := s.http.get(ctx, s.api, nil) //nolint:bodyclose // body is closed in handleResponse
 	body, err := s.handleResponse(response, err)
 	if err != nil {
 		return nil, err
@@ -147,7 +152,7 @@ func (s APIClient) submissionList(ctx context.Context) (*submissionListResponse,
 }
 
 func (s APIClient) submissionLogs(ctx context.Context, id string) (string, error) {
-	metadataResp, err := s.http.get(ctx, joinURL(s.api, id, "logs"), nil)
+	metadataResp, err := s.http.get(ctx, joinURL(s.api, id, "logs"), nil) //nolint:bodyclose // body is closed in handleResponse
 	body, err := s.handleResponse(metadataResp, err)
 	if err != nil {
 		return "", fmt.Errorf("unable to fetch log metadata with ID=%s: %w", id, err)
@@ -160,9 +165,10 @@ func (s APIClient) submissionLogs(ctx context.Context, id string) (string, error
 
 	redactPresignedURLParams(resp.Data.Attributes.DeveloperLogURL)
 
-	// fetch logs without auth header (it's a presigned URL with its own auth)
+	// fetch logs without auth (presigned URL), with redirect validation for SSRF protection.
+	// use a larger size limit since log files can be bigger than typical API responses.
 	logsResp, err := s.http.getUnauthenticated(ctx, resp.Data.Attributes.DeveloperLogURL)
-	contents, err := s.handleResponse(logsResp, err)
+	contents, err := s.handleResponseWithLimit(logsResp, err, maxLogResponseSize)
 	if err != nil {
 		return "", fmt.Errorf("unable to fetch log destination with ID=%s: %w", id, err)
 	}
@@ -171,16 +177,28 @@ func (s APIClient) submissionLogs(ctx context.Context, id string) (string, error
 }
 
 func (s APIClient) handleResponse(response *http.Response, err error) ([]byte, error) {
+	return s.handleResponseWithLimit(response, err, maxAPIResponseSize)
+}
+
+func (s APIClient) handleResponseWithLimit(response *http.Response, err error, maxBytes int64) ([]byte, error) {
+	// ensure body is always closed, even if there's an error
+	if response != nil && response.Body != nil {
+		defer response.Body.Close()
+	}
+
 	if err != nil {
 		return nil, err
+	}
+
+	if response == nil {
+		return nil, fmt.Errorf("nil response")
 	}
 
 	var body []byte
 
 	if response.Body != nil {
-		defer response.Body.Close()
-
-		body, err = io.ReadAll(response.Body)
+		// limit response size to prevent memory exhaustion from malicious responses
+		body, err = utils.ReadAllLimited(response.Body, maxBytes)
 		if err != nil {
 			return nil, err
 		}

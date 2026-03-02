@@ -15,11 +15,13 @@ import (
 	"github.com/PuerkitoBio/goquery"
 
 	"github.com/anchore/quill/internal/urlvalidate"
+	"github.com/anchore/quill/internal/utils"
 )
 
 const (
-	CertsDir   = "certs"
-	AppleCaURL = "https://www.apple.com/certificateauthority/"
+	CertsDir           = "certs"
+	AppleCaURL         = "https://www.apple.com/certificateauthority/"
+	maxCertificateSize = 1 * 1024 * 1024 // 1 MB for certificates
 )
 
 type Link struct {
@@ -185,7 +187,8 @@ func download(u string) ([]byte, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	return io.ReadAll(resp.Body)
+	// limit response size to prevent memory exhaustion from unexpectedly large responses
+	return utils.ReadAllLimited(resp.Body, maxCertificateSize)
 }
 
 func findCALinks(html []byte, url string) (*AppleCALinks, error) {
