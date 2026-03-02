@@ -50,5 +50,5 @@ func (s httpClient) post(ctx context.Context, endpoint string, body io.Reader) (
 func (s httpClient) do(request *http.Request) (*http.Response, error) {
 	log.Tracef("http %s %s", request.Method, request.URL)
 	request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", s.token))
-	return s.client.Do(request)
+	return s.client.Do(request) //nolint:gosec // G704 false positive: URLs are constructed internally for Apple's notary API
 }
