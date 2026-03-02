@@ -15,7 +15,7 @@ type TokenConfig struct {
 	Issuer        string
 	PrivateKeyID  string
 	TokenLifetime time.Duration
-	PrivateKey    string
+	PrivateKey    string //nolint:gosec // G117 false positive: not a hardcoded secret
 }
 
 func NewSignedToken(cfg TokenConfig) (string, error) {
