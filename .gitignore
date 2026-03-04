@@ -27,6 +27,8 @@ CHANGELOG.md
 *.log
 .images
 .tmp/
+/.tool
+/.task
 coverage.txt
 bin/
 cmd/quill/quill
