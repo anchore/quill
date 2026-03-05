@@ -1,7 +1,6 @@
 package commands
 
 import (
-	_ "embed"
 	"fmt"
 	"os"
 	"strings"
@@ -13,12 +12,8 @@ import (
 	"github.com/anchore/quill/cmd/quill/cli/options"
 	"github.com/anchore/quill/internal/bus"
 	"github.com/anchore/quill/internal/log"
+	"github.com/anchore/quill/cmd/quill/cli/commands/internal/notarizetest"
 )
-
-//go:generate ./testdata/generate.sh
-
-//go:embed test_notarize_hello.macho
-var embeddedTestBinary []byte
 
 const (
 	testNotarizePollSeconds    = 5
@@ -116,7 +111,7 @@ func runTestNotarize(opts *testNotarizeConfig) error {
 		return err
 	}
 
-	tmpPath, err := prepareTestBinary(embeddedTestBinary)
+	tmpPath, err := prepareTestBinary(notarizetest.Bytes())
 	if err != nil {
 		return err
 	}

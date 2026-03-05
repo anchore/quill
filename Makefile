@@ -198,7 +198,7 @@ install-test-cache-load: $(SNAPSHOT_DIR)
 .PHONY: generate
 generate:  ## Generate test fixtures and binaries (does not update Apple certs)
 	$(call title,Running code generation)
-	go generate ./cmd/quill/cli/commands
+	go generate ./cmd/quill/cli/commands/internal/notarizetest
 
 .PHONY: update-apple-certs
 update-apple-certs:  ## Update the apple certs checked into the repo

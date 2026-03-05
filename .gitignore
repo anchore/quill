@@ -42,3 +42,6 @@ cmd/quill/quill
 .DS_STORE
 
 *.profile
+
+# intermediate generated test binary (Go source is tracked, not this)
+cmd/quill/cli/commands/internal/notarizetest/bin/test_notarize_hello.macho
