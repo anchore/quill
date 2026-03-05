@@ -71,7 +71,7 @@ tools:
 
   - name: gh
     version:
-      want: v2.87.2
+      want: v2.87.3
     method: github-release
     with:
       repo: cli/cli
