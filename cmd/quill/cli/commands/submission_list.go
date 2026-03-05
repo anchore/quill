@@ -31,9 +31,9 @@ func SubmissionList(app clio.Application) *cobra.Command {
 			log.Info("fetching previous submissions")
 
 			cfg := quill.NewNotarizeConfig(
-				opts.Notary.Issuer,
-				opts.Notary.PrivateKeyID,
-				opts.Notary.PrivateKey,
+				opts.Issuer,
+				opts.PrivateKeyID,
+				opts.PrivateKey,
 			)
 
 			token, err := notary.NewSignedToken(cfg.TokenConfig)

@@ -1,0 +1,276 @@
+version: "3"
+vars:
+  TOOL_DIR: .tool
+
+  OWNER: anchore
+  PROJECT: quill
+
+  TMP_DIR: .tmp
+  SNAPSHOT_DIR: snapshot
+  CHANGELOG: CHANGELOG.md
+  NEXT_VERSION: VERSION
+
+  RESULTS_DIR: test/results
+
+  # unit test coverage threshold (in % coverage)
+  COVERAGE_THRESHOLD: 25
+
+tasks:
+  default:
+    # desc: Run all validation tasks
+    aliases:
+      - pr-validations
+      - validations
+    cmds:
+      - task: static-analysis
+      - task: test
+      - task: build
+
+  static-analysis:
+    desc: Run all static analysis tasks
+    cmds:
+      - task: check-go-mod-tidy
+      - task: lint
+      - task: check-licenses
+
+  test:
+    desc: Run all levels of test
+    cmds:
+      - task: unit
+
+
+  ## Bootstrap tasks #################################
+
+  binny:
+    internal: true
+    # desc: Get the binny tool
+    generates:
+      - "{{ .TOOL_DIR }}/binny"
+    status:
+      - "test -f {{ .TOOL_DIR }}/binny"
+    cmd: "curl -sSfL https://get.anchore.io/binny | sh -s -- -b .tool"
+    silent: true
+
+  tools:
+    desc: Install all tools needed for CI and local development
+    deps: [binny]
+    aliases:
+      - bootstrap
+    generates:
+      - ".binny.yaml"
+      - "{{ .TOOL_DIR }}/*"
+    status:
+      - "{{ .TOOL_DIR }}/binny check -v"
+    cmd: "{{ .TOOL_DIR }}/binny install -v"
+    silent: true
+
+  update-tools:
+    desc: Update pinned versions of all tools to their latest available versions
+    deps: [binny]
+    generates:
+      - ".binny.yaml"
+      - "{{ .TOOL_DIR }}/*"
+    cmd: "{{ .TOOL_DIR }}/binny update -v"
+    silent: true
+
+  list-tools:
+    desc: List all tools needed for CI and local development
+    deps: [binny]
+    cmd: "{{ .TOOL_DIR }}/binny list"
+    silent: true
+
+  list-tool-updates:
+    desc: List all tools that are not up to date relative to the binny config
+    deps: [binny]
+    cmd: "{{ .TOOL_DIR }}/binny list --updates"
+    silent: true
+
+  tmpdir:
+    silent: true
+    generates:
+      - "{{ .TMP_DIR }}"
+    cmd: "mkdir -p {{ .TMP_DIR }}"
+
+
+  ## Static analysis tasks #################################
+
+  format:
+    desc: Auto-format all source code
+    deps: [tools]
+    cmds:
+      - gofmt -w -s .
+      - "{{ .TOOL_DIR }}/gosimports -local github.com/anchore -w ."
+      - go mod tidy
+
+  lint-fix:
+    desc: Auto-format all source code + run golangci lint fixers
+    deps: [tools]
+    cmds:
+      - task: format
+      - "{{ .TOOL_DIR }}/golangci-lint run --tests=false --fix"
+
+  lint:
+    desc: Run gofmt + golangci lint checks
+    vars:
+      BAD_FMT_FILES:
+        sh: gofmt -l -s .
+      BAD_FILE_NAMES:
+        sh: "find . | grep -e ':' || true"
+    deps: [tools]
+    cmds:
+      # ensure there are no go fmt differences
+      - cmd: 'test -z "{{ .BAD_FMT_FILES }}" || (echo "files with gofmt issues: [{{ .BAD_FMT_FILES }}]"; exit 1)'
+        silent: true
+      # ensure there are no files with ":" in it (a known bad case in the go ecosystem)
+      - cmd: 'test -z "{{ .BAD_FILE_NAMES }}" || (echo "files with bad names: [{{ .BAD_FILE_NAMES }}]"; exit 1)'
+        silent: true
+      # run linting
+      - "{{ .TOOL_DIR }}/golangci-lint run --tests=false"
+      # ensure there are no gosimports differences
+      - cmd: '[ -z "$({{ .TOOL_DIR }}/gosimports -local github.com/anchore -d .)" ] || (echo "gosimports needs to be fixed" && false)'
+        silent: true
+
+  check-go-mod-tidy:
+    # desc: Ensure go.mod and go.sum are up to date
+    cmds:
+      - .github/scripts/go-mod-tidy-check.sh && echo "go.mod and go.sum are tidy!"
+
+  check-licenses:
+    # desc: Ensure licenses are valid
+    deps: [tools]
+    cmds:
+      - "{{ .TOOL_DIR }}/bouncer check ./..."
+
+
+  ## Testing tasks #################################
+
+  unit:
+    desc: Run all unit tests
+    vars:
+      TEST_PKGS:
+        sh: "go list ./... | grep -v {{ .OWNER }}/{{ .PROJECT }}/test | tr '\n' ' '"
+    cmds:
+      - cmd: "mkdir -p {{ .TMP_DIR }}"
+        silent: true
+      - "go test -coverprofile {{ .TMP_DIR }}/unit-coverage-details.txt {{ .TEST_PKGS }}"
+      - cmd: ".github/scripts/coverage.py {{ .COVERAGE_THRESHOLD }} {{ .TMP_DIR }}/unit-coverage-details.txt"
+        silent: true
+
+
+  ## Test-fixture-related tasks #################################
+
+  fingerprints:
+    desc: Create all test cache input fingerprints
+    cmds:
+      - cmd: "cd test/install && make cache.fingerprint"
+
+  install-test:
+    desc: Run install.sh tests
+    cmds:
+      - cmd: "cd test/install && make"
+
+  install-test-cache-save:
+    # desc: Save install test cache
+    cmds:
+      - cmd: "cd test/install && make save"
+
+  install-test-cache-load:
+    # desc: Load install test cache
+    cmds:
+      - cmd: "cd test/install && make load"
+
+
+  ## Code generation tasks #################################
+
+  update-apple-certs:
+    desc: Update the apple certs checked into the repo
+    cmds:
+      - go generate ./...
+
+
+  ## Build-related tasks #################################
+
+  changelog:
+    desc: Generate a changelog
+    deps: [tools]
+    generates:
+      - "{{ .CHANGELOG }}"
+      - "{{ .NEXT_VERSION }}"
+    cmds:
+      - "{{ .TOOL_DIR }}/chronicle -vvv -n --version-file {{ .NEXT_VERSION }} > {{ .CHANGELOG }}"
+      - "{{ .TOOL_DIR }}/glow {{ .CHANGELOG }}"
+
+  snapshot:
+    desc: Create a snapshot release
+    aliases:
+      - build
+    deps: [tools]
+    cmds:
+      - cmd: "mkdir -p {{ .TMP_DIR }}"
+        silent: true
+      - cmd: |
+          cat .goreleaser.yaml > {{ .TMP_DIR }}/goreleaser.yaml
+          echo "dist: {{ .SNAPSHOT_DIR }}" >> {{ .TMP_DIR }}/goreleaser.yaml
+      - cmd: "{{ .TOOL_DIR }}/goreleaser release --clean --skip=publish --skip=sign --snapshot --config {{ .TMP_DIR }}/goreleaser.yaml"
+
+  cli:
+    desc: Run CLI tests
+    vars:
+      OS:
+        sh: "uname | tr '[:upper:]' '[:lower:]'"
+      SNAPSHOT_BIN: "snapshot/{{ .OS }}-build_{{ .OS }}_amd64_v1/quill"
+    cmds:
+      - "chmod 755 {{ .SNAPSHOT_BIN }}"
+      - "{{ .SNAPSHOT_BIN }} version"
+      - "go test -count=1 -timeout=15m -v ./test/cli"
+
+
+  ## Release tasks #################################
+
+  release:
+    desc: Create a release
+    interactive: true
+    deps: [tools]
+    cmds:
+      - cmd: .github/scripts/trigger-release.sh
+        silent: true
+
+  ci-release:
+    # desc: "[CI only] Create a release"
+    deps: [tools]
+    cmds:
+      - task: ci-check
+      - "{{ .TOOL_DIR }}/chronicle -vvv > CHANGELOG.md"
+      - cmd: "cat CHANGELOG.md"
+        silent: true
+      - cmd: |
+          cat .goreleaser.yaml > {{ .TMP_DIR }}/goreleaser.yaml
+          echo "dist: dist" >> {{ .TMP_DIR }}/goreleaser.yaml
+      - "{{ .TOOL_DIR }}/goreleaser release --clean --release-notes CHANGELOG.md --config {{ .TMP_DIR }}/goreleaser.yaml"
+
+  ci-check:
+    # desc: "[CI only] Are you in CI?"
+    cmds:
+      - cmd: .github/scripts/ci-check.sh
+        silent: true
+
+
+  ## Cleanup tasks #################################
+
+  clean:
+    desc: Remove previous builds, result reports, and test cache
+    cmds:
+      - "rm -rf {{ .RESULTS_DIR }}/*"
+      - task: clean-snapshot
+      - task: clean-dist
+
+  clean-snapshot:
+    # desc: Remove snapshot build artifacts
+    cmds:
+      - "rm -rf {{ .SNAPSHOT_DIR }} {{ .TMP_DIR }}/goreleaser.yaml"
+
+  clean-dist:
+    # desc: Remove distribution artifacts
+    cmds:
+      - "rm -rf dist {{ .TMP_DIR }}/goreleaser.yaml"
+      - "rm -f {{ .CHANGELOG }} {{ .NEXT_VERSION }}"

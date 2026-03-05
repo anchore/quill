@@ -11,9 +11,7 @@ import (
 
 func PublishTask(titles event.Title, context string, total int) *event.ManualStagedProgress {
 	prog := event.ManualStagedProgress{
-		Manual: progress.Manual{
-			Total: int64(total),
-		},
+		Manual: *progress.NewManual(int64(total)),
 	}
 
 	publish(partybus.Event{

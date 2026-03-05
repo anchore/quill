@@ -1,0 +1,85 @@
+tools:
+  - name: quill
+    version:
+      want: current
+    method: go-install
+    with:
+      module: .
+      entrypoint: cmd/quill
+      ldflags:
+        - -X main.version={{ .Version }}
+        - -X main.gitCommit={{ .Version }}
+        - -X main.gitDescription={{ .Version }}
+        # note: sprig functions are available: http://masterminds.github.io/sprig/
+        - -X main.buildDate={{ now | date "2006-01-02T15:04:05Z07:00" }}
+
+  - name: binny
+    version:
+      want: v0.11.3
+    method: github-release
+    with:
+      repo: anchore/binny
+
+  - name: task
+    version:
+      want: v3.48.0
+    method: github-release
+    with:
+      repo: go-task/task
+
+  - name: golangci-lint
+    version:
+      want: v2.10.1
+    method: github-release
+    with:
+      repo: golangci/golangci-lint
+
+  - name: goreleaser
+    version:
+      want: v2.14.1
+    method: github-release
+    with:
+      repo: goreleaser/goreleaser
+
+  - name: gosimports
+    version:
+      want: v0.3.8
+    method: github-release
+    with:
+      repo: rinchsan/gosimports
+
+  - name: chronicle
+    version:
+      want: v0.8.0
+    method: github-release
+    with:
+      repo: anchore/chronicle
+
+  - name: glow
+    version:
+      want: v2.1.1
+    method: github-release
+    with:
+      repo: charmbracelet/glow
+
+  - name: bouncer
+    version:
+      want: v0.4.0
+    method: github-release
+    with:
+      repo: wagoodman/go-bouncer
+
+  - name: gh
+    version:
+      want: v2.87.3
+    method: github-release
+    with:
+      repo: cli/cli
+
+  # used for signing the checksums file at release
+  - name: cosign
+    version:
+      want: v3.0.5
+    method: github-release
+    with:
+      repo: sigstore/cosign
