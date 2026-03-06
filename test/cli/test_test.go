@@ -14,7 +14,7 @@ func Test_TestCommand(t *testing.T) {
 	}{
 		{
 			name:    "help output",
-			command: "test-notarize --help",
+			command: "test --help",
 			assertions: []trait.Assertion{
 				trait.AssertInStdout("Test Apple notarization credentials"),
 				trait.AssertInStdout("FORBIDDEN.REQUIRED_AGREEMENTS_MISSING_OR_EXPIRED"),
