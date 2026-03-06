@@ -1,21 +1,26 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Build a minimal macOS binary for testing notarization and generate a Go source file
+# Build a minimal macOS binary using Zig (via Docker) and generate a Go source file
 # This script is called by `go generate` from binary.go
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BIN_DIR="$SCRIPT_DIR/bin"
-BINARY_FILE="$BIN_DIR/test_notarize_hello.macho"
+IMAGE_DIR="$SCRIPT_DIR/image"
+BINARY_FILE="$SCRIPT_DIR/bin/hello.macho"
 GO_FILE="$SCRIPT_DIR/binary_gen.go"
+IMAGE_NAME="quill-notarize-test-bin"
 
-echo "Building test hello world binary..."
+echo "Building minimal macOS binary with Zig (via Docker)..."
 
-# build for darwin/arm64 (Apple Silicon)
-cd "$BIN_DIR/hello"
-GOOS=darwin GOARCH=arm64 go build -o "$BINARY_FILE" -ldflags="-s -w" .
+# build the Docker image containing the compiled binary
+docker build -t "$IMAGE_NAME" "$IMAGE_DIR"
 
-echo "Generated test_notarize_hello.macho ($(wc -c < "$BINARY_FILE") bytes)"
+# extract the binary from the image
+container_id=$(docker create "$IMAGE_NAME" /hello)
+docker cp "$container_id:/hello" "$BINARY_FILE"
+docker rm "$container_id" > /dev/null
+
+echo "Generated hello.macho ($(wc -c < "$BINARY_FILE" | tr -d ' ') bytes)"
 
 echo "Generating Go source file..."
 
@@ -31,4 +36,4 @@ echo "Generating Go source file..."
     echo "}"
 } > "$GO_FILE"
 
-echo "Generated binary_gen.go"
+echo "Generated binary_gen.go ($(wc -c < "$GO_FILE" | tr -d ' ') bytes)"
