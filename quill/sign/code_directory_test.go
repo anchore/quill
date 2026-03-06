@@ -96,7 +96,7 @@ func Test_newCodeDirectoryFromMacho(t *testing.T) {
 				HashBytes: pListBytes,
 			}
 
-			actualCD, err := newCodeDirectoryFromMacho(tt.id, tt.hasher, m, tt.flags, []SpecialSlot{reqSlot, plistSlot})
+			actualCD, err := newCodeDirectoryFromMacho(tt.id, "", tt.hasher, m, tt.flags, []SpecialSlot{reqSlot, plistSlot})
 			require.NoError(t, err)
 
 			// make certain the headers match
@@ -202,7 +202,7 @@ func Test_generateCodeDirectory(t *testing.T) {
 				HashBytes: pListBytes,
 			}
 
-			cdBlob, err := generateCodeDirectory(tt.id, tt.hasher, m, tt.flags, []SpecialSlot{reqSlot, plistSlot})
+			cdBlob, err := generateCodeDirectory(tt.id, "", tt.hasher, m, tt.flags, []SpecialSlot{reqSlot, plistSlot})
 			require.NoError(t, err)
 
 			cdBytes, err := cdBlob.Pack()

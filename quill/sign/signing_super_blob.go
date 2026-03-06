@@ -45,7 +45,13 @@ func GenerateSigningSuperBlob(id string, m *macho.File, signingMaterial pki.Sign
 		specialSlots = append(specialSlots, *requirements)
 	}
 
-	cdBlob, err := generateCodeDirectory(id, sha256.New(), m, cdFlags, specialSlots)
+	// derive team ID from the leaf certificate's Organizational Unit (OU) field
+	var teamID string
+	if leaf := signingMaterial.Leaf(); leaf != nil && len(leaf.Subject.OrganizationalUnit) > 0 {
+		teamID = leaf.Subject.OrganizationalUnit[0]
+	}
+
+	cdBlob, err := generateCodeDirectory(id, teamID, sha256.New(), m, cdFlags, specialSlots)
 	if err != nil {
 		return 0, nil, fmt.Errorf("unable to create code directory: %w", err)
 	}
