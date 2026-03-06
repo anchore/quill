@@ -15,8 +15,8 @@ import (
 	"github.com/anchore/quill/quill/macho"
 )
 
-func generateCodeDirectory(id string, hasher hash.Hash, m *macho.File, flags macho.CdFlag, specialSlots []SpecialSlot) (*macho.Blob, error) {
-	cd, err := newCodeDirectoryFromMacho(id, hasher, m, flags, specialSlots)
+func generateCodeDirectory(id, teamID string, hasher hash.Hash, m *macho.File, flags macho.CdFlag, specialSlots []SpecialSlot) (*macho.Blob, error) {
+	cd, err := newCodeDirectoryFromMacho(id, teamID, hasher, m, flags, specialSlots)
 	if err != nil {
 		return nil, err
 	}
@@ -39,7 +39,7 @@ func packCodeDirectory(cd *macho.CodeDirectory, order binary.ByteOrder) (*macho.
 	return &blob, nil
 }
 
-func newCodeDirectoryFromMacho(id string, hasher hash.Hash, m *macho.File, flags macho.CdFlag, specialSlots []SpecialSlot) (*macho.CodeDirectory, error) {
+func newCodeDirectoryFromMacho(id, teamID string, hasher hash.Hash, m *macho.File, flags macho.CdFlag, specialSlots []SpecialSlot) (*macho.CodeDirectory, error) {
 	textSeg := m.Segment("__TEXT")
 
 	var codeSize uint32
@@ -59,7 +59,7 @@ func newCodeDirectoryFromMacho(id string, hasher hash.Hash, m *macho.File, flags
 		return nil, err
 	}
 
-	return newCodeDirectory(id, hasher, textSeg.Offset, textSeg.Filesz, codeSize, hashes, flags, specialSlots)
+	return newCodeDirectory(id, teamID, hasher, textSeg.Offset, textSeg.Filesz, codeSize, hashes, flags, specialSlots)
 }
 
 // SpecialSlotHashWriter writes the special slots in the right order and with the right content.
@@ -132,33 +132,35 @@ func (w *SpecialSlotHashWriter) Write(buffer *bytes.Buffer) error {
 	return nil
 }
 
-func newCodeDirectory(id string, hasher hash.Hash, execOffset, execSize uint64, codeSize uint32, hashes [][]byte, flags macho.CdFlag, specialSlots []SpecialSlot) (*macho.CodeDirectory, error) {
+func newCodeDirectory(id, teamID string, hasher hash.Hash, execOffset, execSize uint64, codeSize uint32, hashes [][]byte, flags macho.CdFlag, specialSlots []SpecialSlot) (*macho.CodeDirectory, error) {
 	cdSize := unsafe.Sizeof(macho.BlobHeader{}) + unsafe.Sizeof(macho.CodeDirectoryHeader{})
 	idOff := int32(cdSize)
 	// note: the hash offset starts at the first non-special hash (page hashes). Special hashes (e.g. requirements hash) are written before the page hashes.
 
-	var ht macho.HashType
-	switch hasher.Size() {
-	case sha256.Size:
-		ht = macho.HashTypeSha256
-	case sha1.Size:
-		ht = macho.HashTypeSha1
-	default:
-		return nil, fmt.Errorf("unsupported hash type")
+	ht, err := hashTypeFromHasher(hasher)
+	if err != nil {
+		return nil, err
 	}
 
 	buff := bytes.Buffer{}
 
 	// write the identifier
 	hashOff := int(idOff)
-	var (
-		written int
-		err     error
-	)
+	var written int
 	if written, err = buff.Write([]byte(id + "\000")); err != nil {
 		return nil, fmt.Errorf("unable to write ID to code directory: %w", err)
 	}
 	hashOff += written
+
+	// write the team identifier (if present)
+	var teamOff uint32
+	if teamID != "" {
+		teamOff = uint32(hashOff)
+		if written, err = buff.Write([]byte(teamID + "\000")); err != nil {
+			return nil, fmt.Errorf("unable to write team ID to code directory: %w", err)
+		}
+		hashOff += written
+	}
 
 	// write hashes
 	specialSlotHashWriter, err := newSpecialSlotHashWriter(specialSlots)
@@ -189,6 +191,7 @@ func newCodeDirectory(id string, hasher hash.Hash, execOffset, execSize uint64, 
 			HashSize:         uint8(hasher.Size()),
 			HashType:         ht,
 			PageSize:         uint8(macho.PageSizeBits),
+			TeamOffset:       teamOff,
 			ExecSegBase:      execOffset,
 			ExecSegLimit:     execSize,
 			ExecSegFlags:     macho.ExecsegMainBinary,
@@ -197,4 +200,15 @@ func newCodeDirectory(id string, hasher hash.Hash, execOffset, execSize uint64, 
 		},
 		Payload: buff.Bytes(),
 	}, nil
+}
+
+func hashTypeFromHasher(hasher hash.Hash) (macho.HashType, error) {
+	switch hasher.Size() {
+	case sha256.Size:
+		return macho.HashTypeSha256, nil
+	case sha1.Size:
+		return macho.HashTypeSha1, nil
+	default:
+		return 0, fmt.Errorf("unsupported hash type")
+	}
 }

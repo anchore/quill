@@ -153,6 +153,31 @@ func TestSign(t *testing.T) {
 			},
 		},
 		{
+			// this test uses a certificate with an OU field to verify that the team ID is correctly
+			// derived and written to the CodeDirectory
+			name: "sign the syft binary - cert chain with OU (team ID)",
+			args: args{
+				id:                        "syft-id",
+				path:                      test.AssetCopy(t, "syft_unsigned"),
+				keyFile:                   test.Asset(t, "chain-with-ou-leaf-key.pem"),
+				certFile:                  test.Asset(t, "chain-with-ou.pem"),
+				failWithoutFullChain:      true,
+				skipAssertAgainstCodesign: true, // this test fixture isn't configured to be trusted
+			},
+			assertions: []test.OutputAssertion{
+				test.AssertContains("CodeDirectory v=20500"),
+				test.AssertContains("flags=0x10000(runtime)"),
+				test.AssertContains("Hash type=sha256 size=32"),
+				test.AssertContains("Signature size="), // assert not adhoc
+				test.AssertContains("Authority=quill-test-leaf-with-ou"),
+				test.AssertContains("Authority=quill-test-intermediate-ca-with-ou"),
+				test.AssertContains("Authority=quill-test-root-ca-with-ou"),
+				test.AssertContains("Info.plist=not bound"),
+				test.AssertContains("TeamIdentifier=TESTTEAMID"), // verify team ID is set from certificate OU
+				test.AssertContains("Sealed Resources=none"),
+			},
+		},
+		{
 			name: "sign the syft binary (with a password)",
 			args: args{
 				id:                        "syft-id",
