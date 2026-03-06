@@ -137,24 +137,16 @@ func newCodeDirectory(id, teamID string, hasher hash.Hash, execOffset, execSize 
 	idOff := int32(cdSize)
 	// note: the hash offset starts at the first non-special hash (page hashes). Special hashes (e.g. requirements hash) are written before the page hashes.
 
-	var ht macho.HashType
-	switch hasher.Size() {
-	case sha256.Size:
-		ht = macho.HashTypeSha256
-	case sha1.Size:
-		ht = macho.HashTypeSha1
-	default:
-		return nil, fmt.Errorf("unsupported hash type")
+	ht, err := hashTypeFromHasher(hasher)
+	if err != nil {
+		return nil, err
 	}
 
 	buff := bytes.Buffer{}
 
 	// write the identifier
 	hashOff := int(idOff)
-	var (
-		written int
-		err     error
-	)
+	var written int
 	if written, err = buff.Write([]byte(id + "\000")); err != nil {
 		return nil, fmt.Errorf("unable to write ID to code directory: %w", err)
 	}
@@ -208,4 +200,15 @@ func newCodeDirectory(id, teamID string, hasher hash.Hash, execOffset, execSize 
 		},
 		Payload: buff.Bytes(),
 	}, nil
+}
+
+func hashTypeFromHasher(hasher hash.Hash) (macho.HashType, error) {
+	switch hasher.Size() {
+	case sha256.Size:
+		return macho.HashTypeSha256, nil
+	case sha1.Size:
+		return macho.HashTypeSha1, nil
+	default:
+		return 0, fmt.Errorf("unsupported hash type")
+	}
 }
