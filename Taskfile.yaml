@@ -185,7 +185,7 @@ tasks:
   update-apple-certs:
     desc: Update the apple certs checked into the repo
     cmds:
-      - go generate ./...
+      - go generate ./quill/pki/apple
 
 
   ## Build-related tasks #################################
