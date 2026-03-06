@@ -182,11 +182,6 @@ tasks:
 
   ## Code generation tasks #################################
 
-  generate:
-    desc: Generate test fixtures and binaries (does not update Apple certs)
-    cmds:
-      - go generate ./cmd/quill/cli/commands/internal/notarizetest
-
   update-apple-certs:
     desc: Update the apple certs checked into the repo
     cmds:

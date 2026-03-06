@@ -1,7 +1,9 @@
 package commands
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -12,7 +14,6 @@ import (
 	"github.com/anchore/quill/cmd/quill/cli/options"
 	"github.com/anchore/quill/internal/bus"
 	"github.com/anchore/quill/internal/log"
-	"github.com/anchore/quill/cmd/quill/cli/commands/internal/notarizetest"
 )
 
 const (
@@ -20,26 +21,27 @@ const (
 	testNotarizeTimeoutSeconds = 300 // 5 minutes
 )
 
-var _ fangs.FlagAdder = (*testNotarizeConfig)(nil)
+var _ fangs.FlagAdder = (*testConfig)(nil)
 
-type testNotarizeConfig struct {
+type testConfig struct {
 	options.Signing `yaml:"sign" json:"sign" mapstructure:"sign"`
 	options.Notary  `yaml:"notary" json:"notary" mapstructure:"notary"`
+	Yes             bool `yaml:"yes" json:"yes" mapstructure:"yes"`
 }
 
-func (o *testNotarizeConfig) AddFlags(_ fangs.FlagSet) {
-	// All flags provided by embedded Signing and Notary options
+func (o *testConfig) AddFlags(flags fangs.FlagSet) {
+	flags.BoolVarP(&o.Yes, "yes", "y", "skip confirmation prompt and proceed with signing/notarization")
 }
 
-func TestNotarize(app clio.Application) *cobra.Command {
-	opts := &testNotarizeConfig{
+func Test(app clio.Application) *cobra.Command {
+	opts := &testConfig{
 		Signing: options.DefaultSigning(),
 	}
 
 	return app.SetupCommand(&cobra.Command{
-		Use:   "test-notarize",
-		Short: "test Apple notarization credentials by signing and notarizing a minimal test binary",
-		Long: `Test Apple notarization credentials by signing and notarizing a minimal test binary.
+		Use:   "test",
+		Short: "test Apple notarization credentials by signing and notarizing a copy of this binary (quill)",
+		Long: `Test Apple notarization credentials by signing and notarizing a copy of this binary (quill).
 
 This command is useful for verifying that your Apple credentials are valid and that you have
 accepted all required agreements before running a full release pipeline. Common errors this
@@ -54,40 +56,78 @@ end-to-end workflow.`,
 		Args: cobra.NoArgs,
 		RunE: func(_ *cobra.Command, _ []string) error {
 			defer bus.Exit()
-			return runTestNotarize(opts)
+			return runTest(opts)
 		},
 	}, opts)
 }
 
-func validateNotarizeCredentials(opts *testNotarizeConfig) error {
-	if opts.Notary.Issuer == "" || opts.Notary.PrivateKeyID == "" || opts.Notary.PrivateKey == "" {
+func validateNotarizeCredentials(opts *testConfig) error {
+	if opts.Issuer == "" || opts.PrivateKeyID == "" || opts.PrivateKey == "" {
 		return fmt.Errorf("notarization credentials required: provide --notary-issuer, --notary-key-id, and --notary-key")
 	}
 
-	if opts.Signing.AdHoc {
+	if opts.AdHoc {
 		return fmt.Errorf("ad-hoc signing cannot be used for notarization; provide a valid p12 certificate via --p12")
 	}
 
-	if opts.Signing.P12 == "" {
+	if opts.P12 == "" {
 		return fmt.Errorf("signing certificate required: provide a valid p12 certificate via --p12")
 	}
 
 	return nil
 }
 
-func prepareTestBinary(decoded []byte) (string, error) {
+func confirmTest() (bool, error) {
+	fmt.Println(`This command will:
+  1. Create a temporary copy of the current quill binary
+  2. Sign it using your provided certificate (--p12)
+  3. Submit it to Apple's notary service using your credentials
+  4. Wait for notarization to complete
+
+This is a test to verify your credentials are valid.`)
+	fmt.Println()
+	fmt.Print("Do you want to continue? [y/N] ")
+
+	reader := bufio.NewReader(os.Stdin)
+	response, err := reader.ReadString('\n')
+	if err != nil {
+		return false, fmt.Errorf("failed to read response: %w", err)
+	}
+
+	response = strings.TrimSpace(strings.ToLower(response))
+	return response == "y" || response == "yes", nil
+}
+
+func prepareTestBinary() (string, error) {
+	// get the path to the currently running executable
+	execPath, err := os.Executable()
+	if err != nil {
+		return "", fmt.Errorf("failed to get executable path: %w", err)
+	}
+
+	// open the current executable
+	src, err := os.Open(execPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to open executable: %w", err)
+	}
+	defer src.Close()
+
+	// create a temp file for the copy
 	tmpFile, err := os.CreateTemp("", "quill-test-*.macho")
 	if err != nil {
 		return "", fmt.Errorf("failed to create temporary file: %w", err)
 	}
+	tmpPath := tmpFile.Name()
 	defer tmpFile.Close()
 
-	if _, err := tmpFile.Write(decoded); err != nil {
-		return "", fmt.Errorf("failed to write test binary: %w", err)
+	// copy the executable
+	if _, err := io.Copy(tmpFile, src); err != nil {
+		os.Remove(tmpPath) //nolint:gosec // path is from os.CreateTemp, not user input
+		return "", fmt.Errorf("failed to copy executable: %w", err)
 	}
 
-	log.WithFields("path", tmpFile.Name()).Debug("created temporary test binary")
-	return tmpFile.Name(), nil
+	log.WithFields("path", tmpPath).Debug("created temporary test binary")
+	return tmpPath, nil
 }
 
 func handleNotarizationError(err error) error {
@@ -104,14 +144,24 @@ func handleNotarizationError(err error) error {
 	return fmt.Errorf("notarization test failed: %w", err)
 }
 
-func runTestNotarize(opts *testNotarizeConfig) error {
-	log.Info("testing Apple notarization credentials")
-
+func runTest(opts *testConfig) error {
 	if err := validateNotarizeCredentials(opts); err != nil {
 		return err
 	}
 
-	tmpPath, err := prepareTestBinary(notarizetest.Bytes())
+	if !opts.Yes {
+		confirmed, err := confirmTest()
+		if err != nil {
+			return err
+		}
+		if !confirmed {
+			return fmt.Errorf("aborted by user")
+		}
+	}
+
+	log.Info("testing signing and Apple notarization material")
+
+	tmpPath, err := prepareTestBinary()
 	if err != nil {
 		return err
 	}
