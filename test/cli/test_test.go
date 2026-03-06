@@ -6,7 +6,7 @@ import (
 	"github.com/anchore/quill/test/trait"
 )
 
-func Test_TestNotarizeCommand(t *testing.T) {
+func Test_TestCommand(t *testing.T) {
 	tests := []struct {
 		name       string
 		command    string
@@ -24,7 +24,7 @@ func Test_TestNotarizeCommand(t *testing.T) {
 		},
 		{
 			name:    "missing notary credentials fails early",
-			command: "test-notarize --ad-hoc",
+			command: "test --ad-hoc",
 			assertions: []trait.Assertion{
 				trait.AssertInStderr("notarization credentials required"),
 				trait.AssertFailingReturnCode,
@@ -32,7 +32,7 @@ func Test_TestNotarizeCommand(t *testing.T) {
 		},
 		{
 			name:    "missing notary credentials fails before p12 check",
-			command: "test-notarize --p12 /nonexistent/file.p12",
+			command: "test --p12 /nonexistent/file.p12",
 			assertions: []trait.Assertion{
 				trait.AssertInStderr("notarization credentials required"),
 				trait.AssertFailingReturnCode,
@@ -40,7 +40,7 @@ func Test_TestNotarizeCommand(t *testing.T) {
 		},
 		{
 			name:    "rejects unexpected arguments",
-			command: "test-notarize extra-arg",
+			command: "test extra-arg",
 			assertions: []trait.Assertion{
 				trait.AssertInStderr("unknown command"),
 				trait.AssertFailingReturnCode,

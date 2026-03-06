@@ -1,7 +1,7 @@
 package commands
 
 import (
-	"bufio"
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -78,18 +78,20 @@ func validateNotarizeCredentials(opts *testConfig) error {
 }
 
 func confirmTest() (bool, error) {
-	fmt.Println(`This command will:
-  1. Create a temporary copy of the current quill binary
-  2. Sign it using your provided certificate (--p12)
-  3. Submit it to Apple's notary service using your credentials
-  4. Wait for notarization to complete
+	prompter := bus.PromptForInput(`This command will:
+     1. Create a temporary copy of the current quill binary
+     2. Sign it using your provided certificate (--p12)
+     3. Submit it to Apple's notary service using your credentials
+     4. Wait for notarization to complete
 
-This is a test to verify your credentials are valid.`)
-	fmt.Println()
-	fmt.Print("Do you want to continue? [y/N] ")
+   This is a test to verify your credentials are valid
 
-	reader := bufio.NewReader(os.Stdin)
-	response, err := reader.ReadString('\n')
+   Do you want to continue? [y/N]`, false)
+	if prompter == nil {
+		return false, fmt.Errorf("unable to prompt for confirmation (no UI available)")
+	}
+
+	response, err := prompter.Response(context.Background())
 	if err != nil {
 		return false, fmt.Errorf("failed to read response: %w", err)
 	}
@@ -182,12 +184,6 @@ func runTest(opts *testConfig) error {
 		return handleNotarizationError(err)
 	}
 
-	successMsg := `
-Apple notarization credentials verified successfully.
-
-Your credentials are valid and all required agreements are signed.
-You can proceed with notarizing your releases.`
-
-	bus.Report(strings.TrimSpace(successMsg))
+	bus.Report("Apple signing material and notarization credentials verified")
 	return nil
 }
