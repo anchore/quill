@@ -29,7 +29,7 @@ tools:
 
   - name: golangci-lint
     version:
-      want: v2.10.1
+      want: v2.11.1
     method: github-release
     with:
       repo: golangci/golangci-lint
