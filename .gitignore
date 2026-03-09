@@ -32,6 +32,7 @@ CHANGELOG.md
 coverage.txt
 bin/
 cmd/quill/quill
+generate
 
 # Binaries for programs and plugins
 *.exe

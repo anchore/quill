@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"path"
 	"strings"
 	"sync/atomic"
@@ -19,6 +20,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 
 	"github.com/anchore/quill/internal/log"
+	"github.com/anchore/quill/internal/redact"
+	"github.com/anchore/quill/internal/urlvalidate"
 )
 
 type api interface {
@@ -34,9 +37,19 @@ type APIClient struct {
 	api  string
 }
 
+// NewAPIClient creates a new APIClient with the default URL validator configuration.
 func NewAPIClient(token string, httpTimeout time.Duration) *APIClient {
+	return NewAPIClientWithValidator(token, httpTimeout, nil)
+}
+
+// NewAPIClientWithValidator creates a new APIClient with a custom URL validator.
+// If validator is nil, a default validator with production settings will be used.
+func NewAPIClientWithValidator(token string, httpTimeout time.Duration, validator *urlvalidate.Validator) *APIClient {
+	if validator == nil {
+		validator = urlvalidate.New(urlvalidate.DefaultConfig())
+	}
 	return &APIClient{
-		http: newHTTPClient(token, httpTimeout),
+		http: newHTTPClient(token, httpTimeout, validator),
 		api:  "https://appstoreconnect.apple.com/notary/v2/submissions",
 	}
 }
@@ -66,6 +79,9 @@ func (s APIClient) submissionRequest(ctx context.Context, request submissionRequ
 func (s APIClient) uploadBinary(ctx context.Context, response submissionResponse, bin Payload) error {
 	attrs := response.Data.Attributes
 	log.WithFields("bucket", attrs.Bucket, "object", attrs.Object).Trace("uploading binary to S3")
+
+	// there is currently no path that would log these values, but let the redactor know about them just in case
+	redact.Add(attrs.AwsAccessKeyID, attrs.AwsSecretAccessKey, attrs.AwsSessionToken)
 
 	// create AWS config with static credentials
 	cfg, err := config.LoadDefaultConfig(ctx,
@@ -142,8 +158,10 @@ func (s APIClient) submissionLogs(ctx context.Context, id string) (string, error
 		return "", fmt.Errorf("unable to decode log metadata response with ID=%s: %w", id, err)
 	}
 
-	// note: we are not using the custom API client here since we don't need the token
-	logsResp, err := http.Get(resp.Data.Attributes.DeveloperLogURL)
+	redactPresignedURLParams(resp.Data.Attributes.DeveloperLogURL)
+
+	// fetch logs without auth header (it's a presigned URL with its own auth)
+	logsResp, err := s.http.getUnauthenticated(ctx, resp.Data.Attributes.DeveloperLogURL)
 	contents, err := s.handleResponse(logsResp, err)
 	if err != nil {
 		return "", fmt.Errorf("unable to fetch log destination with ID=%s: %w", id, err)
@@ -193,6 +211,33 @@ func (r *monitoredReader) ReadAt(p []byte, off int64) (int, error) {
 
 func (r *monitoredReader) Seek(offset int64, whence int) (int64, error) {
 	return r.reader.Seek(offset, whence)
+}
+
+func redactPresignedURLParams(rawURL string) {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return
+	}
+
+	// check both v2 and v4 signature parameter names (case-sensitive in query strings)
+	params := []string{
+		"AWSAccessKeyId",       // v2 signature
+		"Signature",            // v2 signature
+		"x-amz-security-token", // v2 signature
+		"X-Amz-Security-Token", // v4 signature
+		"X-Amz-Signature",      // v4 signature
+		"X-Amz-Credential",     // v4 signature
+	}
+
+	for _, p := range params {
+		if v := u.Query().Get(p); v != "" {
+			// add both decoded and URL-encoded versions since URLs may be logged either way
+			redact.Add(v)
+			if encoded := url.QueryEscape(v); encoded != v {
+				redact.Add(encoded)
+			}
+		}
+	}
 }
 
 func joinURL(base string, paths ...string) string {
