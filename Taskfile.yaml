@@ -1,16 +1,40 @@
 version: "3"
 vars:
-  TOOL_DIR: .tool
-
   OWNER: anchore
   PROJECT: quill
 
+  # static file dirs
+  TOOL_DIR: .tool
   TMP_DIR: .tmp
-  SNAPSHOT_DIR: snapshot
+  RESULTS_DIR: test/results
+
+  # TOOLS
+  BINNY: "{{ .TOOL_DIR }}/binny"
+  GOSIMPORTS: "{{ .TOOL_DIR }}/gosimports"
+  GOLANGCI_LINT: "{{ .TOOL_DIR }}/golangci-lint"
+  BOUNCER: "{{ .TOOL_DIR }}/bouncer"
+  CHRONICLE: "{{ .TOOL_DIR }}/chronicle"
+  GLOW: "{{ .TOOL_DIR }}/glow"
+  GORELEASER: "{{ .TOOL_DIR }}/goreleaser"
+
+  # used for changelog generation
   CHANGELOG: CHANGELOG.md
   NEXT_VERSION: VERSION
 
-  RESULTS_DIR: test/results
+  # used for snapshot builds
+  OS:
+    sh: uname -s | tr '[:upper:]' '[:lower:]'
+  ARCH:
+    sh: |
+      [ "$(uname -m)" = "x86_64" ] && echo "amd64_v1" || echo "$(uname -m)"
+  PROJECT_ROOT:
+    sh: echo $PWD
+
+  SNAPSHOT_DIR: ./snapshot
+  SNAPSHOT_BIN: "{{ .PROJECT_ROOT }}/{{ .SNAPSHOT_DIR }}/{{ .OS }}-build_{{ .OS }}_{{ .ARCH }}/{{ .PROJECT }}"
+  SNAPSHOT_CMD: "{{ .GORELEASER }} release --config {{ .TMP_DIR }}/goreleaser.yaml --clean --snapshot --skip=publish --skip=sign"
+  BUILD_CMD: "{{ .GORELEASER }} build --config {{ .TMP_DIR }}/goreleaser.yaml --clean --snapshot --single-target"
+  RELEASE_CMD: "{{ .GORELEASER }} release --clean --release-notes {{ .CHANGELOG }}"
 
   # unit test coverage threshold (in % coverage)
   COVERAGE_THRESHOLD: 25
@@ -45,9 +69,9 @@ tasks:
     internal: true
     # desc: Get the binny tool
     generates:
-      - "{{ .TOOL_DIR }}/binny"
+      - "{{ .BINNY }}"
     status:
-      - "test -f {{ .TOOL_DIR }}/binny"
+      - "test -f {{ .BINNY }}"
     cmd: "curl -sSfL https://get.anchore.io/binny | sh -s -- -b .tool"
     silent: true
 
@@ -60,8 +84,8 @@ tasks:
       - ".binny.yaml"
       - "{{ .TOOL_DIR }}/*"
     status:
-      - "{{ .TOOL_DIR }}/binny check -v"
-    cmd: "{{ .TOOL_DIR }}/binny install -v"
+      - "{{ .BINNY }} check -v"
+    cmd: "{{ .BINNY }} install -v"
     silent: true
 
   update-tools:
@@ -70,19 +94,19 @@ tasks:
     generates:
       - ".binny.yaml"
       - "{{ .TOOL_DIR }}/*"
-    cmd: "{{ .TOOL_DIR }}/binny update -v"
+    cmd: "{{ .BINNY }} update -v"
     silent: true
 
   list-tools:
     desc: List all tools needed for CI and local development
     deps: [binny]
-    cmd: "{{ .TOOL_DIR }}/binny list"
+    cmd: "{{ .BINNY }} list"
     silent: true
 
   list-tool-updates:
     desc: List all tools that are not up to date relative to the binny config
     deps: [binny]
-    cmd: "{{ .TOOL_DIR }}/binny list --updates"
+    cmd: "{{ .BINNY }} list --updates"
     silent: true
 
   tmpdir:
@@ -99,7 +123,7 @@ tasks:
     deps: [tools]
     cmds:
       - gofmt -w -s .
-      - "{{ .TOOL_DIR }}/gosimports -local github.com/anchore -w ."
+      - "{{ .GOSIMPORTS }} -local github.com/anchore -w ."
       - go mod tidy
 
   lint-fix:
@@ -107,7 +131,7 @@ tasks:
     deps: [tools]
     cmds:
       - task: format
-      - "{{ .TOOL_DIR }}/golangci-lint run --tests=false --fix"
+      - "{{ .GOLANGCI_LINT }} run --tests=false --fix"
 
   lint:
     desc: Run gofmt + golangci lint checks
@@ -125,9 +149,9 @@ tasks:
       - cmd: 'test -z "{{ .BAD_FILE_NAMES }}" || (echo "files with bad names: [{{ .BAD_FILE_NAMES }}]"; exit 1)'
         silent: true
       # run linting
-      - "{{ .TOOL_DIR }}/golangci-lint run --tests=false"
+      - "{{ .GOLANGCI_LINT }} run --tests=false"
       # ensure there are no gosimports differences
-      - cmd: '[ -z "$({{ .TOOL_DIR }}/gosimports -local github.com/anchore -d .)" ] || (echo "gosimports needs to be fixed" && false)'
+      - cmd: '[ -z "$({{ .GOSIMPORTS }} -local github.com/anchore -d .)" ] || (echo "gosimports needs to be fixed" && false)'
         silent: true
 
   check-go-mod-tidy:
@@ -139,7 +163,7 @@ tasks:
     # desc: Ensure licenses are valid
     deps: [tools]
     cmds:
-      - "{{ .TOOL_DIR }}/bouncer check ./..."
+      - "{{ .BOUNCER }} check ./..."
 
 
   ## Testing tasks #################################
@@ -197,28 +221,22 @@ tasks:
       - "{{ .CHANGELOG }}"
       - "{{ .NEXT_VERSION }}"
     cmds:
-      - "{{ .TOOL_DIR }}/chronicle -vvv -n --version-file {{ .NEXT_VERSION }} > {{ .CHANGELOG }}"
-      - "{{ .TOOL_DIR }}/glow {{ .CHANGELOG }}"
+      - "{{ .CHRONICLE }} -vvv -n --version-file {{ .NEXT_VERSION }} > {{ .CHANGELOG }}"
+      - "{{ .GLOW }} {{ .CHANGELOG }}"
 
   snapshot:
     desc: Create a snapshot release
     aliases:
       - build
-    deps: [tools]
+    deps: [tools, tmpdir]
     cmds:
-      - cmd: "mkdir -p {{ .TMP_DIR }}"
-        silent: true
       - cmd: |
           cat .goreleaser.yaml > {{ .TMP_DIR }}/goreleaser.yaml
           echo "dist: {{ .SNAPSHOT_DIR }}" >> {{ .TMP_DIR }}/goreleaser.yaml
-      - cmd: "{{ .TOOL_DIR }}/goreleaser release --clean --skip=publish --skip=sign --snapshot --config {{ .TMP_DIR }}/goreleaser.yaml"
+      - "{{ .SNAPSHOT_CMD }}"
 
   cli:
     desc: Run CLI tests
-    vars:
-      OS:
-        sh: "uname | tr '[:upper:]' '[:lower:]'"
-      SNAPSHOT_BIN: "snapshot/{{ .OS }}-build_{{ .OS }}_amd64_v1/quill"
     cmds:
       - "chmod 755 {{ .SNAPSHOT_BIN }}"
       - "{{ .SNAPSHOT_BIN }} version"
@@ -240,13 +258,10 @@ tasks:
     deps: [tools]
     cmds:
       - task: ci-check
-      - "{{ .TOOL_DIR }}/chronicle -vvv > CHANGELOG.md"
-      - cmd: "cat CHANGELOG.md"
+      - "{{ .CHRONICLE }} -vvv > {{ .CHANGELOG }}"
+      - cmd: "cat {{ .CHANGELOG }}"
         silent: true
-      - cmd: |
-          cat .goreleaser.yaml > {{ .TMP_DIR }}/goreleaser.yaml
-          echo "dist: dist" >> {{ .TMP_DIR }}/goreleaser.yaml
-      - "{{ .TOOL_DIR }}/goreleaser release --clean --release-notes CHANGELOG.md --config {{ .TMP_DIR }}/goreleaser.yaml"
+      - "{{ .RELEASE_CMD }}"
 
   ci-check:
     # desc: "[CI only] Are you in CI?"
