@@ -22,8 +22,9 @@ type Handler struct {
 }
 
 type State struct {
-	WindowSize tea.WindowSizeMsg
-	Running    *sync.WaitGroup
+	WindowSize   tea.WindowSizeMsg
+	Running      *sync.WaitGroup
+	activePrompt bubbly.PromptWriter
 }
 
 func New() *Handler {
@@ -48,12 +49,28 @@ func (m *Handler) State() *State {
 	return m.state
 }
 
+// CancelPrompt cancels any active prompt by calling its Cancel method if available.
+// This causes the prompt's Response() call to return context.Canceled.
+func (m *Handler) CancelPrompt() {
+	if m.state.activePrompt == nil {
+		return
+	}
+	// check if the prompt supports cancellation
+	if canceller, ok := m.state.activePrompt.(interface{ Cancel() }); ok {
+		canceller.Cancel()
+	}
+	m.state.activePrompt = nil
+}
+
 func (m *Handler) handleInputPrompt(e partybus.Event) ([]tea.Model, tea.Cmd) {
 	writer, err := event.ParseCLIInputPromptType(e)
 	if err != nil {
 		log.Warnf("unable to parse event: %+v", err)
 		return nil, nil
 	}
+
+	// track active prompt for cancellation on Ctrl+C
+	m.state.activePrompt = writer
 
 	return []tea.Model{prompt.New(writer)}, nil
 }

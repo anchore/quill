@@ -10,7 +10,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/anchore/clio"
-	"github.com/anchore/fangs"
 	"github.com/anchore/quill/cmd/quill/cli/options"
 	"github.com/anchore/quill/internal/bus"
 	"github.com/anchore/quill/internal/log"
@@ -21,16 +20,10 @@ const (
 	testNotarizeTimeoutSeconds = 300 // 5 minutes
 )
 
-var _ fangs.FlagAdder = (*testConfig)(nil)
-
 type testConfig struct {
 	options.Signing `yaml:"sign" json:"sign" mapstructure:"sign"`
 	options.Notary  `yaml:"notary" json:"notary" mapstructure:"notary"`
-	Yes             bool `yaml:"yes" json:"yes" mapstructure:"yes"`
-}
-
-func (o *testConfig) AddFlags(flags fangs.FlagSet) {
-	flags.BoolVarP(&o.Yes, "yes", "y", "skip confirmation prompt and proceed with signing/notarization")
+	options.Test    `yaml:"test" json:"test" mapstructure:"test"`
 }
 
 func Test(app clio.Application) *cobra.Command {
@@ -78,20 +71,20 @@ func validateNotarizeCredentials(opts *testConfig) error {
 }
 
 func confirmTest() (bool, error) {
-	prompter := bus.PromptForInput(`This command will:
+	prompter := bus.PromptForInput(context.Background(), `This command will:
      1. Create a temporary copy of the current quill binary
      2. Sign it using your provided certificate (--p12)
      3. Submit it to Apple's notary service using your credentials
      4. Wait for notarization to complete
 
-   This is a test to verify your credentials are valid
+This is a test to verify your credentials are valid
 
-   Do you want to continue? [y/N]`, false)
+Do you want to continue? [y/N]`, false)
 	if prompter == nil {
 		return false, fmt.Errorf("unable to prompt for confirmation (no UI available)")
 	}
 
-	response, err := prompter.Response(context.Background())
+	response, err := prompter.Response()
 	if err != nil {
 		return false, fmt.Errorf("failed to read response: %w", err)
 	}
@@ -151,7 +144,7 @@ func runTest(opts *testConfig) error {
 		return err
 	}
 
-	if !opts.Yes {
+	if !opts.AutoAccept {
 		confirmed, err := confirmTest()
 		if err != nil {
 			return err
