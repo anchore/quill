@@ -50,6 +50,10 @@ linters:
       - linters:
           - revive
         text: "var-naming: avoid package names that conflict"
+      # utils is a commonly used helper package name
+      - linters:
+          - revive
+        text: "var-naming: avoid meaningless package names"
     paths:
       - third_party$
       - builtin$

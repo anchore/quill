@@ -3,12 +3,14 @@ package load
 import (
 	"encoding/base64"
 	"fmt"
-	"io"
 	"os"
 	"strings"
 
 	"github.com/anchore/quill/internal/log"
+	"github.com/anchore/quill/internal/utils"
 )
+
+const maxPKIFileSize = 10 * 1024 * 1024 // 10 MB for PKI files
 
 func BytesFromFileOrEnv(path string) ([]byte, error) {
 	if strings.HasPrefix(path, "env:") {
@@ -57,5 +59,6 @@ func BytesFromFileOrEnv(path string) ([]byte, error) {
 
 	defer f.Close()
 
-	return io.ReadAll(f)
+	// limit file size to prevent memory exhaustion from unexpectedly large files
+	return utils.ReadAllLimited(f, maxPKIFileSize)
 }
