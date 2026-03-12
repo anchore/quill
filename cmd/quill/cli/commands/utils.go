@@ -28,8 +28,8 @@ func loadP12Interactively(p12Path, password string) (*load.P12Contents, error) {
 		return nil, fmt.Errorf("unable to read p12 bytes: %w", err)
 	}
 
-	prompter := bus.PromptForInput("Enter P12 password:", true)
-	newPassword, err := prompter.Response(context.Background())
+	prompter := bus.PromptForInput(context.Background(), "Enter P12 password:", true)
+	newPassword, err := prompter.Response()
 	if err != nil {
 		return nil, fmt.Errorf("unable to get password from prompt: %w", err)
 	}

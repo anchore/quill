@@ -146,6 +146,7 @@ func (m *UI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "esc", "ctrl+c":
+			m.handler.CancelPrompt()
 			m.exit()
 			return m, tea.Quit
 		}
