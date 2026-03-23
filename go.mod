@@ -10,7 +10,7 @@ require (
 	github.com/anchore/fangs v0.0.0-20251204220743-df7ac3652565
 	github.com/anchore/go-logger v0.0.0-20251106021608-a5b0513fa9a9
 	github.com/anchore/go-macholibre v0.0.0-20250826193721-3cd206ca93aa
-	github.com/aws/aws-sdk-go-v2 v1.41.3
+	github.com/aws/aws-sdk-go-v2 v1.41.4
 	github.com/aws/aws-sdk-go-v2/config v1.32.11
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.11
 	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.21.1
