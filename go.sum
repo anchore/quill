@@ -6,8 +6,8 @@ github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d h1:licZJFw2RwpH
 github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d/go.mod h1:asat636LX7Bqt5lYEZ27JNDcqxfjdBQuJ/MM4CN/Lzo=
 github.com/adrg/xdg v0.5.3 h1:xRnxJXne7+oWDatRhR1JLnvuccuIeCoBu2rtuLqQB78=
 github.com/adrg/xdg v0.5.3/go.mod h1:nlTsY+NNiCBGCK2tpm09vRqfVzrc2fLmXGpBLF0zlTQ=
-github.com/anchore/bubbly v0.1.0 h1:XI3+Flp4nsND0jUkLAO78lypl3LZDcJ/T29YbPncDWE=
-github.com/anchore/bubbly v0.1.0/go.mod h1:zRg1mfRCCe4vq1t9Ibu24YurErmnp9LAVCbpnpsb1pQ=
+github.com/anchore/bubbly v0.2.0 h1:VE6nLlWsYV+bTOqqCzS46NirrVmvHah3UQDtFcjzgHU=
+github.com/anchore/bubbly v0.2.0/go.mod h1:zRg1mfRCCe4vq1t9Ibu24YurErmnp9LAVCbpnpsb1pQ=
 github.com/anchore/clio v0.0.0-20251028140840-721eea5390a4 h1:ou5Co2rLHT5mqVdVmVE7QukGe2cCFTryAaaVzEEDnb0=
 github.com/anchore/clio v0.0.0-20251028140840-721eea5390a4/go.mod h1:Qps+CdrdcMx1k7GhKaJ1ZkKYZvRaIfbNmW6B8/5ONPs=
 github.com/anchore/fangs v0.0.0-20251204220743-df7ac3652565 h1:w7AFkXXSlBSgY/+NbuQIg5qp8hBq2VTliVL1y9p3QzU=
