@@ -8,7 +8,7 @@ require (
 	github.com/anchore/bubbly v0.2.0
 	github.com/anchore/clio v0.0.0-20251028140840-721eea5390a4
 	github.com/anchore/fangs v0.0.0-20251204220743-df7ac3652565
-	github.com/anchore/go-logger v0.0.0-20251106021608-a5b0513fa9a9
+	github.com/anchore/go-logger v0.1.0
 	github.com/anchore/go-macholibre v0.0.0-20250826193721-3cd206ca93aa
 	github.com/aws/aws-sdk-go-v2 v1.41.5
 	github.com/aws/aws-sdk-go-v2/config v1.32.14
@@ -99,7 +99,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/sagikazarmark/locafero v0.12.0 // indirect
-	github.com/sirupsen/logrus v1.9.3 // indirect
+	github.com/sirupsen/logrus v1.9.4 // indirect
 	github.com/spf13/afero v1.15.0 // indirect
 	github.com/spf13/cast v1.10.0 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
