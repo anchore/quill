@@ -1,15 +1,15 @@
 module github.com/anchore/quill
 
-go 1.25.0
+go 1.26.2
 
 require (
 	github.com/PuerkitoBio/goquery v1.12.0
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d
-	github.com/anchore/bubbly v0.2.0
-	github.com/anchore/clio v0.0.0-20251028140840-721eea5390a4
-	github.com/anchore/fangs v0.0.0-20251204220743-df7ac3652565
-	github.com/anchore/go-logger v0.0.0-20251106021608-a5b0513fa9a9
-	github.com/anchore/go-macholibre v0.0.0-20250826193721-3cd206ca93aa
+	github.com/anchore/bubbly v0.2.1-0.20260408143551-344f363bf6ee
+	github.com/anchore/clio v0.1.1-0.20260414122717-c63b2994e85a
+	github.com/anchore/fangs v0.1.0
+	github.com/anchore/go-logger v0.1.1-0.20260414131315-beb30ae87c9e
+	github.com/anchore/go-macholibre v0.1.1-0.20260413185634-25fb39cdef19
 	github.com/aws/aws-sdk-go-v2 v1.41.5
 	github.com/aws/aws-sdk-go-v2/config v1.32.14
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.14
@@ -38,7 +38,7 @@ require (
 require (
 	dario.cat/mergo v1.0.2 // indirect
 	github.com/adrg/xdg v0.5.3 // indirect
-	github.com/anchore/go-homedir v0.0.0-20250319154043-c29668562e4d // indirect
+	github.com/anchore/go-homedir v0.1.0 // indirect
 	github.com/andybalholm/cascadia v1.3.3 // indirect
 	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.7.8 // indirect
@@ -99,7 +99,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/sagikazarmark/locafero v0.12.0 // indirect
-	github.com/sirupsen/logrus v1.9.3 // indirect
+	github.com/sirupsen/logrus v1.9.4 // indirect
 	github.com/spf13/afero v1.15.0 // indirect
 	github.com/spf13/cast v1.10.0 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
