@@ -7,7 +7,7 @@ require (
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d
 	github.com/anchore/bubbly v0.2.0
 	github.com/anchore/clio v0.0.0-20251028140840-721eea5390a4
-	github.com/anchore/fangs v0.0.0-20251204220743-df7ac3652565
+	github.com/anchore/fangs v0.1.0
 	github.com/anchore/go-logger v0.1.0
 	github.com/anchore/go-macholibre v0.0.0-20250826193721-3cd206ca93aa
 	github.com/aws/aws-sdk-go-v2 v1.41.5
