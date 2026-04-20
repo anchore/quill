@@ -54,7 +54,7 @@ func PrivateKey(path string, password string) (crypto.PrivateKey, error) {
 		privPemBytes = pemObj.Bytes
 	}
 
-	var parsedKey interface{}
+	var parsedKey any
 	if parsedKey, err = x509.ParsePKCS1PrivateKey(privPemBytes); err != nil {
 		if parsedKey, err = x509.ParsePKCS8PrivateKey(privPemBytes); err != nil {
 			return nil, fmt.Errorf("unable to parse RSA private key: %w", err)

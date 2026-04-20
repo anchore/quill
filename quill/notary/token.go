@@ -15,13 +15,13 @@ type TokenConfig struct {
 	Issuer        string
 	PrivateKeyID  string
 	TokenLifetime time.Duration
-	PrivateKey    string //nolint:gosec // G117 false positive: not a hardcoded secret
+	PrivateKey    string // not a hardcoded secret
 }
 
 func NewSignedToken(cfg TokenConfig) (string, error) {
 	method := jwt.SigningMethodES256 // TODO: add more methods
 	token := &jwt.Token{
-		Header: map[string]interface{}{
+		Header: map[string]any{
 			"alg": method.Alg(),
 			"kid": cfg.PrivateKeyID,
 			"typ": "JWT",

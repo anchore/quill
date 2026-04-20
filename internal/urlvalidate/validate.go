@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"net"
 	"net/url"
+	"slices"
 	"strings"
 )
 
@@ -74,13 +75,7 @@ func (v *Validator) Validate(rawURL string) (warning string, err error) {
 	}
 
 	// require allowed scheme (https in production, http can be added for tests)
-	schemeAllowed := false
-	for _, scheme := range v.config.AllowedSchemes {
-		if parsed.Scheme == scheme {
-			schemeAllowed = true
-			break
-		}
-	}
+	schemeAllowed := slices.Contains(v.config.AllowedSchemes, parsed.Scheme)
 	if !schemeAllowed {
 		return "", fmt.Errorf("URL scheme must be https, got %q", parsed.Scheme)
 	}

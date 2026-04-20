@@ -117,7 +117,8 @@ func prepareTestBinary() (string, error) {
 
 	// copy the executable
 	if _, err := io.Copy(tmpFile, src); err != nil {
-		os.Remove(tmpPath) //nolint:gosec // path is from os.CreateTemp, not user input
+		// path is from os.CreateTemp, not user input
+		os.Remove(tmpPath)
 		return "", fmt.Errorf("failed to copy executable: %w", err)
 	}
 

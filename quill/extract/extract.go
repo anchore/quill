@@ -52,7 +52,7 @@ func NewFile(binPath string) ([]*File, error) {
 }
 
 func newFile(path string) (*File, error) {
-	f, err := os.Open(path) //nolint:gosec // G703 false positive: path is not from untrusted input
+	f, err := os.Open(path) // path is not from untrusted input
 	if err != nil {
 		return nil, fmt.Errorf("unable to open file: %w", err)
 	}

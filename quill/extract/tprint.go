@@ -6,7 +6,7 @@ import (
 	"text/template"
 )
 
-func tprintf(tmpl string, data interface{}) string {
+func tprintf(tmpl string, data any) string {
 	t := template.Must(template.New("").Parse(tmpl))
 	buf := &bytes.Buffer{}
 	if err := t.Execute(buf, data); err != nil {

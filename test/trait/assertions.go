@@ -30,7 +30,7 @@ func AssertFileOutput(tb testing.TB, path string, assertions ...Assertion) Asser
 
 func AssertJSONReport(tb testing.TB, stdout, _ string, _ error) {
 	tb.Helper()
-	var data interface{}
+	var data any
 
 	if err := json.Unmarshal([]byte(stdout), &data); err != nil {
 		tb.Errorf("expected to find a JSON report, but was unmarshalable: %+v", err)
