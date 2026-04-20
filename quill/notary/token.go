@@ -21,7 +21,7 @@ type TokenConfig struct {
 func NewSignedToken(cfg TokenConfig) (string, error) {
 	method := jwt.SigningMethodES256 // TODO: add more methods
 	token := &jwt.Token{
-		Header: map[string]interface{}{
+		Header: map[string]any{
 			"alg": method.Alg(),
 			"kid": cfg.PrivateKeyID,
 			"typ": "JWT",

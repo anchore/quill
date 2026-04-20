@@ -23,8 +23,8 @@ type CodeDirectoryDetails struct {
 }
 
 type DescribedValue struct {
-	Value       interface{} `json:"value"`
-	Description string      `json:"description"`
+	Value       any    `json:"value"`
+	Description string `json:"description"`
 }
 
 type SectionDigest struct {
