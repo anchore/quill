@@ -20,7 +20,7 @@ type Signing struct {
 	FailWithoutFullChain bool   `yaml:"fail-without-full-chain" json:"fail-without-full-chain" mapstructure:"fail-without-full-chain"`
 
 	// unbound options
-	Password     string `yaml:"password" json:"password" mapstructure:"password"` //nolint:gosec // G117 false positive: not a hardcoded secret
+	Password     string `yaml:"password" json:"password" mapstructure:"password"` // not a hardcoded secret
 	Entitlements string `yaml:"entitlements" json:"entitlements" mapstructure:"entitlements"`
 }
 

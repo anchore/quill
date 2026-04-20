@@ -11,7 +11,7 @@ var _ interface {
 } = (*P12)(nil)
 
 type P12 struct {
-	Password string `yaml:"password" json:"password" mapstructure:"password"` //nolint:gosec // G117 false positive: not a hardcoded secret
+	Password string `yaml:"password" json:"password" mapstructure:"password"` // not a hardcoded secret
 }
 
 func (o *P12) PostLoad() error {

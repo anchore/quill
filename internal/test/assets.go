@@ -30,7 +30,7 @@ func copyFile(t *testing.T, src, dest string) {
 		t.Fatalf("unable to read source: %+v", err)
 	}
 
-	if err = os.WriteFile(dest, input, 0600); err != nil {
+	if err = os.WriteFile(dest, input, 0600); err != nil { //nolint:gosec // G304: dest is under t.TempDir() in a test helper
 		t.Fatalf("unable to write to destintion: %+v", err)
 	}
 }

@@ -13,7 +13,7 @@ type Notary struct {
 	// bound options
 	Issuer       string `yaml:"issuer" json:"issuer" mapstructure:"issuer"`
 	PrivateKeyID string `yaml:"key-id" json:"key-id" mapstructure:"key-id"`
-	PrivateKey   string `yaml:"key" json:"key" mapstructure:"key"` //nolint:gosec // G117 false positive: not a hardcoded secret
+	PrivateKey   string `yaml:"key" json:"key" mapstructure:"key"` // not a hardcoded secret
 
 	// unbound options
 }

@@ -63,7 +63,7 @@ func (s httpClient) getUnauthenticated(ctx context.Context, endpoint string) (*h
 	}
 
 	log.Tracef("http %s %s (unauthenticated)", request.Method, request.URL)
-	//nolint:gosec // G704: URL is validated by validator.Validate above
+	// URL is validated by validator.Validate above
 	return s.client.Do(request)
 }
 
