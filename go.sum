@@ -16,8 +16,8 @@ github.com/anchore/go-homedir v0.0.0-20250319154043-c29668562e4d h1:gT69osH9Asdp
 github.com/anchore/go-homedir v0.0.0-20250319154043-c29668562e4d/go.mod h1:PhSnuFYknwPZkOWKB1jXBNToChBA+l0FjwOxtViIc50=
 github.com/anchore/go-logger v0.1.0 h1:3pE9Sli4SE1I/mtV+2pZXzim+aWj83BRaneVXeMgD3A=
 github.com/anchore/go-logger v0.1.0/go.mod h1:0l63X5VyHqfWQwsNaTmkgXErsfohze3NAFCXFdhSjdQ=
-github.com/anchore/go-macholibre v0.0.0-20250826193721-3cd206ca93aa h1:KPEP8f3enFJeus3Wo51I+riVuCvlf4OEYl2B4IfycbQ=
-github.com/anchore/go-macholibre v0.0.0-20250826193721-3cd206ca93aa/go.mod h1:7YJA6tAfRm4SzIF93b32pR4xnbf8g2nJIeQnp+2vzzI=
+github.com/anchore/go-macholibre v0.1.0 h1:qHbdusBZNcZM/uuKf1Psa9xxAFSoyRTps8GW9gpJgsg=
+github.com/anchore/go-macholibre v0.1.0/go.mod h1:eu0gbwaZ+ocVFJLePdmPPDKU8MboV1MKsUCr36Ckd5s=
 github.com/andreyvit/diff v0.0.0-20170406064948-c7f18ee00883/go.mod h1:rCTlJbsFo29Kk6CurOXKm700vrz8f0KW0JNfpkRJY/8=
 github.com/andybalholm/cascadia v1.3.3 h1:AG2YHrzJIm4BZ19iwJ/DAua6Btl3IwJX+VI4kktS1LM=
 github.com/andybalholm/cascadia v1.3.3/go.mod h1:xNd9bqTn98Ln4DwST8/nG+H0yuB8Hmgu1YHNnWw0GeA=
