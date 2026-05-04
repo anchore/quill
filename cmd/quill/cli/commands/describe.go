@@ -18,11 +18,16 @@ type describeConfig struct {
 	options.Describe `yaml:"describe" json:"describe" mapstructure:"describe"`
 }
 
+const (
+	formatText = "text"
+	formatJSON = "json"
+)
+
 func Describe(app clio.Application) *cobra.Command {
 	opts := &describeConfig{
 		Format: options.Format{
-			Output:           "text",
-			AllowableFormats: []string{"text", "json"},
+			Output:           formatText,
+			AllowableFormats: []string{formatText, formatJSON},
 		},
 	}
 
@@ -31,7 +36,7 @@ func Describe(app clio.Application) *cobra.Command {
 		Short: "show the details of a macho binary",
 		Example: options.FormatPositionalArgsHelp(
 			map[string]string{
-				"PATH": "the darwin binary to print details for",
+				pathArg: "the darwin binary to print details for",
 			},
 		),
 		Args: chainArgs(
@@ -47,9 +52,9 @@ func Describe(app clio.Application) *cobra.Command {
 			var err error
 			buf := &strings.Builder{}
 			switch strings.ToLower(opts.Output) {
-			case "text":
+			case formatText:
 				err = extract.ShowText(opts.Path, buf, !opts.Detail)
-			case "json":
+			case formatJSON:
 				err = extract.ShowJSON(opts.Path, buf)
 			default:
 				err = fmt.Errorf("unknown format: %s", opts.Output)

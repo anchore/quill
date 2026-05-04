@@ -29,7 +29,7 @@ tools:
 
   - name: golangci-lint
     version:
-      want: v2.11.4
+      want: v2.12.1
     method: github-release
     with:
       repo: golangci/golangci-lint
@@ -71,7 +71,7 @@ tools:
 
   - name: gh
     version:
-      want: v2.91.0
+      want: v2.92.0
     method: github-release
     with:
       repo: cli/cli

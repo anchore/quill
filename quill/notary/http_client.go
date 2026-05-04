@@ -98,6 +98,5 @@ func (s httpClient) do(request *http.Request) (*http.Response, error) {
 
 	log.Tracef("http %s %s", request.Method, request.URL)
 	request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", s.token))
-	//nolint:gosec // G704: URL is validated by validator.Validate above
 	return s.client.Do(request)
 }

@@ -42,7 +42,7 @@ func P12AttachChain(app clio.Application) *cobra.Command {
 			"command with the `--p12` option.",
 		Example: options.FormatPositionalArgsHelp(
 			map[string]string{
-				"PATH": "path to the p12 file from Apple (containing the private key and single signing certificate)",
+				pathArg: "path to the p12 file from Apple (containing the private key and single signing certificate)",
 			},
 		),
 		Args: chainArgs(
