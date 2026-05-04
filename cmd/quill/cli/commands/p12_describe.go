@@ -26,7 +26,7 @@ func P12Describe(app clio.Application) *cobra.Command {
 		Short: "describe the contents of a p12 file",
 		Example: options.FormatPositionalArgsHelp(
 			map[string]string{
-				"PATH": "path to the p12 file to describe",
+				pathArg: "path to the p12 file to describe",
 			},
 		),
 		Args: chainArgs(

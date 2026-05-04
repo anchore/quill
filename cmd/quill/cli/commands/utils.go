@@ -13,6 +13,8 @@ import (
 	"github.com/anchore/quill/quill/pki/load"
 )
 
+const pathArg = "PATH"
+
 func loadP12Interactively(p12Path, password string) (*load.P12Contents, error) {
 	p12Content, err := load.P12(p12Path, password)
 	if err == nil {

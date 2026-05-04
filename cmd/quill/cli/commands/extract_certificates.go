@@ -30,7 +30,7 @@ func ExtractCertificates(app clio.Application) *cobra.Command {
 		Short: "extract certificates from a signed macho binary",
 		Example: options.FormatPositionalArgsHelp(
 			map[string]string{
-				"PATH": "the darwin binary to extract certificates from",
+				pathArg: "the darwin binary to extract certificates from",
 			},
 		),
 		Args: chainArgs(
