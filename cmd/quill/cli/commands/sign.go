@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -46,28 +47,41 @@ func Sign(app clio.Application) *cobra.Command {
 }
 
 func sign(binPath string, opts options.Signing) error {
+	if opts.KMS.Key != "" && opts.P12 != "" {
+		return fmt.Errorf("--kms-key and --p12 are mutually exclusive")
+	}
+
 	cfg := quill.SigningConfig{
 		Path: binPath,
 	}
 
-	if opts.P12 != "" {
-		if opts.AdHoc {
-			log.Warn("ad-hoc signing is enabled, but a p12 file was also provided. The p12 file will be ignored.")
-		} else {
-			p12Content, err := loadP12Interactively(opts.P12, opts.Password)
-			if err != nil {
-				return fmt.Errorf("unable to decode p12 file: %w", err)
-			}
-			if p12Content == nil {
-				return fmt.Errorf("no content found in the p12 file")
-			}
-
-			replacement, err := quill.NewSigningConfigFromP12(binPath, *p12Content, opts.FailWithoutFullChain)
-			if err != nil {
-				return fmt.Errorf("unable to read p12: %w", err)
-			}
-			cfg = *replacement
+	switch {
+	case opts.AdHoc:
+		if opts.KMS.Key != "" || opts.P12 != "" {
+			log.Warn("ad-hoc signing is enabled; --kms-key / --p12 will be ignored")
 		}
+
+	case opts.KMS.Key != "":
+		replacement, err := quill.NewSigningConfigFromKMS(context.Background(), binPath, opts.KMS.Key, opts.KMS.CertChain, opts.FailWithoutFullChain)
+		if err != nil {
+			return fmt.Errorf("unable to set up KMS-backed signer: %w", err)
+		}
+		cfg = *replacement
+
+	case opts.P12 != "":
+		p12Content, err := loadP12Interactively(opts.P12, opts.Password)
+		if err != nil {
+			return fmt.Errorf("unable to decode p12 file: %w", err)
+		}
+		if p12Content == nil {
+			return fmt.Errorf("no content found in the p12 file")
+		}
+
+		replacement, err := quill.NewSigningConfigFromP12(binPath, *p12Content, opts.FailWithoutFullChain)
+		if err != nil {
+			return fmt.Errorf("unable to read p12: %w", err)
+		}
+		cfg = *replacement
 	}
 
 	cfg.WithIdentity(opts.Identity)

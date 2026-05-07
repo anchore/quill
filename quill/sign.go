@@ -1,6 +1,7 @@
 package quill
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path"
@@ -15,6 +16,9 @@ import (
 	"github.com/anchore/quill/quill/pki"
 	"github.com/anchore/quill/quill/pki/load"
 	"github.com/anchore/quill/quill/sign"
+
+	// register KMS providers so kms.Open recognizes their URI schemes.
+	_ "github.com/anchore/quill/quill/pki/kms/aws"
 )
 
 type SigningConfig struct {
@@ -39,6 +43,19 @@ func NewSigningConfigFromPEMs(binaryPath, certificate, privateKey, password stri
 		Path:            binaryPath,
 		Identity:        path.Base(binaryPath),
 		SigningMaterial: signingMaterial,
+	}, nil
+}
+
+func NewSigningConfigFromKMS(ctx context.Context, binaryPath, kmsURI, certChainPath string, failWithoutFullChain bool) (*SigningConfig, error) {
+	signingMaterial, err := pki.NewSigningMaterialFromKMS(ctx, kmsURI, certChainPath, failWithoutFullChain)
+	if err != nil {
+		return nil, err
+	}
+
+	return &SigningConfig{
+		Path:            binaryPath,
+		Identity:        path.Base(binaryPath),
+		SigningMaterial: *signingMaterial,
 	}, nil
 }
 

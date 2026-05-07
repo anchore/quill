@@ -66,6 +66,7 @@ func New(id clio.Identification) clio.Application {
 	root.AddCommand(commands.Test(app))
 	root.AddCommand(commands.Describe(app))
 	root.AddCommand(commands.EmbeddedCerts(app))
+	root.AddCommand(commands.CSR(app))
 	root.AddCommand(submission)
 	root.AddCommand(extract)
 	root.AddCommand(p12)

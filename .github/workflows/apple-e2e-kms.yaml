@@ -1,0 +1,115 @@
+name: "Apple E2E (KMS)"
+
+# Manual end-to-end validation of the AWS KMS-backed signing path against the
+# real Apple Notary service. Builds a quill snapshot, signs the resulting binary
+# with a real KMS-resident Developer ID key, runs codesign --verify, and submits
+# the binary to Apple for notarization. This is the only test that proves the
+# CMS we produce around a KMS-resident key is acceptable to Apple.
+#
+# Triggered manually because Apple Notary has rate limits and outages we don't
+# want gating PR turnaround. Per-PR coverage is provided by
+# quill/sign_kms_test.go:TestSign_KMS which proves byte-identical output to the
+# validated P12 path.
+#
+# One-time setup (see docs/hsm-signing.md):
+#   - AWS KMS asymmetric key (RSA_2048 SIGN_VERIFY)
+#   - IAM role with kms:Sign + kms:GetPublicKey, OIDC trust on this repo
+#   - Developer ID certificate enrolled against the KMS key, chain.pem assembled
+#   - Repo Variables: QUILL_KMS_KEY_URI, QUILL_KMS_CERT_CHAIN_PEM,
+#     AWS_KMS_SIGNING_ROLE_ARN, AWS_KMS_REGION
+#   - Secrets (already present): APPLE_NOTARY_ISSUER, APPLE_NOTARY_KEY_ID,
+#     APPLE_NOTARY_KEY
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sign-and-notarize:
+    name: "Sign and notarize quill via KMS"
+    runs-on: macos-15
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Bootstrap environment
+        uses: ./.github/actions/bootstrap
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@b47578312673ae6fa5b630002463f9f499d5ff8c # v5.1.0
+        with:
+          role-to-assume: ${{ vars.AWS_KMS_SIGNING_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_KMS_REGION }}
+
+      - name: Materialize cert chain
+        env:
+          CERT_CHAIN: ${{ vars.QUILL_KMS_CERT_CHAIN_PEM }}
+        run: |
+          set -euo pipefail
+          printf '%s\n' "$CERT_CHAIN" > "${RUNNER_TEMP}/chain.pem"
+
+      - name: Build quill snapshot
+        run: make snapshot
+
+      - name: Locate snapshot binary
+        run: |
+          set -euo pipefail
+          QUILL_BIN="$(find ./snapshot -type f -name quill -path '*darwin*' | head -1)"
+          if [ -z "$QUILL_BIN" ]; then
+            echo "could not locate snapshot quill binary under ./snapshot" >&2
+            find ./snapshot -type f >&2 || true
+            exit 1
+          fi
+          echo "QUILL_BIN=$QUILL_BIN" >> "$GITHUB_ENV"
+
+      - name: Smoke test quill csr
+        env:
+          KMS_KEY_URI: ${{ vars.QUILL_KMS_KEY_URI }}
+        run: |
+          set -euo pipefail
+          "$QUILL_BIN" csr \
+            --kms-key "$KMS_KEY_URI" \
+            --common-name "quill-ci-csr-smoke" \
+            --out "${RUNNER_TEMP}/smoke.csr" \
+            -vv
+          openssl req -in "${RUNNER_TEMP}/smoke.csr" -verify -noout -text
+
+      - name: Sign quill with KMS
+        env:
+          KMS_KEY_URI: ${{ vars.QUILL_KMS_KEY_URI }}
+        run: |
+          set -euo pipefail
+          cp "$QUILL_BIN" "${RUNNER_TEMP}/quill-signed"
+          "$QUILL_BIN" sign "${RUNNER_TEMP}/quill-signed" \
+            --kms-key "$KMS_KEY_URI" \
+            --kms-cert-chain "${RUNNER_TEMP}/chain.pem" \
+            -vv
+
+      - name: Verify signature with codesign
+        run: |
+          set -euo pipefail
+          codesign -dv --verbose=4 "${RUNNER_TEMP}/quill-signed"
+          codesign --verify --strict --deep "${RUNNER_TEMP}/quill-signed"
+
+      - name: Notarize with Apple
+        env:
+          QUILL_NOTARY_ISSUER: ${{ secrets.APPLE_NOTARY_ISSUER }}
+          QUILL_NOTARY_KEY_ID: ${{ secrets.APPLE_NOTARY_KEY_ID }}
+          QUILL_NOTARY_KEY: ${{ secrets.APPLE_NOTARY_KEY }}
+        run: |
+          set -euo pipefail
+          "$QUILL_BIN" notarize "${RUNNER_TEMP}/quill-signed" --wait -vv
+
+      - name: Upload signed binary
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        if: always()
+        with:
+          name: quill-signed
+          path: ${{ runner.temp }}/quill-signed
+          if-no-files-found: ignore

@@ -18,6 +18,7 @@ type Signing struct {
 	TimestampServer      string `yaml:"timestamp-server" json:"timestamp-server" mapstructure:"timestamp-server"`
 	AdHoc                bool   `yaml:"ad-hoc" json:"ad-hoc" mapstructure:"ad-hoc"`
 	FailWithoutFullChain bool   `yaml:"fail-without-full-chain" json:"fail-without-full-chain" mapstructure:"fail-without-full-chain"`
+	KMS                  KMS    `yaml:"kms" json:"kms" mapstructure:"kms"`
 
 	// unbound options
 	Password     string `yaml:"password" json:"password" mapstructure:"password"` //nolint:gosec // G117 false positive: not a hardcoded secret

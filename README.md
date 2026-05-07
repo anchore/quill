@@ -121,11 +121,41 @@ $ quill p12 attach-chain [path-to-p12-from-apple]
 At this point you can use `quill p12 describe` to confirm the full certificate chain is attached.
 
 
+### HSM-backed signing (AWS KMS)
+
+If you'd rather not have a private key on disk at all, quill can sign with a key that lives in AWS KMS — quill calls
+`kms:Sign` and gets back a signature, the private key never leaves the HSM. The certificate chain remains required (it's
+public material), but the dangerous half — the private key — is never exposed to the build machine.
+
+```bash
+$ quill sign [path/to/binary] \
+    --kms-key awskms:///alias/my-quill-signing-key \
+    --kms-cert-chain ./chain.pem
+```
+
+`--kms-key` accepts the [sigstore-style URI scheme](https://docs.sigstore.dev/cosign/key_management/overview/) so the
+same URI form works elsewhere. `--kms-cert-chain` is a PEM file containing the leaf cert plus any intermediates that
+pair with the KMS key — file path, base64 contents, or `env:VAR_NAME` are all accepted (mirrors the `--p12` ergonomics).
+
+To enroll the key with Apple, generate a CSR signed by the KMS:
+
+```bash
+$ quill csr --kms-key awskms:///alias/my-quill-signing-key \
+    --common-name "Developer ID Application: My Org (TEAMID)" \
+    --organization "My Org" --organizational-unit TEAMID --country US \
+    --out csr.pem
+```
+
+Submit `csr.pem` to Apple Developer, download the resulting cert, and assemble it with the Apple intermediate(s) into
+`chain.pem`. See [`docs/hsm-signing.md`](docs/hsm-signing.md) for the full walkthrough including IAM policy,
+threat model, and CI setup.
+
 ## Commands
 
 - `sign [binary-file]`: sign a mac executable binary
 - `notarize [binary-file]`: notarize a signed a mac binary with Apple's Notary service
 - `sign-and-notarize [binary-file]` sign and notarize a mac binary
+- `csr`: generate a CSR signed by a KMS-resident key (for enrolling a Developer ID cert against an HSM keypair)
 - `submission list`: list previous submissions to Apple's Notary service
 - `submission logs [id]`: fetch logs for an existing submission from Apple's Notary service
 - `submission status [id]`: check against Apple's Notary service to see the status of a notarization submission request
@@ -148,6 +178,18 @@ log:
   
   # file to write all loge entries to (env var: "QUILL_LOG_FILE")
   file: ""
+
+sign:
+  # PKCS#12 input (existing): file path, base64, or env:VAR_NAME (env var: "QUILL_SIGN_P12")
+  p12: ""
+
+  # KMS-backed signing (env var: "QUILL_SIGN_KMS_KEY"). Mutually exclusive with p12.
+  kms:
+    # URI of the KMS key (e.g. awskms:///arn:aws:kms:us-east-1:111122223333:key/...)
+    key: ""
+    # PEM cert chain that pairs with the KMS key — file path, base64, or env:VAR_NAME
+    # (env var: "QUILL_SIGN_KMS_CERT_CHAIN"). Certificates are public material, safe to commit.
+    cert-chain: ""
 ```
 
 ## Why make this?
