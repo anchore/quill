@@ -5,7 +5,7 @@ updates:
   - package-ecosystem: gomod
     directory: "/"
     schedule:
-      interval: "daily"
+      interval: "weekly"
     cooldown:
       default-days: 7
     open-pull-requests-limit: 10
@@ -13,19 +13,11 @@ updates:
       - "dependencies"
 
   - package-ecosystem: "github-actions"
-    directory: "/"
+    directories:
+      - "/"
+      - "/.github/actions/*"
     schedule:
-      interval: "daily"
-    cooldown:
-      default-days: 7
-    open-pull-requests-limit: 10
-    labels:
-      - "dependencies"
-
-  - package-ecosystem: "github-actions"
-    directory: "/.github/actions/bootstrap"
-    schedule:
-      interval: "daily"
+      interval: "weekly"
     cooldown:
       default-days: 7
     open-pull-requests-limit: 10
