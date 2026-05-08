@@ -1,3 +1,5 @@
+cooldown: 7d
+
 tools:
   - name: quill
     version:
