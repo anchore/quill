@@ -52,7 +52,7 @@ tools:
 
   - name: chronicle
     version:
-      want: v0.8.3
+      want: v0.9.0
     method: github-release
     with:
       repo: anchore/chronicle
