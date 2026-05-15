@@ -22,7 +22,7 @@ jobs:
           persist-credentials: false
 
       - name: Bootstrap environment
-        uses: ./.github/actions/bootstrap
+        uses: anchore/go-make/.github/actions/setup@88c36505984649108439f13fb35dcaea4ce61d94 # v0.4.0
 
       - name: Run static analysis
         run: make static-analysis
@@ -34,7 +34,6 @@ jobs:
     permissions:
       contents: read
     steps:
-
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd #v6.0.2
         with:
           # this downloads and initializes LFS, but does not pull the objects
@@ -46,7 +45,7 @@ jobs:
         run: git lfs pull
 
       - name: Bootstrap environment
-        uses: ./.github/actions/bootstrap
+        uses: anchore/go-make/.github/actions/setup@88c36505984649108439f13fb35dcaea4ce61d94 # v0.4.0
 
       - name: Run unit tests
         run: make unit
@@ -57,6 +56,7 @@ jobs:
           path: test/results/**/*
 
   Build-Snapshot-Artifacts:
+    # Note: changing this job name requires making the same update in the .github/workflows/release.yaml pipeline
     name: "Build snapshot artifacts"
     runs-on: ubuntu-24.04
     permissions:
@@ -67,7 +67,14 @@ jobs:
           persist-credentials: false
 
       - name: Bootstrap environment
-        uses: ./.github/actions/bootstrap
+        uses: anchore/go-make/.github/actions/setup@88c36505984649108439f13fb35dcaea4ce61d94 # v0.4.0
+        with:
+          # why have another build cache key? We don't want unit/integration/etc test build caches to replace
+          # the snapshot build cache, which includes builds for all OSs and architectures. As long as this key is
+          # unique from the build-cache-key-prefix in other CI jobs, we should be fine.
+          #
+          # note: ideally this value should match what is used in release (just to help with build times).
+          cache-key-prefix: "snapshot"
 
       - name: Build snapshot artifacts
         run: make snapshot
@@ -91,6 +98,9 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd #v6.0.2
         with:
           persist-credentials: false
+
+      - name: Bootstrap environment
+        uses: anchore/go-make/.github/actions/setup@88c36505984649108439f13fb35dcaea4ce61d94 # v0.4.0
 
       - name: Download snapshot build
         uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae #v5.0.5
@@ -136,7 +146,7 @@ jobs:
         run: git lfs pull
 
       - name: Bootstrap environment
-        uses: ./.github/actions/bootstrap
+        uses: anchore/go-make/.github/actions/setup@88c36505984649108439f13fb35dcaea4ce61d94 # v0.4.0
 
       - name: Download snapshot build
         uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae #v5.0.5

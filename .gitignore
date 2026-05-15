@@ -1,21 +1,49 @@
-# local workflow
+# local development tailoring
 go.work
 go.work.sum
+.tool-versions
+.mise.toml
 mise.toml
+.env
 .claude
 .conductor
-specs
 
-# release assets
-CHANGELOG.md
-/VERSION
+# tool and bin directories
+.tmp/
+bin/
+/bin
+/.bin
+/build
+.tool/
 /test/results
 /dist
 /snapshot
-.server/
+/.tool
+/.task
+/specs
+/docs
+/doc
+cmd/quill/quill
+generate
+
+# changelog generation
+/CHANGELOG.md
+/VERSION
+
+# IDE configuration
 .vscode/
+.idea/
+.server/
 .history/
+
+# test related
 *.fingerprint
+/test/results
+coverage.txt
+*.log
+
+# probable archives
+.images
 *.tar
 *.jar
 *.war
@@ -23,16 +51,7 @@ CHANGELOG.md
 *.jpi
 *.hpi
 *.zip
-.idea/
-*.log
-.images
-.tmp/
-/.tool
-/.task
-coverage.txt
-bin/
-cmd/quill/quill
-generate
+*.iml
 
 # Binaries for programs and plugins
 *.exe
@@ -51,3 +70,12 @@ generate
 .DS_STORE
 
 *.profile
+
+# attestation
+cosign.key
+cosign.pub
+
+# Byte-compiled object files for python
+__pycache__/
+*.py[cod]
+*$py.class

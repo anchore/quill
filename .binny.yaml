@@ -1,6 +1,11 @@
+# only pull in version updates that were released more than a week ago (low-pass filter for quickly-retracted releases)
 cooldown: 7d
-
+# note: we are inheriting tool definitions from anchore/go-make .binny.yaml, so we only need to specify tools here that
+# are not already defined there (or that we want to override with different versions).
 tools:
+  # Build quill from source so the .tool/quill used to sign darwin binaries during release matches the
+  # version being released, rather than a previously-published GitHub release tag (which is what go-make's
+  # default .binny.yaml provides).
   - name: quill
     version:
       want: current
@@ -15,73 +20,12 @@ tools:
         # note: sprig functions are available: http://masterminds.github.io/sprig/
         - -X main.buildDate={{ now | date "2006-01-02T15:04:05Z07:00" }}
 
-  - name: binny
-    version:
-      want: v0.13.0
-    method: github-release
-    with:
-      repo: anchore/binny
-
-  - name: task
-    version:
-      want: v3.50.0
-    method: github-release
-    with:
-      repo: go-task/task
-
+  # Override go-make's default golangci-lint pin: quill's lint config relies on rules/behavior
+  # introduced after v2.11.4 (the go-make embedded default) — notably, gosec G704 SSRF taint
+  # analysis fires under v2.11.4 in code that lints clean under v2.12.2.
   - name: golangci-lint
     version:
       want: v2.12.2
     method: github-release
     with:
       repo: golangci/golangci-lint
-
-  - name: goreleaser
-    version:
-      want: v2.15.4
-    method: github-release
-    with:
-      repo: goreleaser/goreleaser
-
-  - name: gosimports
-    version:
-      want: v0.3.8
-    method: github-release
-    with:
-      repo: rinchsan/gosimports
-
-  - name: chronicle
-    version:
-      want: v0.9.0
-    method: github-release
-    with:
-      repo: anchore/chronicle
-
-  - name: glow
-    version:
-      want: v2.1.2
-    method: github-release
-    with:
-      repo: charmbracelet/glow
-
-  - name: bouncer
-    version:
-      want: v0.4.0
-    method: github-release
-    with:
-      repo: wagoodman/go-bouncer
-
-  - name: gh
-    version:
-      want: v2.92.0
-    method: github-release
-    with:
-      repo: cli/cli
-
-  # used for signing the checksums file at release
-  - name: cosign
-    version:
-      want: v3.0.6
-    method: github-release
-    with:
-      repo: sigstore/cosign

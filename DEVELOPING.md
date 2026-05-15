@@ -5,10 +5,9 @@ There are a few useful things to know before diving into the codebase.
 ## Getting started
 
 After cloning do the following:
-1. run `make bootstrap` to download go mod dependencies, create the `.tmp` dir, and download helper utilities.
-2. run `git lfs install` to install git lfs hooks (see [git-lfs](https://git-lfs.github.com/) on how to install git LFS if you don't already have it)
-3. run `git lfs pull` to get the test-fixture files from LFS
-4. run `make` to run linting, tests, and other verifications to make certain everything is working alright.
+1. run `git lfs install` to install git lfs hooks (see [git-lfs](https://git-lfs.github.com/) on how to install git LFS if you don't already have it)
+2. run `git lfs pull` to get the test-fixture files from LFS
+3. run `make` to run linting, tests, and other verifications to make certain everything is working alright. Helper tools are installed on-demand into `.tool/` by [go-make](https://github.com/anchore/go-make) the first time they are needed.
 
 The main make tasks for common static analysis and testing are `lint`, `format`, `lint-fix`, and `unit`.
 

@@ -2,7 +2,6 @@ name: "Release"
 
 permissions: {}
 
-# there should never be two releases in progress at the same time
 concurrency:
   group: release
   cancel-in-progress: false
@@ -15,15 +14,16 @@ on:
         required: true
 
 jobs:
-
   version-available:
+    permissions:
+      contents: read # required for the reusable workflow to check out the repo and verify the version
     uses: anchore/workflows/.github/workflows/check-version-available.yaml@8b2b1caf40e03933c6807e03b99e883e2ceb5ac8 # v0.4.0
     with:
       version: ${{ github.event.inputs.version }}
 
   check-gate:
     permissions:
-      checks: read   # required for getting the status of specific check names
+      checks: read # required for getting the status of specific check names
     uses: anchore/workflows/.github/workflows/check-gate.yaml@8b2b1caf40e03933c6807e03b99e883e2ceb5ac8 # v0.4.0
     with:
       # these are checks that should be run on pull-request and merges to main.
@@ -33,36 +33,34 @@ jobs:
 
   release:
     needs: [check-gate, version-available]
-    runs-on: ubuntu-latest
+    environment: release
+    runs-on: ubuntu-24.04
     permissions:
-      packages: write
-      contents: write
+      contents: write # required for creating the GitHub release and pushing the version tag
+      packages: write # required for publishing release artifacts to GitHub packages
+      id-token: write # required for keyless signing (cosign/sigstore OIDC)
     steps:
-
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd #v6.0.2
         with:
           fetch-depth: 0
           persist-credentials: true
 
       - name: Bootstrap environment
-        uses: ./.github/actions/bootstrap
-
-      - name: Tag release
-        env:
-          VERSION: ${{ github.event.inputs.version }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          git tag "$VERSION"
-          git push origin --tags
+        uses: anchore/go-make/.github/actions/setup@88c36505984649108439f13fb35dcaea4ce61d94 # v0.4.0
 
       - name: Build & publish release artifacts
         run: make ci-release
         env:
+          # for pushing tags (requires write access to content, but not packages)
+          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+          RELEASE_VERSION: ${{ github.event.inputs.version }}
+          # for mac signing and notarization...
           QUILL_SIGN_P12: ${{ secrets.ANCHORE_APPLE_DEVELOPER_ID_CERT_CHAIN }}
           QUILL_SIGN_PASSWORD: ${{ secrets.ANCHORE_APPLE_DEVELOPER_ID_CERT_PASS }}
           QUILL_NOTARY_ISSUER: ${{ secrets.APPLE_NOTARY_ISSUER }}
           QUILL_NOTARY_KEY_ID: ${{ secrets.APPLE_NOTARY_KEY_ID }}
           QUILL_NOTARY_KEY: ${{ secrets.APPLE_NOTARY_KEY }}
+          # for creating the release (requires write access to packages and content)
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 #v0.24.0
@@ -74,10 +72,31 @@ jobs:
           name: artifacts
           path: dist/**/*
 
+      - name: Notify Slack of new release
+        uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c #v3.0.3
+        continue-on-error: true
+        with:
+          webhook: ${{ secrets.SLACK_TOOLBOX_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            text: "A new Quill release has been published: https://github.com/anchore/quill/releases/tag/${{ github.event.inputs.version }}"
+            blocks:
+              - type: section
+                text:
+                  type: mrkdwn
+                  text: |
+                    *A new Quill release has been published* :rocket:
+                    • Release: <https://github.com/anchore/quill/releases/tag/${{ github.event.inputs.version }}|${{ github.event.inputs.version }}>
+                    • Workflow: `${{ github.workflow }}`
+                    • Event: `${{ github.event_name }}`
+        if: ${{ success() }}
+
   release-install-script:
     needs: [release]
     if: ${{ needs.release.result == 'success' }}
-    uses: "anchore/workflows/.github/workflows/release-install-script.yaml@main"
+    permissions:
+      contents: read # required for the reusable workflow to check out the repo and publish the install script
+    uses: anchore/workflows/.github/workflows/release-install-script.yaml@8b2b1caf40e03933c6807e03b99e883e2ceb5ac8 # v0.4.0
     with:
       tag: ${{ github.event.inputs.version }}
     secrets:
