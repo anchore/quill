@@ -87,13 +87,7 @@ Date:   Mon Aug 1 11:27:13 2020 -0400
 
 ## Test your changes
 
-This project has a `Makefile` which includes many helpers running both unit and integration tests. You can run `make help` to see all the options. Although PRs will have automatic checks for these, it is useful to run them locally, ensuring they pass before submitting changes. Ensure you've bootstrapped once before running tests:
-
-```text
-$ make bootstrap
-```
-
-You only need to bootstrap once. After the bootstrap process, you can run the tests as many times as needed:
+This project has a `Makefile` which includes many helpers running both unit and integration tests. You can run `make help` to see all the options. Although PRs will have automatic checks for these, it is useful to run them locally, ensuring they pass before submitting changes. Helper tools are installed on-demand into `.tool/` the first time a task that needs them is run, so no separate bootstrap step is required:
 
 ```text
 $ make test
