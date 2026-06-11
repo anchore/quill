@@ -15,7 +15,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
-	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
+	"github.com/aws/aws-sdk-go-v2/feature/s3/transfermanager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 
 	"github.com/anchore/quill/internal/log"
@@ -103,9 +103,9 @@ func (s APIClient) uploadBinary(ctx context.Context, response submissionResponse
 
 	// create S3 client and uploader
 	client := s3.NewFromConfig(cfg)
-	uploader := manager.NewUploader(client)
+	uploader := transfermanager.New(client)
 
-	input := &s3.PutObjectInput{
+	input := &transfermanager.UploadObjectInput{
 		Bucket: aws.String(attrs.Bucket),
 		Key:    aws.String(attrs.Object),
 		Body: &monitoredReader{
@@ -115,7 +115,7 @@ func (s APIClient) uploadBinary(ctx context.Context, response submissionResponse
 		ContentType: aws.String("application/zip"),
 	}
 
-	_, err = uploader.Upload(ctx, input)
+	_, err = uploader.UploadObject(ctx, input)
 	if err != nil {
 		return err
 	}
