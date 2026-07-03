@@ -22,7 +22,7 @@ jobs:
           persist-credentials: false
 
       - name: Bootstrap environment
-        uses: anchore/go-make/.github/actions/setup@39fe5f71112d4dceb3ff0a92a40f272f067fc457 # v0.6.0
+        uses: anchore/go-make/.github/actions/setup@430e2175bb166bfd138ef75466adbcc8ddab875f # v0.8.0
 
       - name: Run static analysis
         run: make static-analysis
@@ -45,7 +45,7 @@ jobs:
         run: git lfs pull
 
       - name: Bootstrap environment
-        uses: anchore/go-make/.github/actions/setup@39fe5f71112d4dceb3ff0a92a40f272f067fc457 # v0.6.0
+        uses: anchore/go-make/.github/actions/setup@430e2175bb166bfd138ef75466adbcc8ddab875f # v0.8.0
 
       - name: Run unit tests
         run: make unit
@@ -67,7 +67,7 @@ jobs:
           persist-credentials: false
 
       - name: Bootstrap environment
-        uses: anchore/go-make/.github/actions/setup@39fe5f71112d4dceb3ff0a92a40f272f067fc457 # v0.6.0
+        uses: anchore/go-make/.github/actions/setup@430e2175bb166bfd138ef75466adbcc8ddab875f # v0.8.0
         with:
           # why have another build cache key? We don't want unit/integration/etc test build caches to replace
           # the snapshot build cache, which includes builds for all OSs and architectures. As long as this key is
@@ -100,7 +100,7 @@ jobs:
           persist-credentials: false
 
       - name: Bootstrap environment
-        uses: anchore/go-make/.github/actions/setup@39fe5f71112d4dceb3ff0a92a40f272f067fc457 # v0.6.0
+        uses: anchore/go-make/.github/actions/setup@430e2175bb166bfd138ef75466adbcc8ddab875f # v0.8.0
 
       - name: Download snapshot build
         uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae #v5.0.5
@@ -146,7 +146,7 @@ jobs:
         run: git lfs pull
 
       - name: Bootstrap environment
-        uses: anchore/go-make/.github/actions/setup@39fe5f71112d4dceb3ff0a92a40f272f067fc457 # v0.6.0
+        uses: anchore/go-make/.github/actions/setup@430e2175bb166bfd138ef75466adbcc8ddab875f # v0.8.0
 
       - name: Download snapshot build
         uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae #v5.0.5
