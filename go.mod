@@ -9,7 +9,7 @@ require (
 	github.com/anchore/clio v0.1.1
 	github.com/anchore/fangs v0.1.1
 	github.com/anchore/go-logger v0.1.1
-	github.com/anchore/go-macholibre v0.1.0
+	github.com/anchore/go-macholibre v0.1.1
 	github.com/aws/aws-sdk-go-v2 v1.42.0
 	github.com/aws/aws-sdk-go-v2/config v1.32.25
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.24
