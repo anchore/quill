@@ -290,6 +290,26 @@ func signSingleBinary(cfg SigningConfig) error {
 }
 
 func IsSigned(path string) (bool, error) {
+	fi, err := os.Stat(path)
+	if err != nil {
+		return false, err
+	}
+
+	if fi.IsDir() {
+		if !bundle.IsBundle(path) {
+			return false, fmt.Errorf("directory is not an application bundle: %s", path)
+		}
+		b, err := bundle.New(path)
+		if err != nil {
+			return false, err
+		}
+		if _, err := os.Stat(b.CodeResourcesPath()); err != nil {
+			log.WithFields("bundle", path).Trace("bundle has no resource seal")
+			return false, nil
+		}
+		return IsSigned(b.MainExecutablePath())
+	}
+
 	f, err := os.Open(path)
 	if err != nil {
 		return false, err
