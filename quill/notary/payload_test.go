@@ -37,6 +37,7 @@ func TestNewPayload_directory(t *testing.T) {
 	}
 
 	// the bundle directory itself must be the top-level entry (ditto --keepParent behavior)
+	require.Contains(t, entries, "My.app/")
 	require.Contains(t, entries, "My.app/Contents/")
 	require.Contains(t, entries, "My.app/Contents/Info.plist")
 	require.Contains(t, entries, "My.app/Contents/MacOS/my-app")
