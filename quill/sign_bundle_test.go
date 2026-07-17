@@ -115,10 +115,20 @@ func TestSign_appBundle(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			bundlePath := makeAppBundle(t, tt.args.name, tt.args.identifier, tt.args.nestedBinaries...)
 
+			signed, err := IsSigned(bundlePath)
+			require.NoError(t, err)
+			assert.False(t, signed, "bundle should not be considered signed before signing")
+
 			cfg, err := NewSigningConfigFromPEMs(bundlePath, tt.args.certFile, tt.args.keyFile, "", false)
 			require.NoError(t, err)
 
 			require.NoError(t, Sign(*cfg))
+
+			signed, err = IsSigned(bundlePath)
+			require.NoError(t, err)
+			if tt.args.certFile != "" {
+				assert.True(t, signed, "bundle should be considered signed after signing")
+			}
 
 			// the resource seal should exist and account for the bundle resources
 			resourcesPath := filepath.Join(bundlePath, "Contents", "_CodeSignature", "CodeResources")
