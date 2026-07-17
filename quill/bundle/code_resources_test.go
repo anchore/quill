@@ -1,7 +1,6 @@
 package bundle
 
 import (
-	"encoding/binary"
 	"flag"
 	"os"
 	"path/filepath"
@@ -13,11 +12,12 @@ import (
 
 var updateGolden = flag.Bool("update", false, "update golden test fixtures")
 
-// fakeMachO returns bytes that pass isMachOFile detection (64-bit little-endian magic).
-func fakeMachO(payload string) []byte {
-	data := make([]byte, 8)
-	binary.LittleEndian.PutUint32(data, machoMagic64)
-	return append(data, []byte(payload)...)
+// machOFixture returns the contents of a real (unsigned) Mach-O binary.
+func machOFixture(t *testing.T) []byte {
+	t.Helper()
+	data, err := os.ReadFile(filepath.Join("test-fixtures", "assets", "hello"))
+	require.NoError(t, err)
+	return data
 }
 
 type stubSigner struct {
@@ -49,9 +49,9 @@ func TestResourcesBuilder_WalkAndSeal(t *testing.T) {
 	writeFile(t, root, "Contents/PkgInfo", "APPL????")
 	writeFile(t, root, "Contents/version.plist", "<plist/>")
 	writeFile(t, root, "Contents/MacOS/my-app", "main executable content")
-	require.NoError(t, os.WriteFile(filepath.Join(root, "Contents", "MacOS", "helper"), fakeMachO("helper"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(root, "Contents", "MacOS", "helper"), machOFixture(t), 0o755))
 	require.NoError(t, os.MkdirAll(filepath.Join(root, "Contents", "Frameworks"), 0o755))
-	require.NoError(t, os.WriteFile(filepath.Join(root, "Contents", "Frameworks", "libfoo.dylib"), fakeMachO("libfoo"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(root, "Contents", "Frameworks", "libfoo.dylib"), machOFixture(t), 0o755))
 	writeFile(t, root, "Contents/Resources/app.txt", "application resource")
 	writeFile(t, root, "Contents/Resources/.DS_Store", "junk")
 	writeFile(t, root, "Contents/Resources/en.lproj/Main.strings", "localized")
