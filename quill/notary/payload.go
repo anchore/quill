@@ -65,7 +65,7 @@ func prepareDirectory(path string) (*Payload, error) {
 			return walkErr
 		}
 		if fullPath == path {
-			return nil
+			return addDirectoryZipEntry(zw, parent, fullPath, d)
 		}
 
 		rel, err := filepath.Rel(path, fullPath)
