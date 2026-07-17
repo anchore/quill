@@ -14,6 +14,7 @@ import (
 	"howett.net/plist"
 
 	"github.com/anchore/quill/internal/log"
+	"github.com/anchore/quill/quill/macho"
 )
 
 // SignedBinaryInfo describes the code signature of a nested Mach-O binary, used to seal
@@ -186,7 +187,7 @@ func (b *ResourcesBuilder) processFile(fullPath, normalized string, signer MachO
 }
 
 func (b *ResourcesBuilder) sealNestedMachO(fullPath, normalized string, optional bool, signer MachOSigner) error {
-	isMachO, err := isMachOFile(fullPath)
+	isMachO, err := macho.IsMachoFile(fullPath)
 	if err != nil {
 		return err
 	}

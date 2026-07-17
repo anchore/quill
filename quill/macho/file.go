@@ -93,6 +93,9 @@ func NewReadOnlyFile(path string) (*File, error) {
 	return m, m.refresh(false)
 }
 
+// IsMachoFile indicates if the file at the given path is a Mach-O binary (thin or universal).
+// Content that cannot be parsed as Mach-O is reported as (false, nil); a non-nil error is
+// only returned when the file cannot be read at all.
 func IsMachoFile(path string) (bool, error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -105,7 +108,7 @@ func IsMachoFile(path string) (bool, error) {
 	}
 
 	mf, err := macho.NewFile(f)
-	return mf != nil && err == nil, err
+	return mf != nil && err == nil, nil
 }
 
 func (m *File) refresh(withWrite bool) error {
