@@ -5,11 +5,11 @@ go 1.25.0
 require (
 	github.com/PuerkitoBio/goquery v1.12.0
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d
-	github.com/anchore/bubbly v0.2.1
-	github.com/anchore/clio v0.1.1
-	github.com/anchore/fangs v0.1.1
-	github.com/anchore/go-logger v0.1.1
-	github.com/anchore/go-macholibre v0.1.1
+	github.com/anchore/bubbly v0.2.2-0.20260717055459-c5133e47fd35
+	github.com/anchore/clio v0.1.2-0.20260717204439-dab29a4b678a
+	github.com/anchore/fangs v0.1.2-0.20260703223445-c302d3bb5487
+	github.com/anchore/go-logger v0.1.2-0.20260717155448-597b44424b5b
+	github.com/anchore/go-macholibre v0.1.2-0.20260703232422-1f01b9f5cd4e
 	github.com/aws/aws-sdk-go-v2 v1.42.1
 	github.com/aws/aws-sdk-go-v2/config v1.32.29
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.28
