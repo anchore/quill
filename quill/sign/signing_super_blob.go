@@ -16,7 +16,20 @@ type SpecialSlot struct {
 	HashBytes []byte
 }
 
-func GenerateSigningSuperBlob(id string, m *macho.File, signingMaterial pki.SigningMaterial, entitlementsData string, paddingTarget int) (int, []byte, error) {
+// NewExternalContentSpecialSlot creates a special slot for content that lives outside of the
+// binary (e.g. a bundle's Info.plist or CodeResources file): the hash of the content is
+// recorded in the code directory, but no blob is embedded in the superblob.
+func NewExternalContentSpecialSlot(slotType macho.SlotType, content []byte) SpecialSlot {
+	h := sha256.New()
+	h.Write(content)
+	return SpecialSlot{Type: slotType, HashBytes: h.Sum(nil)}
+}
+
+// GenerateSigningSuperBlob generates the superblob holding the code directory, entitlements,
+// requirements, and CMS signature for the given binary. Any additionalSlots provided are
+// recorded in the code directory alongside the generated slots (used when the binary is the
+// main executable of a bundle).
+func GenerateSigningSuperBlob(id string, m *macho.File, signingMaterial pki.SigningMaterial, entitlementsData string, additionalSlots []SpecialSlot, paddingTarget int) (int, []byte, error) {
 	var cdFlags macho.CdFlag
 	if signingMaterial.Signer != nil {
 		// TODO: add options to enable more strict rules (such as macho.Hard)
@@ -27,7 +40,7 @@ func GenerateSigningSuperBlob(id string, m *macho.File, signingMaterial pki.Sign
 		cdFlags = macho.Adhoc
 	}
 
-	specialSlots := []SpecialSlot{}
+	specialSlots := append([]SpecialSlot{}, additionalSlots...)
 
 	entitlements, err := generateEntitlements(sha256.New(), entitlementsData)
 	if err != nil {
@@ -64,6 +77,11 @@ func GenerateSigningSuperBlob(id string, m *macho.File, signingMaterial pki.Sign
 	sb := macho.NewSuperBlob(macho.MagicEmbeddedSignature)
 	sb.Add(macho.CsSlotCodedirectory, cdBlob)
 	for _, slot := range specialSlots {
+		if slot.Blob == nil {
+			// the slot content lives outside the binary (e.g. Info.plist); only its hash
+			// is recorded in the code directory
+			continue
+		}
 		sb.Add(slot.Type, slot.Blob)
 	}
 

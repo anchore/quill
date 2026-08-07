@@ -34,10 +34,10 @@ func SignAndNotarize(app clio.Application) *cobra.Command {
 
 	return app.SetupCommand(&cobra.Command{
 		Use:   "sign-and-notarize PATH",
-		Short: "sign and notarize a macho (darwin) executable binary",
+		Short: "sign and notarize a macho (darwin) executable binary or application bundle",
 		Example: options.FormatPositionalArgsHelp(
 			map[string]string{
-				pathArg: "the darwin binary to sign and notarize",
+				pathArg: "the darwin binary or .app bundle to sign and notarize",
 			},
 		),
 		Args: chainArgs(

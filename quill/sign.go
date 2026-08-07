@@ -10,6 +10,7 @@ import (
 	macholibre "github.com/anchore/go-macholibre"
 	"github.com/anchore/quill/internal/bus"
 	"github.com/anchore/quill/internal/log"
+	"github.com/anchore/quill/quill/bundle"
 	"github.com/anchore/quill/quill/event"
 	"github.com/anchore/quill/quill/macho"
 	"github.com/anchore/quill/quill/pki"
@@ -22,6 +23,10 @@ type SigningConfig struct {
 	Identity        string
 	Path            string
 	Entitlements    string
+
+	// specialSlots carries additional code directory slots (e.g. the Info.plist and
+	// CodeResources hashes when signing the main executable of an app bundle)
+	specialSlots []sign.SpecialSlot
 }
 
 func NewSigningConfigFromPEMs(binaryPath, certificate, privateKey, password string, failWithoutFullChain bool) (*SigningConfig, error) {
@@ -73,6 +78,22 @@ func (c *SigningConfig) WithEntitlements(path string) *SigningConfig {
 }
 
 func Sign(cfg SigningConfig) error {
+	fi, err := os.Stat(cfg.Path)
+	if err != nil {
+		return err
+	}
+
+	if fi.IsDir() {
+		if bundle.IsBundle(cfg.Path) {
+			return signAppBundle(cfg)
+		}
+		return fmt.Errorf("unable to sign %q: directory is not an application bundle (no Contents/Info.plist found)", cfg.Path)
+	}
+
+	return signBinary(cfg)
+}
+
+func signBinary(cfg SigningConfig) error {
 	f, err := os.Open(cfg.Path)
 	if err != nil {
 		return err
@@ -235,7 +256,7 @@ func signSingleBinary(cfg SigningConfig) error {
 
 	// first pass: add the signed data with the dummy loader
 	log.Debugf("estimating signing material size")
-	superBlobSize, sbBytes, err := sign.GenerateSigningSuperBlob(cfg.Identity, m, cfg.SigningMaterial, entitlementsXML, 0)
+	superBlobSize, sbBytes, err := sign.GenerateSigningSuperBlob(cfg.Identity, m, cfg.SigningMaterial, entitlementsXML, cfg.specialSlots, 0)
 	if err != nil {
 		return fmt.Errorf("failed to add signing data on pass=1: %w", err)
 	}
@@ -243,12 +264,12 @@ func signSingleBinary(cfg SigningConfig) error {
 	// (patch) make certain offset and size references to the superblob are finalized in the binary
 	log.Debugf("patching binary with updated superblob offsets")
 	if err = sign.UpdateSuperBlobOffsetReferences(m, uint64(len(sbBytes))); err != nil {
-		return nil
+		return err
 	}
 
 	// second pass: now that all of the sizing is right, let's do it again with the final contents (replacing the hashes and signature)
 	log.Debug("creating signature for binary")
-	_, sbBytes, err = sign.GenerateSigningSuperBlob(cfg.Identity, m, cfg.SigningMaterial, entitlementsXML, superBlobSize)
+	_, sbBytes, err = sign.GenerateSigningSuperBlob(cfg.Identity, m, cfg.SigningMaterial, entitlementsXML, cfg.specialSlots, superBlobSize)
 	if err != nil {
 		return fmt.Errorf("failed to add signing data on pass=2: %w", err)
 	}
@@ -269,6 +290,26 @@ func signSingleBinary(cfg SigningConfig) error {
 }
 
 func IsSigned(path string) (bool, error) {
+	fi, err := os.Stat(path)
+	if err != nil {
+		return false, err
+	}
+
+	if fi.IsDir() {
+		if !bundle.IsBundle(path) {
+			return false, fmt.Errorf("directory is not an application bundle: %s", path)
+		}
+		b, err := bundle.New(path)
+		if err != nil {
+			return false, err
+		}
+		if _, err := os.Stat(b.CodeResourcesPath()); err != nil {
+			log.WithFields("bundle", path).Trace("bundle has no resource seal")
+			return false, nil
+		}
+		return IsSigned(b.MainExecutablePath())
+	}
+
 	f, err := os.Open(path)
 	if err != nil {
 		return false, err
