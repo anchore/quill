@@ -5,11 +5,11 @@ go 1.25.0
 require (
 	github.com/PuerkitoBio/goquery v1.12.0
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d
-	github.com/anchore/bubbly v0.2.1
-	github.com/anchore/clio v0.1.1
-	github.com/anchore/fangs v0.1.1
-	github.com/anchore/go-logger v0.1.1
-	github.com/anchore/go-macholibre v0.1.1
+	github.com/anchore/bubbly v0.2.2-0.20260731055418-54cb36559aef
+	github.com/anchore/clio v0.1.2-0.20260807204443-df98d4273b1f
+	github.com/anchore/fangs v0.1.2-0.20260807223428-10e35a22d979
+	github.com/anchore/go-logger v0.1.2-0.20260731155834-200b9a5f3774
+	github.com/anchore/go-macholibre v0.1.2-0.20260731232419-db44e94c1e73
 	github.com/aws/aws-sdk-go-v2 v1.43.2
 	github.com/aws/aws-sdk-go-v2/config v1.32.33
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.32
@@ -105,7 +105,7 @@ require (
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	go.mongodb.org/mongo-driver v1.17.7 // indirect
-	go.yaml.in/yaml/v3 v3.0.4 // indirect
+	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/crypto v0.52.0 // indirect
 	golang.org/x/exp v0.0.0-20251209150349-8475f28825e9 // indirect
 	golang.org/x/net v0.55.0 // indirect
