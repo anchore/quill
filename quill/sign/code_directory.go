@@ -41,6 +41,9 @@ func packCodeDirectory(cd *macho.CodeDirectory, order binary.ByteOrder) (*macho.
 
 func newCodeDirectoryFromMacho(id, teamID string, hasher hash.Hash, m *macho.File, flags macho.CdFlag, specialSlots []SpecialSlot) (*macho.CodeDirectory, error) {
 	textSeg := m.Segment("__TEXT")
+	if textSeg == nil {
+		return nil, fmt.Errorf("no __TEXT segment found")
+	}
 
 	var codeSize uint32
 	if m.HasCodeSigningCmd() {
@@ -51,6 +54,9 @@ func newCodeDirectoryFromMacho(id, teamID string, hasher hash.Hash, m *macho.Fil
 		codeSize = signCmd.DataOffset
 	} else {
 		linkEditSeg := m.Segment("__LINKEDIT")
+		if linkEditSeg == nil {
+			return nil, fmt.Errorf("no __LINKEDIT segment found")
+		}
 		codeSize = uint32(linkEditSeg.Offset + linkEditSeg.Filesz)
 	}
 

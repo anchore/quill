@@ -247,6 +247,9 @@ func (m *File) AddEmptyCodeSigningCmd() (err error) {
 	// contain any signing content, thus, the end of this section is the offset for
 	// the new signing content. (though, we don't know the size yet)
 	linkEditSeg := m.Segment("__LINKEDIT")
+	if linkEditSeg == nil {
+		return fmt.Errorf("no __LINKEDIT segment found")
+	}
 
 	codeSigningCmd := CodeSigningCommand{
 		Cmd:        LcCodeSignature,
