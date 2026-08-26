@@ -29,6 +29,57 @@ type Info struct {
 	Executable string `plist:"CFBundleExecutable"`
 }
 
+// MainExecutableOf returns the path of the main executable of the bundle rooted at the
+// given directory, handling both bundle layouts macOS uses.
+//
+//	Foo.app / Foo.appex / Foo.xpc   Contents/Info.plist -> Contents/MacOS/<CFBundleExecutable>
+//	Foo.framework                   Versions/<v>/Resources/Info.plist -> Versions/<v>/<CFBundleExecutable>
+//
+// Frameworks are versioned and flat rather than having a Contents directory, so the
+// shallow layout has to be handled explicitly; treating one as the other yields a
+// "main executable not found" error on a perfectly valid bundle.
+func MainExecutableOf(root string) (string, error) {
+	if IsBundle(root) {
+		b, err := New(root)
+		if err != nil {
+			return "", err
+		}
+		return b.MainExecutablePath(), nil
+	}
+
+	if exe, err := frameworkMainExecutable(root); err == nil {
+		return exe, nil
+	}
+
+	return "", fmt.Errorf("not a bundle (no Contents/Info.plist and no framework layout): %s", root)
+}
+
+// frameworkMainExecutable resolves the main executable of a versioned framework bundle.
+func frameworkMainExecutable(root string) (string, error) {
+	for _, version := range []string{"Current", "A"} {
+		versionDir := filepath.Join(root, "Versions", version)
+		infoPath := filepath.Join(versionDir, "Resources", "Info.plist")
+
+		data, err := os.ReadFile(infoPath)
+		if err != nil {
+			continue
+		}
+		var info Info
+		if _, err := plist.Unmarshal(data, &info); err != nil {
+			return "", fmt.Errorf("unable to parse framework Info.plist %s: %w", infoPath, err)
+		}
+		if info.Executable == "" {
+			return "", fmt.Errorf("framework Info.plist has no CFBundleExecutable entry: %s", infoPath)
+		}
+
+		exe := filepath.Join(versionDir, info.Executable)
+		if fi, err := os.Stat(exe); err == nil && fi.Mode().IsRegular() {
+			return exe, nil
+		}
+	}
+	return "", fmt.Errorf("no framework main executable found under %s", root)
+}
+
 // IsBundle indicates if the given path appears to be an application bundle (a directory containing Contents/Info.plist).
 func IsBundle(path string) bool {
 	fi, err := os.Stat(path)

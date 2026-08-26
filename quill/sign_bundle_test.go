@@ -160,3 +160,19 @@ func TestSign_nonBundleDirectory(t *testing.T) {
 	err = Sign(*cfg)
 	require.ErrorContains(t, err, "directory is not an application bundle")
 }
+
+func Test_implicitDesignatedRequirement(t *testing.T) {
+	// A binary with no embedded designated requirement -- an ad-hoc signature, most
+	// commonly -- still has an implicit one, and a nested seal entry that omits it is
+	// rejected by codesign with "the sealed resource directory is invalid" even though the
+	// cdhash is correct. The expected form was taken from codesign's own output for an
+	// ad-hoc signed .appex nested in an .app.
+	cdHash := []byte{
+		0x6d, 0x3a, 0xb2, 0xc3, 0x3f, 0x12, 0x06, 0xe4, 0x96, 0xd6,
+		0x48, 0x67, 0x09, 0xde, 0x90, 0x44, 0x52, 0x84, 0x61, 0x44,
+	}
+	want := `cdhash H"6d3ab2c33f1206e496d6486709de904452846144"`
+	if got := implicitDesignatedRequirement(cdHash); got != want {
+		t.Errorf("implicitDesignatedRequirement() = %q, want %q", got, want)
+	}
+}

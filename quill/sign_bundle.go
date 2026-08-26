@@ -2,6 +2,7 @@ package quill
 
 import (
 	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"path"
@@ -126,6 +127,32 @@ func (s nestedMachOSigner) SignMachO(binPath string) (*bundle.SignedBinaryInfo, 
 	return readSignedBinaryInfo(binPath)
 }
 
+// SealNestedBundle reports the signature of an already-signed nested bundle, so the parent
+// can seal it by reference.
+//
+// The nested bundle is not signed here. Apple requires nested code to be signed before its
+// container, because the container's resource seal covers the child's signature; signing
+// the child from inside the parent's walk would mean hashing a binary that is about to
+// change. Callers sign inner bundles first, then the outer one.
+func (s nestedMachOSigner) SealNestedBundle(bundlePath string) (*bundle.SignedBinaryInfo, error) {
+	exe, err := bundle.MainExecutableOf(bundlePath)
+	if err != nil {
+		return nil, err
+	}
+
+	// The presence of a signature is established by reading it rather than by calling
+	// IsSigned, which reports whether a binary carries a CMS blob. An ad-hoc signature has
+	// no CMS blob but is still a signature with a code directory to hash, and refusing to
+	// seal one would make ad-hoc signing unusable for any bundle with nested code.
+	info, err := readSignedBinaryInfo(exe)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"unable to read the signature of nested bundle %q (sign it before signing the bundle that contains it): %w",
+			path.Base(bundlePath), err)
+	}
+	return info, nil
+}
+
 // readSignedBinaryInfo extracts the code directory hash and designated requirement (in text
 // form) from a signed binary. For universal binaries the first architecture is used, which
 // matches the behavior of Apple's tooling.
@@ -172,11 +199,25 @@ func readSignedBinaryInfo(binPath string) (*bundle.SignedBinaryInfo, error) {
 	if err != nil {
 		return nil, err
 	}
+	if requirement == "" {
+		// A binary with no explicit designated requirement -- an ad-hoc signature, most
+		// commonly -- still has an implicit one, which codesign derives from the code
+		// directory hash. Seal entries must carry it: a nested entry with a cdhash and no
+		// requirement is rejected by codesign as an invalid sealed resource directory,
+		// even though the hash itself is correct.
+		requirement = implicitDesignatedRequirement(cdHash)
+	}
 
 	return &bundle.SignedBinaryInfo{
 		CDHash:      cdHash,
 		Requirement: requirement,
 	}, nil
+}
+
+// implicitDesignatedRequirement renders the requirement codesign synthesizes for a binary
+// that embeds no explicit one: a direct match on the code directory hash.
+func implicitDesignatedRequirement(cdHash []byte) string {
+	return fmt.Sprintf("cdhash H%q", hex.EncodeToString(cdHash))
 }
 
 func readDesignatedRequirement(binPath string) (string, error) {
