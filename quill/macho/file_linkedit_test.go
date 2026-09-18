@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// A Mach-O without a __LINKEDIT segment is malformed, but it can be handed to us,
+// a Mach-O without a __LINKEDIT segment is malformed, but it can be handed to us,
 // and Segment() returns nil for a name it does not find. Every use of that result
 // dereferences it, so the whole signing path used to panic instead of reporting
 // what was wrong with the input.

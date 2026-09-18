@@ -2,6 +2,7 @@ package sign
 
 import (
 	"crypto/sha256"
+	stdmacho "debug/macho"
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
@@ -223,4 +224,35 @@ func Test_generateCodeDirectory(t *testing.T) {
 			assert.Equal(t, tt.cdHash, fmt.Sprintf("%x", actualCDHash))
 		})
 	}
+}
+
+// a Mach-O missing __TEXT is malformed, but newCodeDirectoryFromMacho used to dereference
+// the nil segment it got back instead of reporting the problem.
+func Test_newCodeDirectoryFromMacho_NoTextSegment(t *testing.T) {
+	m := &macho.File{File: &stdmacho.File{}}
+
+	_, err := newCodeDirectoryFromMacho("", "", sha256.New(), m, 0, nil)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "__TEXT")
+}
+
+// same shape as the missing __TEXT case, but for the __LINKEDIT fallback taken when there is
+// no code signing loader command yet.
+func Test_newCodeDirectoryFromMacho_NoLinkEditSegment(t *testing.T) {
+	textSeg := &stdmacho.Segment{
+		LoadBytes:     make(stdmacho.LoadBytes, 8), // enough bytes for CodeSigningCmd() to read a cmd/size pair
+		SegmentHeader: stdmacho.SegmentHeader{Name: "__TEXT"},
+	}
+
+	m := &macho.File{
+		File: &stdmacho.File{
+			ByteOrder: binary.LittleEndian,
+			Loads:     []stdmacho.Load{textSeg},
+		},
+	}
+	require.False(t, m.HasCodeSigningCmd(), "fixture should not have a code signing loader command")
+
+	_, err := newCodeDirectoryFromMacho("", "", sha256.New(), m, 0, nil)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "__LINKEDIT")
 }
