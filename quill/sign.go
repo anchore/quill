@@ -243,7 +243,7 @@ func signSingleBinary(cfg SigningConfig) error {
 	// (patch) make certain offset and size references to the superblob are finalized in the binary
 	log.Debugf("patching binary with updated superblob offsets")
 	if err = sign.UpdateSuperBlobOffsetReferences(m, uint64(len(sbBytes))); err != nil {
-		return nil
+		return fmt.Errorf("unable to update superblob offset references: %w", err)
 	}
 
 	// second pass: now that all of the sizing is right, let's do it again with the final contents (replacing the hashes and signature)
