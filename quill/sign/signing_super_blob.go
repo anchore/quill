@@ -104,7 +104,10 @@ func UpdateSuperBlobOffsetReferences(m *macho.File, numSbBytes uint64) error {
 	}
 
 	// (patch) update the __LINKEDIT segment sizes to be "oldsize + newsuperblobsize"
-	linkEditSegment := m.Segment("__LINKEDIT")
+	linkEditSegment, err := m.RequireSegment("__LINKEDIT")
+	if err != nil {
+		return err
+	}
 
 	linkEditSegment.Filesz += numSbBytes
 	for linkEditSegment.Filesz > linkEditSegment.Memsz {
