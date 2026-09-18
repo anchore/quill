@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -24,6 +25,15 @@ type Payload struct {
 }
 
 func NewPayload(path string) (*Payload, error) {
+	fi, err := os.Stat(path)
+	if err != nil {
+		return nil, err
+	}
+	if fi.IsDir() {
+		// an application bundle must be uploaded as a zip of the bundle directory
+		return prepareDirectory(path)
+	}
+
 	contentType, err := fileContentType(path)
 	if err != nil {
 		return nil, err
@@ -36,6 +46,96 @@ func NewPayload(path string) (*Payload, error) {
 	}
 
 	// TODO: support repackaging tar.gz for easy with goreleaser
+}
+
+// prepareDirectory zips up a directory (e.g. an .app bundle) for submission. The directory
+// itself is kept as the top-level entry within the archive (matching the behavior of
+// "ditto -c -k --keepParent" that Apple prescribes for notarization) and symlinks are
+// preserved as symlink entries.
+func prepareDirectory(path string) (*Payload, error) {
+	log.Trace("zipping up directory payload")
+
+	buf := &bytes.Buffer{}
+	zw := zip.NewWriter(buf)
+
+	parent := filepath.Base(filepath.Clean(path))
+
+	err := filepath.WalkDir(path, func(fullPath string, d fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		if fullPath == path {
+			return addDirectoryZipEntry(zw, parent, fullPath, d)
+		}
+
+		rel, err := filepath.Rel(path, fullPath)
+		if err != nil {
+			return err
+		}
+
+		return addDirectoryZipEntry(zw, parent+"/"+filepath.ToSlash(rel), fullPath, d)
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unable to zip directory %q: %w", path, err)
+	}
+
+	if err := zw.Close(); err != nil {
+		return nil, err
+	}
+
+	h := sha256.New()
+	if _, err := io.Copy(h, bytes.NewReader(buf.Bytes())); err != nil {
+		return nil, err
+	}
+
+	return &Payload{
+		Reader: bytes.NewReader(buf.Bytes()),
+		Path:   path,
+		Digest: hex.EncodeToString(h.Sum(nil)),
+	}, nil
+}
+
+func addDirectoryZipEntry(zw *zip.Writer, name, fullPath string, d fs.DirEntry) error {
+	info, err := d.Info()
+	if err != nil {
+		return err
+	}
+
+	header, err := zip.FileInfoHeader(info)
+	if err != nil {
+		return err
+	}
+	header.Name = name
+
+	if d.IsDir() {
+		header.Name += "/"
+		_, err := zw.CreateHeader(header)
+		return err
+	}
+
+	header.Method = zip.Deflate
+	w, err := zw.CreateHeader(header)
+	if err != nil {
+		return err
+	}
+
+	if d.Type()&fs.ModeSymlink != 0 {
+		target, err := os.Readlink(fullPath)
+		if err != nil {
+			return err
+		}
+		_, err = w.Write([]byte(filepath.ToSlash(target)))
+		return err
+	}
+
+	f, err := os.Open(fullPath)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	_, err = io.Copy(w, f)
+	return err
 }
 
 func prepareZip(path string) (*Payload, error) {
