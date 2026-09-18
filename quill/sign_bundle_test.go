@@ -3,7 +3,9 @@ package quill
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"regexp"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -151,6 +153,73 @@ func TestSign_appBundle(t *testing.T) {
 			test.AssertAgainstCodesignTool(t, bundlePath)
 		})
 	}
+}
+
+// TestSign_appBundle_adhocWithNestedBinary is a regression test for a bug where ad-hoc signed
+// nested binaries got no designated requirement at all (quill only synthesizes one when a
+// certificate is present), leaving the resource seal's "cdhash"-only entry unverifiable.
+// "codesign --verify --deep --strict" is the actual bug detector here: it failed before the
+// fix in sign_bundle.go (readSignedBinaryInfo) with "the sealed resource directory is invalid".
+func TestSign_appBundle_adhocWithNestedBinary(t *testing.T) {
+	bundlePath := makeAppBundle(t, "my-app", "com.quill.my-app", "helper")
+
+	cfg, err := NewSigningConfigFromPEMs(bundlePath, "", "", "", false)
+	require.NoError(t, err)
+	require.NoError(t, Sign(*cfg))
+
+	test.AssertAgainstCodesignTool(t, bundlePath)
+}
+
+// TestSign_appBundle_universalNestedBinary is a regression test for a bug where a nested
+// binary that is itself multi-architecture only had one architecture slice's cdhash sealed
+// into CodeResources, which "codesign --verify --deep --strict" rejects whenever the slice
+// that ends up loaded isn't the one quill recorded. The fix (readSignedBinaryInfo in
+// sign_bundle.go) seals a requirement satisfied by every architecture slice, matching what
+// codesign itself emits for multi-architecture nested code.
+//
+// "codesign --verify --deep --strict" alone is not a reliable detector for this bug: it only
+// checks the slice that matches the *host* architecture running the test, so on a host whose
+// architecture happens to match whichever slice quill picked, the old, broken code passes by
+// luck. So this test additionally asserts, independent of host architecture, that every
+// architecture's own cdhash (as reported by codesign itself) is present in the recorded
+// requirement - this is what actually fails against the pre-fix code.
+func TestSign_appBundle_universalNestedBinary(t *testing.T) {
+	bundlePath := makeAppBundle(t, "my-app", "com.quill.my-app", "libfoo.dylib")
+
+	universalDylib, err := os.ReadFile(test.Asset(t, "nested_universal_dylib"))
+	require.NoError(t, err)
+	nestedPath := filepath.Join(bundlePath, "Contents", "MacOS", "libfoo.dylib")
+	require.NoError(t, os.WriteFile(nestedPath, universalDylib, 0o755))
+
+	cfg, err := NewSigningConfigFromPEMs(bundlePath, test.Asset(t, "hello-cert.pem"), test.Asset(t, "hello-key.pem"), "", false)
+	require.NoError(t, err)
+	require.NoError(t, Sign(*cfg))
+
+	signed, err := IsSigned(nestedPath)
+	require.NoError(t, err)
+	assert.True(t, signed, "expected universal nested binary to be signed")
+
+	resourcesData, err := os.ReadFile(filepath.Join(bundlePath, "Contents", "_CodeSignature", "CodeResources"))
+	require.NoError(t, err)
+	for _, arch := range []string{"arm64", "x86_64"} {
+		cdHash := codesignCDHash(t, nestedPath, arch)
+		assert.Contains(t, string(resourcesData), cdHash,
+			"expected the sealed requirement for the nested binary to cover the %s architecture slice", arch)
+	}
+
+	test.AssertAgainstCodesignTool(t, bundlePath)
+}
+
+// codesignCDHash returns the code directory hash (hex) that the real codesign tool reports
+// for a single architecture slice of a signed Mach-O file.
+func codesignCDHash(t *testing.T, path, arch string) string {
+	t.Helper()
+	out, err := exec.Command("codesign", "-d", "--verbose=4", "--arch="+arch, path).CombinedOutput()
+	require.NoError(t, err, "codesign -d --arch=%s failed: %s", arch, out)
+
+	match := regexp.MustCompile(`(?m)^CDHash=([0-9a-f]+)$`).FindSubmatch(out)
+	require.NotNil(t, match, "no CDHash found in codesign output for %s: %s", arch, out)
+	return string(match[1])
 }
 
 func TestSign_nonBundleDirectory(t *testing.T) {

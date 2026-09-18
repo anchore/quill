@@ -68,8 +68,7 @@ func TestResourcesBuilder_WalkAndSeal(t *testing.T) {
 	}
 
 	builder := NewResourcesBuilder()
-	require.NoError(t, builder.ExcludePath("MacOS/my-app"))
-	require.NoError(t, builder.WalkAndSeal(root, signer))
+	require.NoError(t, builder.WalkAndSeal(root, []string{"MacOS/my-app"}, signer))
 
 	assert.ElementsMatch(t, []string{
 		filepath.Join(root, "Contents", "Frameworks", "libfoo.dylib"),
@@ -95,7 +94,7 @@ func TestResourcesBuilder_WalkAndSeal_nestedBundlesUnsupported(t *testing.T) {
 	writeFile(t, root, "Contents/Frameworks/Foo.framework/Foo", "framework binary")
 
 	builder := NewResourcesBuilder()
-	err := builder.WalkAndSeal(root, &stubSigner{})
+	err := builder.WalkAndSeal(root, nil, &stubSigner{})
 	require.ErrorContains(t, err, "signing nested bundles is not supported")
 	require.ErrorContains(t, err, "Frameworks/Foo.framework")
 }
@@ -105,6 +104,6 @@ func TestResourcesBuilder_WalkAndSeal_nonMachOInNestedLocation(t *testing.T) {
 	writeFile(t, root, "Contents/MacOS/notabinary", "just text")
 
 	builder := NewResourcesBuilder()
-	err := builder.WalkAndSeal(root, &stubSigner{})
+	err := builder.WalkAndSeal(root, nil, &stubSigner{})
 	require.ErrorContains(t, err, "is not a mach-o binary")
 }
