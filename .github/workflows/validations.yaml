@@ -17,12 +17,12 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 #v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 #v7.0.1
         with:
           persist-credentials: false
 
       - name: Bootstrap environment
-        uses: anchore/go-make/.github/actions/setup@39fe5f71112d4dceb3ff0a92a40f272f067fc457 # v0.6.0
+        uses: anchore/go-make/.github/actions/setup@fa5421b3bf24c9d18f11a736c5eb4172f2b7d683 # v0.8.1
 
       - name: Run static analysis
         run: make static-analysis
@@ -34,7 +34,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 #v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 #v7.0.1
         with:
           # this downloads and initializes LFS, but does not pull the objects
           lfs: true
@@ -45,7 +45,7 @@ jobs:
         run: git lfs pull
 
       - name: Bootstrap environment
-        uses: anchore/go-make/.github/actions/setup@39fe5f71112d4dceb3ff0a92a40f272f067fc457 # v0.6.0
+        uses: anchore/go-make/.github/actions/setup@fa5421b3bf24c9d18f11a736c5eb4172f2b7d683 # v0.8.1
 
       - name: Run unit tests
         run: make unit
@@ -62,12 +62,12 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 #v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 #v7.0.1
         with:
           persist-credentials: false
 
       - name: Bootstrap environment
-        uses: anchore/go-make/.github/actions/setup@39fe5f71112d4dceb3ff0a92a40f272f067fc457 # v0.6.0
+        uses: anchore/go-make/.github/actions/setup@fa5421b3bf24c9d18f11a736c5eb4172f2b7d683 # v0.8.1
         with:
           # why have another build cache key? We don't want unit/integration/etc test build caches to replace
           # the snapshot build cache, which includes builds for all OSs and architectures. As long as this key is
@@ -82,7 +82,7 @@ jobs:
       # why not use actions/upload-artifact? It is very slow (3 minutes to upload ~600MB of data, vs 10 seconds with this approach).
       # see https://github.com/actions/upload-artifact/issues/199 for more info
       - name: Upload snapshot artifacts
-        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae #v5.0.5
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 #v6.1.0
         with:
           path: snapshot
           key: snapshot-build-${{ github.run_id }}
@@ -95,15 +95,15 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 #v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 #v7.0.1
         with:
           persist-credentials: false
 
       - name: Bootstrap environment
-        uses: anchore/go-make/.github/actions/setup@39fe5f71112d4dceb3ff0a92a40f272f067fc457 # v0.6.0
+        uses: anchore/go-make/.github/actions/setup@fa5421b3bf24c9d18f11a736c5eb4172f2b7d683 # v0.8.1
 
       - name: Download snapshot build
-        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae #v5.0.5
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 #v6.1.0
         with:
           path: snapshot
           key: snapshot-build-${{ github.run_id }}
@@ -135,7 +135,7 @@ jobs:
       contents: read
     steps:
 
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 #v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 #v7.0.1
         with:
           # this downloads and initializes LFS, but does not pull the objects
           lfs: true
@@ -146,10 +146,10 @@ jobs:
         run: git lfs pull
 
       - name: Bootstrap environment
-        uses: anchore/go-make/.github/actions/setup@39fe5f71112d4dceb3ff0a92a40f272f067fc457 # v0.6.0
+        uses: anchore/go-make/.github/actions/setup@fa5421b3bf24c9d18f11a736c5eb4172f2b7d683 # v0.8.1
 
       - name: Download snapshot build
-        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae #v5.0.5
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 #v6.1.0
         with:
           path: snapshot
           key: snapshot-build-${{ github.run_id }}

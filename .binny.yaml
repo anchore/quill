@@ -25,7 +25,7 @@ tools:
   # analysis fires under v2.11.4 in code that lints clean under v2.12.2.
   - name: golangci-lint
     version:
-      want: v2.12.2
+      want: v2.13.2
     method: github-release
     with:
       repo: golangci/golangci-lint

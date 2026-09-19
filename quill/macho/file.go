@@ -236,6 +236,15 @@ func (m *File) hasRoomForNewCmd() bool {
 	return true
 }
 
+// RequireSegment returns the named segment, or an error if the Mach-O has no such segment.
+func (m *File) RequireSegment(name string) (*macho.Segment, error) {
+	seg := m.Segment(name)
+	if seg == nil {
+		return nil, fmt.Errorf("no %s segment found", name)
+	}
+	return seg, nil
+}
+
 func (m *File) AddEmptyCodeSigningCmd() (err error) {
 	log.Trace("adding empty code signing loader command")
 
@@ -249,7 +258,10 @@ func (m *File) AddEmptyCodeSigningCmd() (err error) {
 	// since there is no signing command, we know that the __LINKEDIT section does not
 	// contain any signing content, thus, the end of this section is the offset for
 	// the new signing content. (though, we don't know the size yet)
-	linkEditSeg := m.Segment("__LINKEDIT")
+	linkEditSeg, err := m.RequireSegment("__LINKEDIT")
+	if err != nil {
+		return err
+	}
 
 	codeSigningCmd := CodeSigningCommand{
 		Cmd:        LcCodeSignature,
