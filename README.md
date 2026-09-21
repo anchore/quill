@@ -78,9 +78,9 @@ $ quill sign My.app --entitlements app.entitlements
 
 Each nested bundle is signed on its own because it usually needs its own signing options (an app extension, for
 instance, must carry its own sandbox entitlements to load). Its existing signature is then sealed as-is, so quill
-checks it against the outer bundle: signing a bundle with a certificate fails if a nested bundle is still ad-hoc
-signed (e.g. left over from a development build), since Apple's notary service rejects that, and warns if a nested
-bundle was signed with a different certificate.
+checks it against the outer bundle. Signing a bundle with a certificate fails if a nested bundle is still ad-hoc
+signed (e.g. left over from a development build) or was signed without the hardened runtime, since Apple's notary
+service rejects both, and warns if a nested bundle was signed with a different certificate.
 
 **Note**: quill cannot yet sign a `.framework` bundle itself (frameworks use a different, versioned layout). A
 framework that was already signed by other means is sealed correctly when signing the bundle that contains it.

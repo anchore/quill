@@ -365,6 +365,27 @@ func TestSign_appBundle_nestedSignatureMismatch(t *testing.T) {
 	}
 }
 
+func TestSign_appBundle_nestedBundleWithoutHardenedRuntime(t *testing.T) {
+	appPath := makeAppBundle(t, "my-app", "com.quill.my-app")
+	appexPath := makeNestedAppex(t, appPath, "my-ext", "com.quill.my-app.my-ext")
+
+	// a copy of Apple's /bin/ls: a genuine certificate signature (every architecture slice)
+	// but without the hardened runtime, which Apple's notary service requires of nested code
+	lsBin, err := os.ReadFile(test.Asset(t, "ls_universal_signed"))
+	require.NoError(t, err)
+	require.NoError(t, os.WriteFile(filepath.Join(appexPath, "Contents", "MacOS", "my-ext"), lsBin, 0o755))
+
+	err = signBundleWithPEMs(t, appPath, test.Asset(t, "hello-cert.pem"), test.Asset(t, "hello-key.pem"))
+	require.ErrorIs(t, err, errNestedBundleWithoutRuntime)
+	require.ErrorContains(t, err, `"my-ext.appex"`)
+
+	_, statErr := os.Stat(filepath.Join(appPath, "Contents", "_CodeSignature", "CodeResources"))
+	assert.True(t, os.IsNotExist(statErr), "expected no resource seal to be written")
+
+	// an ad-hoc signed container places no requirements on its nested code
+	require.NoError(t, signBundleWithPEMs(t, appPath, "", ""))
+}
+
 func Test_cdHashRequirement(t *testing.T) {
 	// The single-architecture form was taken from codesign's own output for an ad-hoc signed
 	// .appex nested in an .app.

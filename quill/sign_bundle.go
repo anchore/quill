@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	blacktopMacho "github.com/blacktop/go-macho"
+	blacktopMachoTypes "github.com/blacktop/go-macho/pkg/codesign/types"
 	cms "github.com/github/smimesign/ietf-cms"
 
 	macholibre "github.com/anchore/go-macholibre"
@@ -165,15 +166,22 @@ func (s nestedMachOSigner) SealNestedBundle(bundlePath string) (*bundle.SignedBi
 	return info, nil
 }
 
-// errAdhocNestedBundle indicates a nested bundle is ad-hoc signed while its container is being
-// signed with a certificate.
-var errAdhocNestedBundle = errors.New("nested bundle is ad-hoc signed but its container is being signed with a certificate")
+var (
+	// errAdhocNestedBundle indicates a nested bundle is ad-hoc signed while its container is
+	// being signed with a certificate.
+	errAdhocNestedBundle = errors.New("nested bundle is ad-hoc signed but its container is being signed with a certificate")
+
+	// errNestedBundleWithoutRuntime indicates a nested bundle is signed without the hardened
+	// runtime while its container is being signed with a certificate.
+	errNestedBundleWithoutRuntime = errors.New("nested bundle is signed without the hardened runtime")
+)
 
 // checkNestedSignature compares the existing signature of a nested bundle's main executable
-// (every architecture slice) with the signing material of the outer bundle. An ad-hoc
-// signature under a certificate-signed container is an error; a signature from a different
-// certificate is only a warning, since nested code from a third party (e.g. a vendor
-// framework) legitimately keeps its own signature.
+// (every architecture slice) with the signing material of the outer bundle. When the outer
+// bundle is signed with a certificate, and so with the hardened runtime, an ad-hoc signature
+// or one without the hardened runtime is an error, since Apple's notary service rejects both.
+// A signature from a different certificate is only a warning, since nested code from a third
+// party (e.g. a vendor framework) legitimately keeps its own signature.
 func checkNestedSignature(name, exe string, material pki.SigningMaterial) error {
 	if material.Signer == nil {
 		// an ad-hoc signed container places no requirements on its nested code
@@ -192,6 +200,10 @@ func checkNestedSignature(name, exe string, material pki.SigningMaterial) error 
 			return fmt.Errorf("%w: re-sign %q with the certificate before signing the bundle that contains it", errAdhocNestedBundle, name)
 		}
 
+		if !hasHardenedRuntime(cs) {
+			return fmt.Errorf("%w: re-sign %q with the hardened runtime (e.g. with quill, or codesign --options runtime) before signing the bundle that contains it", errNestedBundleWithoutRuntime, name)
+		}
+
 		leaf, err := cmsLeafCertificate(cs.CMSSignature)
 		if err != nil {
 			return fmt.Errorf("unable to read the signing certificate of nested bundle %q: %w", name, err)
@@ -207,6 +219,20 @@ func checkNestedSignature(name, exe string, material pki.SigningMaterial) error 
 		warned = true
 	}
 	return nil
+}
+
+// hasHardenedRuntime indicates if every code directory of the signature enables the hardened
+// runtime.
+func hasHardenedRuntime(cs *blacktopMacho.CodeSignature) bool {
+	if len(cs.CodeDirectories) == 0 {
+		return false
+	}
+	for _, cd := range cs.CodeDirectories {
+		if cd.Header.Flags&blacktopMachoTypes.RUNTIME == 0 {
+			return false
+		}
+	}
+	return true
 }
 
 // codeSignatures returns the code signature of every architecture slice of the given binary
