@@ -2,12 +2,17 @@ package quill
 
 import (
 	"crypto/sha256"
+	"crypto/x509"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
+
+	blacktopMacho "github.com/blacktop/go-macho"
+	cms "github.com/github/smimesign/ietf-cms"
 
 	macholibre "github.com/anchore/go-macholibre"
 	"github.com/anchore/quill/internal/bus"
@@ -15,6 +20,7 @@ import (
 	"github.com/anchore/quill/quill/bundle"
 	"github.com/anchore/quill/quill/event"
 	"github.com/anchore/quill/quill/macho"
+	"github.com/anchore/quill/quill/pki"
 	"github.com/anchore/quill/quill/sign"
 )
 
@@ -127,10 +133,14 @@ func (s nestedMachOSigner) SignMachO(binPath string) (*bundle.SignedBinaryInfo, 
 // SealNestedBundle reports the signature of an already-signed nested bundle, so the parent
 // can seal it by reference.
 //
-// The nested bundle is not signed here. Apple requires nested code to be signed before its
-// container, because the container's resource seal covers the child's signature; signing
-// the child from inside the parent's walk would mean hashing a binary that is about to
-// change. Callers sign inner bundles first, then the outer one.
+// The nested bundle is not signed here. Nested bundles usually need signing options of their
+// own -- an app extension, for instance, must carry its own sandbox entitlements -- so, as
+// Apple recommends, each is signed explicitly, inside-out, before the bundle containing it.
+//
+// Because the existing signature is sealed as-is, it is checked against the signing material
+// of the outer bundle: an ad-hoc signed nested bundle inside a bundle signed with a
+// certificate is rejected, since it is almost always a leftover development signature and
+// Apple's notary service rejects it.
 func (s nestedMachOSigner) SealNestedBundle(bundlePath string) (*bundle.SignedBinaryInfo, error) {
 	exe, err := bundle.MainExecutableOf(bundlePath)
 	if err != nil {
@@ -147,7 +157,106 @@ func (s nestedMachOSigner) SealNestedBundle(bundlePath string) (*bundle.SignedBi
 			"unable to read the signature of nested bundle %q (sign it before signing the bundle that contains it): %w",
 			path.Base(bundlePath), err)
 	}
+
+	if err := checkNestedSignature(path.Base(bundlePath), exe, s.cfg.SigningMaterial); err != nil {
+		return nil, err
+	}
+
 	return info, nil
+}
+
+// errAdhocNestedBundle indicates a nested bundle is ad-hoc signed while its container is being
+// signed with a certificate.
+var errAdhocNestedBundle = errors.New("nested bundle is ad-hoc signed but its container is being signed with a certificate")
+
+// checkNestedSignature compares the existing signature of a nested bundle's main executable
+// (every architecture slice) with the signing material of the outer bundle. An ad-hoc
+// signature under a certificate-signed container is an error; a signature from a different
+// certificate is only a warning, since nested code from a third party (e.g. a vendor
+// framework) legitimately keeps its own signature.
+func checkNestedSignature(name, exe string, material pki.SigningMaterial) error {
+	if material.Signer == nil {
+		// an ad-hoc signed container places no requirements on its nested code
+		return nil
+	}
+
+	signatures, err := codeSignatures(exe)
+	if err != nil {
+		return fmt.Errorf("unable to read the signature of nested bundle %q: %w", name, err)
+	}
+
+	outerLeaf := material.Leaf()
+	warned := false
+	for _, cs := range signatures {
+		if cs == nil || len(cs.CMSSignature) == 0 {
+			return fmt.Errorf("%w: re-sign %q with the certificate before signing the bundle that contains it", errAdhocNestedBundle, name)
+		}
+
+		leaf, err := cmsLeafCertificate(cs.CMSSignature)
+		if err != nil {
+			return fmt.Errorf("unable to read the signing certificate of nested bundle %q: %w", name, err)
+		}
+		if warned || outerLeaf == nil || leaf == nil || leaf.Equal(outerLeaf) {
+			continue
+		}
+
+		msg := fmt.Sprintf("nested bundle %q is signed with a different certificate (%q) than its container (%q)",
+			name, leaf.Subject.CommonName, outerLeaf.Subject.CommonName)
+		bus.Notify("Warning: " + msg)
+		log.Warn(msg)
+		warned = true
+	}
+	return nil
+}
+
+// codeSignatures returns the code signature of every architecture slice of the given binary
+// (an entry is nil for an unsigned slice).
+func codeSignatures(binPath string) ([]*blacktopMacho.CodeSignature, error) {
+	f, err := os.Open(binPath)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	if macholibre.IsUniversalMachoBinary(f) {
+		ff, err := blacktopMacho.NewFatFile(f)
+		if err != nil {
+			return nil, fmt.Errorf("unable to parse universal binary: %w", err)
+		}
+		defer ff.Close()
+
+		var signatures []*blacktopMacho.CodeSignature
+		for _, arch := range ff.Arches {
+			signatures = append(signatures, arch.CodeSignature())
+		}
+		return signatures, nil
+	}
+
+	mf, err := blacktopMacho.NewFile(f)
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse binary: %w", err)
+	}
+	defer mf.Close()
+	return []*blacktopMacho.CodeSignature{mf.CodeSignature()}, nil
+}
+
+// cmsLeafCertificate returns the signing (non-CA) certificate embedded in a CMS signature, or
+// nil if there is none.
+func cmsLeafCertificate(cmsSignature []byte) (*x509.Certificate, error) {
+	sd, err := cms.ParseSignedData(cmsSignature)
+	if err != nil {
+		return nil, err
+	}
+	certs, err := sd.GetCertificates()
+	if err != nil {
+		return nil, err
+	}
+	for _, c := range certs {
+		if !c.IsCA {
+			return c, nil
+		}
+	}
+	return nil, nil
 }
 
 // readSignedBinaryInfo computes the code directory hash of a signed binary and a designated

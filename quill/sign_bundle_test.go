@@ -294,6 +294,77 @@ func TestSign_appBundle_unsignedNestedAppex(t *testing.T) {
 	require.ErrorContains(t, err, "sign it before signing the bundle that contains it")
 }
 
+func signBundleWithPEMs(t *testing.T, p, certFile, keyFile string) error {
+	t.Helper()
+	cfg, err := NewSigningConfigFromPEMs(p, certFile, keyFile, "", false)
+	require.NoError(t, err)
+	return Sign(*cfg)
+}
+
+func TestSign_appBundle_nestedSignatureMismatch(t *testing.T) {
+	helloCert, helloKey := test.Asset(t, "hello-cert.pem"), test.Asset(t, "hello-key.pem")
+	chainCert, chainKey := test.Asset(t, "chain.pem"), test.Asset(t, "chain-leaf-key.pem")
+
+	tests := []struct {
+		name             string
+		appexCert        string
+		appexKey         string
+		appCert          string
+		appKey           string
+		wantErr          error
+		appexAuthorityIs string
+	}{
+		{
+			// a leftover development signature must not slip into a release: the notary
+			// service rejects ad-hoc signed nested code
+			name:    "ad-hoc nested bundle inside a certificate-signed bundle is rejected",
+			appCert: helloCert,
+			appKey:  helloKey,
+			wantErr: errAdhocNestedBundle,
+		},
+		{
+			name:             "certificate-signed nested bundle inside an ad-hoc bundle is allowed",
+			appexCert:        helloCert,
+			appexKey:         helloKey,
+			appexAuthorityIs: "Authority=quill-test-hello",
+		},
+		{
+			// e.g. a vendor-signed component: only a warning, and the nested signature is
+			// sealed as-is
+			name:             "nested bundle signed with a different certificate is allowed",
+			appexCert:        chainCert,
+			appexKey:         chainKey,
+			appCert:          helloCert,
+			appKey:           helloKey,
+			appexAuthorityIs: "Authority=quill-test-leaf",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			appPath := makeAppBundle(t, "my-app", "com.quill.my-app")
+			appexPath := makeNestedAppex(t, appPath, "my-ext", "com.quill.my-app.my-ext")
+
+			require.NoError(t, signBundleWithPEMs(t, appexPath, tt.appexCert, tt.appexKey))
+
+			err := signBundleWithPEMs(t, appPath, tt.appCert, tt.appKey)
+			if tt.wantErr != nil {
+				require.ErrorIs(t, err, tt.wantErr)
+				require.ErrorContains(t, err, `"my-ext.appex"`)
+
+				// nothing was sealed for the outer bundle
+				_, statErr := os.Stat(filepath.Join(appPath, "Contents", "_CodeSignature", "CodeResources"))
+				assert.True(t, os.IsNotExist(statErr), "expected no resource seal to be written")
+				return
+			}
+			require.NoError(t, err)
+
+			// the nested bundle's own signature is sealed, not replaced
+			test.AssertDebugOutput(t, appexPath, test.AssertContains(tt.appexAuthorityIs))
+			test.AssertAgainstCodesignTool(t, appPath)
+		})
+	}
+}
+
 func Test_cdHashRequirement(t *testing.T) {
 	// The single-architecture form was taken from codesign's own output for an ad-hoc signed
 	// .appex nested in an .app.
