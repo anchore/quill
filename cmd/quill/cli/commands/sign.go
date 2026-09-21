@@ -24,10 +24,10 @@ func Sign(app clio.Application) *cobra.Command {
 
 	return app.SetupCommand(&cobra.Command{
 		Use:   "sign PATH",
-		Short: "sign a macho (darwin) executable binary",
+		Short: "sign a macho (darwin) executable binary or application bundle",
 		Example: options.FormatPositionalArgsHelp(
 			map[string]string{
-				pathArg: "the darwin binary to sign",
+				pathArg: "the darwin binary or .app bundle to sign",
 			},
 		),
 		Args: chainArgs(

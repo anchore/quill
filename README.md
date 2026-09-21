@@ -54,6 +54,21 @@ $ quill notarize [path/to/binary]
 $ quill sign-and-notarize [path/to/binary]
 ```
 
+### Application bundles
+
+All of the above also works with application bundles (`.app` directories) — just point quill at the bundle:
+
+```bash
+$ quill sign [path/to/My.app]
+```
+
+When signing a bundle, quill signs any nested binaries it finds (e.g. helper executables and dylibs), seals all
+bundle resources into `Contents/_CodeSignature/CodeResources`, and signs the main executable with the bundle's
+`Info.plist` and resource seal bound into its signature (using `CFBundleIdentifier` as the default signing identity).
+When notarizing, the bundle is automatically zipped for submission to Apple's notary service.
+
+**Note**: bundles that contain nested bundles (e.g. frameworks or nested `.app` bundles) are not supported yet.
+
 Here's an example of using quill with goreleaser:
 ```yaml
 # .goreleaser.yml
@@ -123,9 +138,9 @@ At this point you can use `quill p12 describe` to confirm the full certificate c
 
 ## Commands
 
-- `sign [binary-file]`: sign a mac executable binary
-- `notarize [binary-file]`: notarize a signed a mac binary with Apple's Notary service
-- `sign-and-notarize [binary-file]` sign and notarize a mac binary
+- `sign [binary-file|app-bundle]`: sign a mac executable binary or application bundle
+- `notarize [binary-file|app-bundle]`: notarize a signed a mac binary or application bundle with Apple's Notary service
+- `sign-and-notarize [binary-file|app-bundle]` sign and notarize a mac binary or application bundle
 - `submission list`: list previous submissions to Apple's Notary service
 - `submission logs [id]`: fetch logs for an existing submission from Apple's Notary service
 - `submission status [id]`: check against Apple's Notary service to see the status of a notarization submission request
