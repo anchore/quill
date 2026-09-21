@@ -3,6 +3,7 @@ package bundle
 import (
 	"crypto/sha1" //nolint:gosec // sha1 is required by the CodeResources format (version 1 "files" hashes)
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"hash"
 	"io"
@@ -16,6 +17,10 @@ import (
 	"github.com/anchore/quill/internal/log"
 	"github.com/anchore/quill/quill/macho"
 )
+
+// ErrNestedBundleUnsupported indicates that a bundle contains a nested bundle (e.g. a
+// framework or a nested .app), which must be signed on its own before the outer bundle.
+var ErrNestedBundleUnsupported = errors.New("signing nested bundles is not supported")
 
 // SignedBinaryInfo describes the code signature of a nested Mach-O binary, used to seal
 // the binary into the CodeResources file by its signature instead of a content hash.
@@ -53,9 +58,11 @@ func NewResourcesBuilder() *ResourcesBuilder {
 	v1 := defaultRulesV1()
 	v2 := defaultRulesV2()
 
-	// these paths are byproducts of signing and notarization and must never be sealed
+	// these paths are byproducts of signing and notarization and must never be sealed. the
+	// "(/|$)" suffix matches both the directory entry itself (so the walk can skip it
+	// entirely) and everything beneath it.
 	exclusions := []rule{
-		newRule(`^_CodeSignature/`).asExcluded(),
+		newRule(`^_CodeSignature(/|$)`).asExcluded(),
 		newRule(`^CodeResources$`).asExcluded(),
 		newRule(`^_MASReceipt$`).asExcluded(),
 	}
@@ -70,22 +77,21 @@ func NewResourcesBuilder() *ResourcesBuilder {
 	}
 }
 
-// ExcludePath excludes an exact normalized path (relative to the bundle Contents directory)
-// from sealing. This is used for the bundle's main executable, which is signed after (and
-// therefore cannot be part of) the resources seal.
-func (b *ResourcesBuilder) ExcludePath(normalizedPath string) error {
-	r, err := excludePathRule(normalizedPath)
-	if err != nil {
-		return err
+// WalkAndSeal walks the bundle rooted at the given directory, excluding excludePaths (exact
+// normalized paths relative to the bundle Contents directory, e.g. the main executable, which
+// is signed after and therefore cannot be part of the resources seal) from sealing, signing
+// nested Mach-O binaries with the given signer, and recording a seal for every remaining
+// matched file.
+func (b *ResourcesBuilder) WalkAndSeal(root string, excludePaths []string, signer MachOSigner) error {
+	for _, p := range excludePaths {
+		r, err := excludePathRule(p)
+		if err != nil {
+			return err
+		}
+		b.rulesV1 = append(b.rulesV1, r)
+		b.rulesV2 = append(b.rulesV2, r)
 	}
-	b.rulesV1 = append(b.rulesV1, r)
-	b.rulesV2 = append(b.rulesV2, r)
-	return nil
-}
 
-// WalkAndSeal walks the bundle rooted at the given directory, signing nested Mach-O
-// binaries with the given signer and recording a seal for every matched file.
-func (b *ResourcesBuilder) WalkAndSeal(root string, signer MachOSigner) error {
 	return filepath.WalkDir(root, func(fullPath string, d fs.DirEntry, walkErr error) error {
 		if walkErr != nil {
 			return walkErr
@@ -130,8 +136,12 @@ func (b *ResourcesBuilder) processDir(normalized string, d fs.DirEntry) error {
 	if r.nested && strings.Contains(d.Name(), ".") {
 		// directories with an extension matched by a nested rule are bundles in their own
 		// right (e.g. frameworks, plugins, or nested apps) and must be signed and sealed
-		// by their own signature
-		return fmt.Errorf("signing nested bundles is not supported (found %q): sign it separately before signing this bundle", normalized)
+		// by their own signature.
+		// ponytail: "has a dot in its name" approximates Apple's extension-based bundle
+		// detection (.framework, .app, .xpc, ...); a non-bundle directory with a dot in its
+		// name in a nested-code location (e.g. Frameworks/v1.2/) would be misclassified here.
+		// Revisit with a real extension allowlist if that turns out to matter in practice.
+		return fmt.Errorf("%w (found %q): sign it separately before signing this bundle", ErrNestedBundleUnsupported, normalized)
 	}
 	return nil
 }
@@ -192,7 +202,7 @@ func (b *ResourcesBuilder) sealNestedMachO(fullPath, normalized string, optional
 		return err
 	}
 	if !isMachO {
-		return fmt.Errorf("file %q matches a nested code resource rule but is not a mach-o binary", normalized)
+		return fmt.Errorf("file %q is in a nested code location (e.g. Frameworks/, PlugIns/) but is not a mach-o binary; move it out of that location or sign it separately", normalized)
 	}
 
 	log.WithFields("path", normalized).Trace("signing and sealing nested binary")
@@ -200,6 +210,9 @@ func (b *ResourcesBuilder) sealNestedMachO(fullPath, normalized string, optional
 	info, err := signer.SignMachO(fullPath)
 	if err != nil {
 		return fmt.Errorf("unable to sign nested binary %q: %w", normalized, err)
+	}
+	if info == nil {
+		return fmt.Errorf("signer returned no signature info for nested binary %q", normalized)
 	}
 
 	entry := map[string]any{

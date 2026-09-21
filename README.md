@@ -68,6 +68,8 @@ bundle resources into `Contents/_CodeSignature/CodeResources`, and signs the mai
 When notarizing, the bundle is automatically zipped for submission to Apple's notary service.
 
 **Note**: bundles that contain nested bundles (e.g. frameworks or nested `.app` bundles) are not supported yet.
+Nested binaries are signed without entitlements (entitlements only apply to the main executable), so a nested
+helper that needs its own entitlements (e.g. a privileged helper tool) is not yet supported.
 
 Here's an example of using quill with goreleaser:
 ```yaml

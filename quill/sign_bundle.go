@@ -2,13 +2,12 @@ package quill
 
 import (
 	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"path"
 	"path/filepath"
-
-	blacktopMacho "github.com/blacktop/go-macho"
-	blacktopMachoTypes "github.com/blacktop/go-macho/pkg/codesign/types"
+	"strings"
 
 	macholibre "github.com/anchore/go-macholibre"
 	"github.com/anchore/quill/internal/bus"
@@ -53,7 +52,7 @@ func signAppBundle(cfg SigningConfig) error {
 
 	exeCfg := cfg
 	exeCfg.Path = b.MainExecutablePath()
-	if cfg.Identity == "" || cfg.Identity == path.Base(cfg.Path) {
+	if !cfg.identityExplicit {
 		// no explicit identity was given (the default is the bundle directory name), so
 		// follow codesign behavior: use the bundle identifier from the Info.plist
 		if b.Info.Identifier != "" {
@@ -77,11 +76,9 @@ func sealBundleResources(cfg SigningConfig, b *bundle.Bundle) ([]byte, error) {
 
 	// the main executable is sealed by the signature we write to it after the resource
 	// seal is finalized, so it must not appear in the CodeResources file
-	if err := builder.ExcludePath("MacOS/" + b.Info.Executable); err != nil {
-		return nil, err
-	}
+	excludePaths := []string{"MacOS/" + b.Info.Executable}
 
-	if err := builder.WalkAndSeal(b.Root, nestedMachOSigner{cfg: cfg}); err != nil {
+	if err := builder.WalkAndSeal(b.Root, excludePaths, nestedMachOSigner{cfg: cfg}); err != nil {
 		return nil, fmt.Errorf("unable to seal bundle resources: %w", err)
 	}
 
@@ -126,9 +123,13 @@ func (s nestedMachOSigner) SignMachO(binPath string) (*bundle.SignedBinaryInfo, 
 	return readSignedBinaryInfo(binPath)
 }
 
-// readSignedBinaryInfo extracts the code directory hash and designated requirement (in text
-// form) from a signed binary. For universal binaries the first architecture is used, which
-// matches the behavior of Apple's tooling.
+// readSignedBinaryInfo computes the code directory hash of a signed binary and a designated
+// requirement satisfied by it. For universal binaries, every architecture slice is hashed and
+// the requirement is a disjunction across all of them (matching Apple's own tooling): only one
+// slice is loaded at runtime, and the seal must be satisfied regardless of which one that is.
+// The requirement is synthesized directly from the cdhash(es) rather than read back from the
+// binary's own embedded signature, since an ad-hoc signature carries no designated requirement
+// at all.
 func readSignedBinaryInfo(binPath string) (*bundle.SignedBinaryInfo, error) {
 	f, err := os.Open(binPath)
 	if err != nil {
@@ -136,7 +137,7 @@ func readSignedBinaryInfo(binPath string) (*bundle.SignedBinaryInfo, error) {
 	}
 	defer f.Close()
 
-	thinPath := binPath
+	thinPaths := []string{binPath}
 	if macholibre.IsUniversalMachoBinary(f) {
 		dir, err := os.MkdirTemp("", "quill-bundle-nested-"+path.Base(binPath))
 		if err != nil {
@@ -151,10 +152,29 @@ func readSignedBinaryInfo(binPath string) (*bundle.SignedBinaryInfo, error) {
 		if len(extractedFiles) == 0 {
 			return nil, fmt.Errorf("no architectures found in multi-arch binary: %s", binPath)
 		}
-		thinPath = extractedFiles[0].Path
+		thinPaths = thinPaths[:0]
+		for _, extracted := range extractedFiles {
+			thinPaths = append(thinPaths, extracted.Path)
+		}
 	}
 
-	m, err := macho.NewReadOnlyFile(thinPath)
+	cdHashes := make([][]byte, 0, len(thinPaths))
+	for _, thinPath := range thinPaths {
+		cdHash, err := hashCodeDirectory(thinPath)
+		if err != nil {
+			return nil, err
+		}
+		cdHashes = append(cdHashes, cdHash)
+	}
+
+	return &bundle.SignedBinaryInfo{
+		CDHash:      cdHashes[0],
+		Requirement: cdHashRequirement(cdHashes),
+	}, nil
+}
+
+func hashCodeDirectory(binPath string) ([]byte, error) {
+	m, err := macho.NewReadOnlyFile(binPath)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse signed nested binary: %w", err)
 	}
@@ -167,35 +187,16 @@ func readSignedBinaryInfo(binPath string) (*bundle.SignedBinaryInfo, error) {
 	if len(cdHash) > cdHashSize {
 		cdHash = cdHash[:cdHashSize]
 	}
-
-	requirement, err := readDesignatedRequirement(thinPath)
-	if err != nil {
-		return nil, err
-	}
-
-	return &bundle.SignedBinaryInfo{
-		CDHash:      cdHash,
-		Requirement: requirement,
-	}, nil
+	return cdHash, nil
 }
 
-func readDesignatedRequirement(binPath string) (string, error) {
-	bf, err := blacktopMacho.Open(binPath)
-	if err != nil {
-		return "", fmt.Errorf("unable to parse signed nested binary: %w", err)
+// cdHashRequirement renders a designated requirement satisfied by any of the given code
+// directory hashes, in the same form codesign emits for multi-architecture nested code, e.g.
+// `cdhash H"..." or cdhash H"..."`.
+func cdHashRequirement(cdHashes [][]byte) string {
+	parts := make([]string, len(cdHashes))
+	for i, h := range cdHashes {
+		parts[i] = fmt.Sprintf(`cdhash H"%s"`, hex.EncodeToString(h))
 	}
-	defer bf.Close()
-
-	cs := bf.CodeSignature()
-	if cs == nil {
-		return "", fmt.Errorf("no code signature found on signed nested binary: %s", binPath)
-	}
-
-	for _, req := range cs.Requirements {
-		if req.Type == blacktopMachoTypes.DesignatedRequirementType && req.Detail != "" && req.Detail != "empty requirement set" {
-			return req.Detail, nil
-		}
-	}
-
-	return "", nil
+	return strings.Join(parts, " or ")
 }

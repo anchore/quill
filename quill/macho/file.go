@@ -93,6 +93,12 @@ func NewReadOnlyFile(path string) (*File, error) {
 	return m, m.refresh(false)
 }
 
+// IsExecutable indicates if this Mach-O file is a main executable (MH_EXECUTE), as opposed
+// to a dylib, bundle, or other Mach-O file type.
+func (m *File) IsExecutable() bool {
+	return m.Type == macho.TypeExec
+}
+
 // IsMachoFile indicates if the file at the given path is a Mach-O binary (thin or universal).
 // Content that cannot be parsed as Mach-O is reported as (false, nil); a non-nil error is
 // only returned when the file cannot be read at all.
