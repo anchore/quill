@@ -67,7 +67,20 @@ bundle resources into `Contents/_CodeSignature/CodeResources`, and signs the mai
 `Info.plist` and resource seal bound into its signature (using `CFBundleIdentifier` as the default signing identity).
 When notarizing, the bundle is automatically zipped for submission to Apple's notary service.
 
-**Note**: bundles that contain nested bundles (e.g. frameworks or nested `.app` bundles) are not supported yet.
+Nested bundles (e.g. app extensions in `Contents/PlugIns/*.appex`, XPC services, frameworks, or nested `.app`
+bundles) are supported, but must be signed **before** the bundle that contains them, since the outer bundle's seal
+records the inner bundle's signature:
+
+```bash
+$ quill sign My.app/Contents/PlugIns/MyExtension.appex
+$ quill sign My.app
+```
+
+**Note**: quill cannot yet sign a `.framework` bundle itself (frameworks use a different, versioned layout). A
+framework that was already signed by other means is sealed correctly when signing the bundle that contains it.
+
+Nested binaries are signed without entitlements (entitlements only apply to the main executable), so a nested
+helper that needs its own entitlements (e.g. a privileged helper tool) is not yet supported.
 
 Here's an example of using quill with goreleaser:
 ```yaml

@@ -1,6 +1,7 @@
 package bundle
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -87,10 +88,7 @@ func infoPlist(executable, identifier string) string {
 func sealApp(t *testing.T, app string, signer MachOSigner) (map[string]any, error) {
 	t.Helper()
 	b := NewResourcesBuilder()
-	if err := b.ExcludePath("MacOS/SFTP"); err != nil {
-		t.Fatal(err)
-	}
-	if err := b.WalkAndSeal(app, signer); err != nil {
+	if err := b.WalkAndSeal(app, []string{"MacOS/SFTP"}, signer); err != nil {
 		return nil, err
 	}
 	data, err := b.Assemble()
@@ -191,8 +189,8 @@ func TestSignerWithoutNestedSupportStillRefuses(t *testing.T) {
 	if err == nil {
 		t.Fatal("a signer without nested-bundle support was allowed to seal a bundle containing one")
 	}
-	if !strings.Contains(err.Error(), "nested bundles is not supported") {
-		t.Errorf("unexpected error: %v", err)
+	if !errors.Is(err, ErrNestedBundleUnsupported) {
+		t.Errorf("expected ErrNestedBundleUnsupported, got: %v", err)
 	}
 }
 

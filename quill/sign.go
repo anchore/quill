@@ -24,6 +24,11 @@ type SigningConfig struct {
 	Path            string
 	Entitlements    string
 
+	// identityExplicit is true when Identity was set via WithIdentity, as opposed to
+	// defaulted to the binary's basename. This distinguishes "no identity was requested"
+	// from "the requested identity happens to equal the basename".
+	identityExplicit bool
+
 	// specialSlots carries additional code directory slots (e.g. the Info.plist and
 	// CodeResources hashes when signing the main executable of an app bundle)
 	specialSlots []sign.SpecialSlot
@@ -63,6 +68,7 @@ func NewSigningConfigFromP12(binaryPath string, p12Content load.P12Contents, fai
 func (c *SigningConfig) WithIdentity(id string) *SigningConfig {
 	if id != "" {
 		c.Identity = id
+		c.identityExplicit = true
 	}
 	return c
 }

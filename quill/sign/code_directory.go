@@ -65,7 +65,14 @@ func newCodeDirectoryFromMacho(id, teamID string, hasher hash.Hash, m *macho.Fil
 		return nil, err
 	}
 
-	return newCodeDirectory(id, teamID, hasher, textSeg.Offset, textSeg.Filesz, codeSize, hashes, flags, specialSlots)
+	// only the main executable's segment is flagged as the main binary; codesign never sets
+	// this on dylibs or other nested code
+	var execSegFlags macho.ExecSegFlag
+	if m.IsExecutable() {
+		execSegFlags = macho.ExecsegMainBinary
+	}
+
+	return newCodeDirectory(id, teamID, hasher, textSeg.Offset, textSeg.Filesz, codeSize, hashes, flags, execSegFlags, specialSlots)
 }
 
 // SpecialSlotHashWriter writes the special slots in the right order and with the right content.
@@ -138,7 +145,7 @@ func (w *SpecialSlotHashWriter) Write(buffer *bytes.Buffer) error {
 	return nil
 }
 
-func newCodeDirectory(id, teamID string, hasher hash.Hash, execOffset, execSize uint64, codeSize uint32, hashes [][]byte, flags macho.CdFlag, specialSlots []SpecialSlot) (*macho.CodeDirectory, error) {
+func newCodeDirectory(id, teamID string, hasher hash.Hash, execOffset, execSize uint64, codeSize uint32, hashes [][]byte, flags macho.CdFlag, execSegFlags macho.ExecSegFlag, specialSlots []SpecialSlot) (*macho.CodeDirectory, error) {
 	cdSize := unsafe.Sizeof(macho.BlobHeader{}) + unsafe.Sizeof(macho.CodeDirectoryHeader{})
 	idOff := int32(cdSize)
 	// note: the hash offset starts at the first non-special hash (page hashes). Special hashes (e.g. requirements hash) are written before the page hashes.
@@ -200,7 +207,7 @@ func newCodeDirectory(id, teamID string, hasher hash.Hash, execOffset, execSize 
 			TeamOffset:       teamOff,
 			ExecSegBase:      execOffset,
 			ExecSegLimit:     execSize,
-			ExecSegFlags:     macho.ExecsegMainBinary,
+			ExecSegFlags:     execSegFlags,
 			Runtime:          0x0c0100,
 			PreEncryptOffset: 0x0,
 		},
