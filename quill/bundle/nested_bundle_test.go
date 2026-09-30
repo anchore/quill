@@ -22,7 +22,7 @@ func (f *fakeSealer) SignMachO(string) (*SignedBinaryInfo, error) {
 	return &SignedBinaryInfo{CDHash: []byte("0123456789abcdefghij")}, nil
 }
 
-func (f *fakeSealer) SealNestedBundle(p string) (*SignedBinaryInfo, error) {
+func (f *fakeSealer) NestedBundleSignature(p string) (*SignedBinaryInfo, error) {
 	f.sealed = append(f.sealed, p)
 	if f.err != nil {
 		return nil, f.err
@@ -251,6 +251,58 @@ func TestMainExecutableOfFramework(t *testing.T) {
 func TestMainExecutableOfNonBundle(t *testing.T) {
 	if _, err := MainExecutableOf(t.TempDir()); err == nil {
 		t.Error("a plain directory was accepted as a bundle")
+	}
+}
+
+// A directory that does have a framework layout, but an unusable one, must report why rather
+// than claiming it is not a bundle: "not a bundle" sends someone holding a real framework off
+// looking for the wrong problem.
+func TestMainExecutableOfBrokenFramework(t *testing.T) {
+	tests := []struct {
+		name        string
+		infoPlist   string
+		writeBinary bool
+		wantInErr   string
+	}{
+		{
+			name:        "unparsable Info.plist",
+			infoPlist:   "this is not a plist",
+			writeBinary: true,
+			wantInErr:   "unable to parse framework Info.plist",
+		},
+		{
+			name: "Info.plist without CFBundleExecutable",
+			infoPlist: `<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0"><dict><key>CFBundleIdentifier</key><string>com.example.Widget</string></dict></plist>`,
+			writeBinary: true,
+			wantInErr:   "no CFBundleExecutable entry",
+		},
+		{
+			name:      "named executable is missing",
+			infoPlist: infoPlist("Widget", "com.example.Widget"),
+			wantInErr: "main executable named by Info.plist not found",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fw := filepath.Join(t.TempDir(), "Widget.framework")
+			mustMkdir(t, filepath.Join(fw, "Versions", "A", "Resources"))
+			mustWrite(t, filepath.Join(fw, "Versions", "A", "Resources", "Info.plist"), tt.infoPlist)
+			if tt.writeBinary {
+				mustWrite(t, filepath.Join(fw, "Versions", "A", "Widget"), "framework binary")
+			}
+
+			_, err := MainExecutableOf(fw)
+			if err == nil {
+				t.Fatal("a broken framework was accepted")
+			}
+			if !strings.Contains(err.Error(), tt.wantInErr) {
+				t.Errorf("error = %q, want it to mention %q", err, tt.wantInErr)
+			}
+			if strings.Contains(err.Error(), "not a bundle") {
+				t.Errorf("error = %q, want it to not claim the framework is not a bundle", err)
+			}
+		})
 	}
 }
 

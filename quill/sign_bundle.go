@@ -131,8 +131,8 @@ func (s nestedMachOSigner) SignMachO(binPath string) (*bundle.SignedBinaryInfo, 
 	return readSignedBinaryInfo(binPath)
 }
 
-// SealNestedBundle reports the signature of an already-signed nested bundle, so the parent
-// can seal it by reference.
+// NestedBundleSignature reports the signature of an already-signed nested bundle, so the
+// parent can seal it by reference.
 //
 // The nested bundle is not signed here. Nested bundles usually need signing options of their
 // own -- an app extension, for instance, must carry its own sandbox entitlements -- so, as
@@ -142,7 +142,7 @@ func (s nestedMachOSigner) SignMachO(binPath string) (*bundle.SignedBinaryInfo, 
 // of the outer bundle: an ad-hoc signed nested bundle inside a bundle signed with a
 // certificate is rejected, since it is almost always a leftover development signature and
 // Apple's notary service rejects it.
-func (s nestedMachOSigner) SealNestedBundle(bundlePath string) (*bundle.SignedBinaryInfo, error) {
+func (s nestedMachOSigner) NestedBundleSignature(bundlePath string) (*bundle.SignedBinaryInfo, error) {
 	exe, err := bundle.MainExecutableOf(bundlePath)
 	if err != nil {
 		return nil, err
@@ -167,13 +167,14 @@ func (s nestedMachOSigner) SealNestedBundle(bundlePath string) (*bundle.SignedBi
 }
 
 var (
-	// errAdhocNestedBundle indicates a nested bundle is ad-hoc signed while its container is
-	// being signed with a certificate.
-	errAdhocNestedBundle = errors.New("nested bundle is ad-hoc signed but its container is being signed with a certificate")
+	// ErrAdhocNestedBundle indicates a nested bundle is ad-hoc signed while its container is
+	// being signed with a certificate. Apple's notary service rejects such a submission.
+	ErrAdhocNestedBundle = errors.New("nested bundle is ad-hoc signed but its container is being signed with a certificate")
 
-	// errNestedBundleWithoutRuntime indicates a nested bundle is signed without the hardened
-	// runtime while its container is being signed with a certificate.
-	errNestedBundleWithoutRuntime = errors.New("nested bundle is signed without the hardened runtime")
+	// ErrNestedBundleWithoutHardenedRuntime indicates a nested bundle is signed without the
+	// hardened runtime while its container is being signed with a certificate. Apple's notary
+	// service rejects such a submission.
+	ErrNestedBundleWithoutHardenedRuntime = errors.New("nested bundle is signed without the hardened runtime")
 )
 
 // checkNestedSignature compares the existing signature of a nested bundle's main executable
@@ -197,11 +198,11 @@ func checkNestedSignature(name, exe string, material pki.SigningMaterial) error 
 	warned := false
 	for _, cs := range signatures {
 		if cs == nil || len(cs.CMSSignature) == 0 {
-			return fmt.Errorf("%w: re-sign %q with the certificate before signing the bundle that contains it", errAdhocNestedBundle, name)
+			return fmt.Errorf("%w: re-sign %q with the certificate before signing the bundle that contains it", ErrAdhocNestedBundle, name)
 		}
 
 		if !hasHardenedRuntime(cs) {
-			return fmt.Errorf("%w: re-sign %q with the hardened runtime (e.g. with quill, or codesign --options runtime) before signing the bundle that contains it", errNestedBundleWithoutRuntime, name)
+			return fmt.Errorf("%w: re-sign %q with the hardened runtime (e.g. with quill, or codesign --options runtime) before signing the bundle that contains it", ErrNestedBundleWithoutHardenedRuntime, name)
 		}
 
 		leaf, err := cmsLeafCertificate(cs.CMSSignature)

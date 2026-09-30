@@ -1,6 +1,7 @@
 package bundle
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -47,15 +48,28 @@ func MainExecutableOf(root string) (string, error) {
 		return b.MainExecutablePath(), nil
 	}
 
-	if exe, err := frameworkMainExecutable(root); err == nil {
+	exe, err := frameworkMainExecutable(root)
+	switch {
+	case err == nil:
 		return exe, nil
+	case errors.Is(err, errNoFrameworkLayout):
+		// neither layout is present, so this is not a bundle at all
+		return "", fmt.Errorf("not a bundle (no Contents/Info.plist and no framework layout): %s", root)
+	default:
+		// the framework layout is present but unusable; report why rather than claiming
+		// that a framework is not a bundle
+		return "", err
 	}
-
-	return "", fmt.Errorf("not a bundle (no Contents/Info.plist and no framework layout): %s", root)
 }
 
-// frameworkMainExecutable resolves the main executable of a versioned framework bundle.
+// errNoFrameworkLayout indicates a directory has no framework layout (no readable
+// Versions/<v>/Resources/Info.plist), as opposed to having one that cannot be used.
+var errNoFrameworkLayout = errors.New("no framework layout")
+
+// frameworkMainExecutable resolves the main executable of a versioned framework bundle,
+// returning errNoFrameworkLayout if the directory has no framework layout at all.
 func frameworkMainExecutable(root string) (string, error) {
+	foundLayout := false
 	for _, version := range []string{"Current", "A"} {
 		versionDir := filepath.Join(root, "Versions", version)
 		infoPath := filepath.Join(versionDir, "Resources", "Info.plist")
@@ -64,6 +78,7 @@ func frameworkMainExecutable(root string) (string, error) {
 		if err != nil {
 			continue
 		}
+		foundLayout = true
 		var info Info
 		if _, err := plist.Unmarshal(data, &info); err != nil {
 			return "", fmt.Errorf("unable to parse framework Info.plist %s: %w", infoPath, err)
@@ -77,7 +92,11 @@ func frameworkMainExecutable(root string) (string, error) {
 			return exe, nil
 		}
 	}
-	return "", fmt.Errorf("no framework main executable found under %s", root)
+
+	if !foundLayout {
+		return "", errNoFrameworkLayout
+	}
+	return "", fmt.Errorf("framework main executable named by Info.plist not found under %s", root)
 }
 
 // IsBundle indicates if the given path appears to be an application bundle (a directory containing Contents/Info.plist).

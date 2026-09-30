@@ -19,8 +19,8 @@ import (
 )
 
 // ErrNestedBundleUnsupported indicates that a bundle contains a nested bundle (e.g. a
-// framework or a nested .app) but the signer given to WalkAndSeal cannot seal nested
-// bundles (it does not implement NestedBundleSealer).
+// framework or a nested .app) but the signer given to WalkAndSeal cannot report the
+// signature of one (it does not implement NestedBundleSignatureReader).
 var ErrNestedBundleUnsupported = errors.New("signing nested bundles is not supported")
 
 // SignedBinaryInfo describes the code signature of a nested Mach-O binary, used to seal
@@ -29,7 +29,7 @@ type SignedBinaryInfo struct {
 	// CDHash is the code directory hash (truncated to 20 bytes)
 	CDHash []byte
 
-	// Requirement is the designated requirement in text form (empty for ad-hoc signatures)
+	// Requirement is the designated requirement in text form
 	Requirement string
 }
 
@@ -38,21 +38,21 @@ type MachOSigner interface {
 	SignMachO(path string) (*SignedBinaryInfo, error)
 }
 
-// NestedBundleSealer reports the code signature of a nested bundle (a .appex, .framework,
-// .xpc, or nested .app) that has already been signed.
+// NestedBundleSignatureReader reports the code signature of a nested bundle (a .appex, a
+// .framework, a .xpc, or a nested .app) that has already been signed.
 //
 // Nested bundles are sealed by reference rather than by content: the parent records the
 // cdhash and designated requirement of the nested bundle's main executable, and nothing
 // inside the nested bundle appears in the parent's seal. That is what Apple's codesign
-// produces, and it is why nested code must be signed before its container -- the parent's
-// seal depends on the child's signature, so signing in the other order would embed a hash
-// of an unsigned binary.
+// produces, and it is why nested code must be signed before its container: the parent's seal
+// records the child's signature, and nested code usually needs signing options of its own
+// (an app extension, for instance, must carry its own sandbox entitlements).
 //
 // A signer that does not implement this interface keeps the previous behavior: sealing a
 // bundle that contains nested bundles is refused (with ErrNestedBundleUnsupported) rather
 // than silently producing a seal that omits them.
-type NestedBundleSealer interface {
-	SealNestedBundle(bundlePath string) (*SignedBinaryInfo, error)
+type NestedBundleSignatureReader interface {
+	NestedBundleSignature(bundlePath string) (*SignedBinaryInfo, error)
 }
 
 // ResourcesBuilder walks a bundle directory and seals its contents into a CodeResources
@@ -170,19 +170,19 @@ func (b *ResourcesBuilder) processDir(fullPath, normalized string, d fs.DirEntry
 // the files within it are covered by its own signature, so repeating them here would both
 // duplicate work and diverge from what codesign emits.
 func (b *ResourcesBuilder) sealNestedBundle(fullPath, normalized string, signer MachOSigner) error {
-	sealer, ok := signer.(NestedBundleSealer)
+	reader, ok := signer.(NestedBundleSignatureReader)
 	if !ok {
 		return fmt.Errorf("%w (found %q): sign it separately before signing this bundle", ErrNestedBundleUnsupported, normalized)
 	}
 
 	log.WithFields("path", normalized).Trace("sealing nested bundle")
 
-	info, err := sealer.SealNestedBundle(fullPath)
+	info, err := reader.NestedBundleSignature(fullPath)
 	if err != nil {
 		return fmt.Errorf("unable to seal nested bundle %q: %w", normalized, err)
 	}
 	if info == nil {
-		return fmt.Errorf("sealer returned no signature info for nested bundle %q", normalized)
+		return fmt.Errorf("no signature reported for nested bundle %q", normalized)
 	}
 
 	entry := map[string]any{

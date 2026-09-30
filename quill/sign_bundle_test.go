@@ -320,7 +320,7 @@ func TestSign_appBundle_nestedSignatureMismatch(t *testing.T) {
 			name:    "ad-hoc nested bundle inside a certificate-signed bundle is rejected",
 			appCert: helloCert,
 			appKey:  helloKey,
-			wantErr: errAdhocNestedBundle,
+			wantErr: ErrAdhocNestedBundle,
 		},
 		{
 			name:             "certificate-signed nested bundle inside an ad-hoc bundle is allowed",
@@ -376,7 +376,7 @@ func TestSign_appBundle_nestedBundleWithoutHardenedRuntime(t *testing.T) {
 	require.NoError(t, os.WriteFile(filepath.Join(appexPath, "Contents", "MacOS", "my-ext"), lsBin, 0o755))
 
 	err = signBundleWithPEMs(t, appPath, test.Asset(t, "hello-cert.pem"), test.Asset(t, "hello-key.pem"))
-	require.ErrorIs(t, err, errNestedBundleWithoutRuntime)
+	require.ErrorIs(t, err, ErrNestedBundleWithoutHardenedRuntime)
 	require.ErrorContains(t, err, `"my-ext.appex"`)
 
 	_, statErr := os.Stat(filepath.Join(appPath, "Contents", "_CodeSignature", "CodeResources"))
