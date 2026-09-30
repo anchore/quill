@@ -68,7 +68,7 @@ bundle resources into `Contents/_CodeSignature/CodeResources`, and signs the mai
 When notarizing, the bundle is automatically zipped for submission to Apple's notary service.
 
 Nested bundles (e.g. app extensions in `Contents/PlugIns/*.appex`, XPC services, frameworks, or nested `.app`
-bundles) are supported, but must be signed **before** the bundle that contains them, since the outer bundle's seal
+bundles) are supported, but must be signed before the bundle that contains them, since the outer bundle's seal
 records the inner bundle's signature:
 
 ```bash
