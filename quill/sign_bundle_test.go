@@ -386,6 +386,47 @@ func TestSign_appBundle_nestedBundleWithoutHardenedRuntime(t *testing.T) {
 	require.NoError(t, signBundleWithPEMs(t, appPath, "", ""))
 }
 
+// makeFramework builds an unsigned framework bundle at the given path.
+func makeFramework(t *testing.T, root, name string) {
+	t.Helper()
+
+	versionDir := filepath.Join(root, "Versions", "A")
+	require.NoError(t, os.MkdirAll(filepath.Join(versionDir, "Resources"), 0o755))
+
+	helloBin, err := os.ReadFile(test.Asset(t, "hello"))
+	require.NoError(t, err)
+	require.NoError(t, os.WriteFile(filepath.Join(versionDir, name), helloBin, 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(versionDir, "Resources", "Info.plist"), []byte(fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0"><dict><key>CFBundleExecutable</key><string>%s</string></dict></plist>
+`, name)), 0o644))
+}
+
+// A framework is a bundle, just not one quill can sign yet, so it must say so rather than
+// claim the directory is not a bundle at all.
+func TestSign_framework(t *testing.T) {
+	frameworkPath := filepath.Join(t.TempDir(), "Foo.framework")
+	makeFramework(t, frameworkPath, "Foo")
+
+	cfg, err := NewSigningConfigFromPEMs(frameworkPath, "", "", "", false)
+	require.NoError(t, err)
+
+	err = Sign(*cfg)
+	require.ErrorContains(t, err, "quill cannot sign framework bundles yet")
+	require.NotContains(t, err.Error(), "not an application bundle")
+}
+
+func TestSign_appBundle_unsignedNestedFramework(t *testing.T) {
+	appPath := makeAppBundle(t, "my-app", "com.quill.my-app")
+	makeFramework(t, filepath.Join(appPath, "Contents", "Frameworks", "Foo.framework"), "Foo")
+
+	cfg, err := NewSigningConfigFromPEMs(appPath, "", "", "", false)
+	require.NoError(t, err)
+
+	err = Sign(*cfg)
+	require.ErrorContains(t, err, `nested framework "Foo.framework"`)
+	require.ErrorContains(t, err, "quill cannot sign frameworks yet")
+}
+
 func Test_cdHashRequirement(t *testing.T) {
 	// The single-architecture form was taken from codesign's own output for an ad-hoc signed
 	// .appex nested in an .app.

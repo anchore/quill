@@ -27,19 +27,25 @@ import (
 
 const cdHashSize = 20 // code directory hashes are truncated to 20 bytes, regardless of hash algorithm
 
-// signAppBundle signs an application bundle (.app directory):
+// signBundle signs an application bundle (a .app, .appex, or .xpc directory):
 //  1. nested code (e.g. dylibs and helper executables) is signed in place, and nested bundles
 //     (e.g. .appex, .framework), which must already be signed, are sealed by reference
 //  2. all bundle resources are sealed into Contents/_CodeSignature/CodeResources
 //  3. the main executable is signed, binding the Info.plist and resource seal hashes into
 //     its code directory
-func signAppBundle(cfg SigningConfig) error {
-	log.WithFields("bundle", cfg.Path).Info("signing application bundle")
-
+func signBundle(cfg SigningConfig) error {
 	b, err := bundle.New(cfg.Path)
 	if err != nil {
 		return err
 	}
+
+	if b.Kind != bundle.KindApp {
+		// a framework's seal covers a versioned layout that the resources rules below do not
+		// describe, so signing one would produce a bundle codesign rejects
+		return fmt.Errorf("unable to sign %q: quill cannot sign %s bundles yet; sign it with another tool before signing the bundle that contains it", cfg.Path, b.Kind)
+	}
+
+	log.WithFields("bundle", cfg.Path).Info("signing application bundle")
 
 	mon := bus.PublishTask(
 		event.Title{
@@ -143,10 +149,11 @@ func (s nestedMachOSigner) SignMachO(binPath string) (*bundle.SignedBinaryInfo, 
 // certificate is rejected, since it is almost always a leftover development signature and
 // Apple's notary service rejects it.
 func (s nestedMachOSigner) NestedBundleSignature(bundlePath string) (*bundle.SignedBinaryInfo, error) {
-	exe, err := bundle.MainExecutableOf(bundlePath)
+	b, err := bundle.New(bundlePath)
 	if err != nil {
 		return nil, err
 	}
+	exe := b.MainExecutablePath()
 
 	// The presence of a signature is established by reading it rather than by calling
 	// IsSigned, which reports whether a binary carries a CMS blob. An ad-hoc signature has
@@ -154,9 +161,12 @@ func (s nestedMachOSigner) NestedBundleSignature(bundlePath string) (*bundle.Sig
 	// seal one would make ad-hoc signing unusable for any bundle with nested code.
 	info, err := readSignedBinaryInfo(exe)
 	if err != nil {
-		return nil, fmt.Errorf(
-			"unable to read the signature of nested bundle %q (sign it before signing the bundle that contains it): %w",
-			path.Base(bundlePath), err)
+		noun, hint := "bundle", "sign it before signing the bundle that contains it"
+		if b.Kind == bundle.KindFramework {
+			noun = "framework"
+			hint = "quill cannot sign frameworks yet, so sign it with another tool before signing the bundle that contains it"
+		}
+		return nil, fmt.Errorf("unable to read the signature of nested %s %q (%s): %w", noun, path.Base(bundlePath), hint, err)
 	}
 
 	if err := checkNestedSignature(path.Base(bundlePath), exe, s.cfg.SigningMaterial); err != nil {

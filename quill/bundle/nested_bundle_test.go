@@ -85,6 +85,16 @@ func infoPlist(executable, identifier string) string {
 </dict></plist>`
 }
 
+// mainExecutableOf resolves a bundle's main executable through the public API, which is what
+// the sign path does for a nested bundle.
+func mainExecutableOf(root string) (string, error) {
+	b, err := New(root)
+	if err != nil {
+		return "", err
+	}
+	return b.MainExecutablePath(), nil
+}
+
 func sealApp(t *testing.T, app string, signer MachOSigner) (map[string]any, error) {
 	t.Helper()
 	b := NewResourcesBuilder()
@@ -206,9 +216,9 @@ func TestSealerErrorIsReportedWithContext(t *testing.T) {
 	}
 }
 
-func TestMainExecutableOfAppBundle(t *testing.T) {
+func TestBundleMainExecutableAppBundle(t *testing.T) {
 	app := appWithNestedAppex(t)
-	got, err := MainExecutableOf(app)
+	got, err := mainExecutableOf(app)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -217,10 +227,10 @@ func TestMainExecutableOfAppBundle(t *testing.T) {
 	}
 }
 
-func TestMainExecutableOfAppExBundle(t *testing.T) {
+func TestBundleMainExecutableAppExBundle(t *testing.T) {
 	app := appWithNestedAppex(t)
 	appex := filepath.Join(app, "Contents", "PlugIns", "SFTPFileProvider.appex")
-	got, err := MainExecutableOf(appex)
+	got, err := mainExecutableOf(appex)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -229,7 +239,7 @@ func TestMainExecutableOfAppExBundle(t *testing.T) {
 	}
 }
 
-func TestMainExecutableOfFramework(t *testing.T) {
+func TestBundleMainExecutableFramework(t *testing.T) {
 	// Frameworks are versioned and flat rather than having a Contents directory; treating
 	// one as an app bundle would report a valid framework as having no main executable.
 	root := t.TempDir()
@@ -239,7 +249,7 @@ func TestMainExecutableOfFramework(t *testing.T) {
 	mustWrite(t, filepath.Join(fw, "Versions", "A", "Resources", "Info.plist"),
 		infoPlist("Widget", "com.example.Widget"))
 
-	got, err := MainExecutableOf(fw)
+	got, err := mainExecutableOf(fw)
 	if err != nil {
 		t.Fatalf("MainExecutableOf on a framework: %v", err)
 	}
@@ -248,8 +258,8 @@ func TestMainExecutableOfFramework(t *testing.T) {
 	}
 }
 
-func TestMainExecutableOfNonBundle(t *testing.T) {
-	if _, err := MainExecutableOf(t.TempDir()); err == nil {
+func TestBundleMainExecutableNonBundle(t *testing.T) {
+	if _, err := mainExecutableOf(t.TempDir()); err == nil {
 		t.Error("a plain directory was accepted as a bundle")
 	}
 }
@@ -257,7 +267,7 @@ func TestMainExecutableOfNonBundle(t *testing.T) {
 // A directory that does have a framework layout, but an unusable one, must report why rather
 // than claiming it is not a bundle: "not a bundle" sends someone holding a real framework off
 // looking for the wrong problem.
-func TestMainExecutableOfBrokenFramework(t *testing.T) {
+func TestBundleMainExecutableBrokenFramework(t *testing.T) {
 	tests := []struct {
 		name        string
 		infoPlist   string
@@ -292,7 +302,7 @@ func TestMainExecutableOfBrokenFramework(t *testing.T) {
 				mustWrite(t, filepath.Join(fw, "Versions", "A", "Widget"), "framework binary")
 			}
 
-			_, err := MainExecutableOf(fw)
+			_, err := mainExecutableOf(fw)
 			if err == nil {
 				t.Fatal("a broken framework was accepted")
 			}

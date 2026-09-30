@@ -48,6 +48,7 @@ func TestNew(t *testing.T) {
 		b, err := New(root)
 		require.NoError(t, err)
 
+		assert.Equal(t, KindApp, b.Kind)
 		assert.Equal(t, "com.example.my-app", b.Info.Identifier)
 		assert.Equal(t, "my-app", b.Info.Executable)
 		assert.Equal(t, filepath.Join(root, "Contents", "MacOS", "my-app"), b.MainExecutablePath())
@@ -55,9 +56,31 @@ func TestNew(t *testing.T) {
 		assert.Equal(t, []byte(testInfoPlist), b.InfoPlistData())
 	})
 
+	t.Run("framework bundle", func(t *testing.T) {
+		// a framework is versioned and flat: Versions/<v>/Resources/Info.plist names an
+		// executable that sits directly in the version directory
+		root := filepath.Join(t.TempDir(), "Widget.framework")
+		versionDir := filepath.Join(root, "Versions", "A")
+		require.NoError(t, os.MkdirAll(filepath.Join(versionDir, "Resources"), 0o755))
+		require.NoError(t, os.WriteFile(filepath.Join(versionDir, "Resources", "Info.plist"), []byte(`<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0"><dict><key>CFBundleExecutable</key><string>Widget</string><key>CFBundleIdentifier</key><string>com.example.Widget</string></dict></plist>`), 0o644))
+		require.NoError(t, os.WriteFile(filepath.Join(versionDir, "Widget"), []byte("framework binary"), 0o755))
+
+		assert.True(t, IsBundle(root), "a framework is a bundle")
+
+		b, err := New(root)
+		require.NoError(t, err)
+
+		assert.Equal(t, KindFramework, b.Kind)
+		assert.Equal(t, "framework", b.Kind.String())
+		assert.Equal(t, "com.example.Widget", b.Info.Identifier)
+		assert.Equal(t, filepath.Join(versionDir, "Widget"), b.MainExecutablePath())
+		assert.Equal(t, filepath.Join(versionDir, "_CodeSignature", "CodeResources"), b.CodeResourcesPath())
+	})
+
 	t.Run("missing Info.plist", func(t *testing.T) {
 		_, err := New(t.TempDir())
-		require.ErrorContains(t, err, "unable to read bundle Info.plist")
+		require.ErrorContains(t, err, "not a bundle")
 	})
 
 	t.Run("missing CFBundleExecutable", func(t *testing.T) {
@@ -75,7 +98,7 @@ func TestNew(t *testing.T) {
 		require.NoError(t, os.Remove(filepath.Join(root, "Contents", "MacOS", "my-app")))
 
 		_, err := New(root)
-		require.ErrorContains(t, err, "main executable not found")
+		require.ErrorContains(t, err, "main executable named by Info.plist not found")
 	})
 
 	t.Run("malformed Info.plist", func(t *testing.T) {
@@ -83,6 +106,6 @@ func TestNew(t *testing.T) {
 		require.NoError(t, os.WriteFile(filepath.Join(root, "Contents", "Info.plist"), []byte("not a plist"), 0o644))
 
 		_, err := New(root)
-		require.ErrorContains(t, err, "unable to parse bundle Info.plist")
+		require.ErrorContains(t, err, "unable to parse application Info.plist")
 	})
 }
