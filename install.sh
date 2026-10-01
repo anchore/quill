@@ -8,7 +8,6 @@ REPO="${PROJECT_NAME}"
 GITHUB_DOWNLOAD_PREFIX=https://github.com/${OWNER}/${REPO}/releases/download
 INSTALL_SH_BASE_URL=https://get.anchore.io/${PROJECT_NAME}
 LEGACY_INSTALL_SH_BASE_URL=https://raw.githubusercontent.com/${OWNER}/${PROJECT_NAME}
-PROGRAM_ARGS=$@
 
 # do not change the name of this parameter (this must always be backwards compatible)
 DOWNLOAD_TAG_INSTALL_SCRIPT=${DOWNLOAD_TAG_INSTALL_SCRIPT:-true}
@@ -610,7 +609,7 @@ install_asset() (
   install "${archive_dir}/${binary}" "${destination}/"
 )
 
-main() (
+parse_install_args() {
   # parse arguments
 
   # note: never change default install directory (this must always be backwards compatible)
@@ -636,6 +635,11 @@ main() (
   shift $((OPTIND - 1))
   set +u
   tag=$1
+  set -u
+}
+
+main() (
+  parse_install_args "$@"
 
   if [ -z "${tag}" ]; then
     log_debug "checking github for the current release tag"
@@ -643,7 +647,6 @@ main() (
   else
     log_debug "checking github for release tag='${tag}'"
   fi
-  set -u
 
   tag=$(get_release_tag "${OWNER}" "${REPO}" "${tag}")
 
@@ -672,7 +675,7 @@ main() (
           log_warn "failed to fetch from ${INSTALL_SH_BASE_URL}, trying fallback URL"
           install_script=$(http_copy "${LEGACY_INSTALL_SH_BASE_URL}/${tag}/install.sh" "")
       fi
-      echo "${install_script}" | sh -s -- ${PROGRAM_ARGS}
+      echo "${install_script}" | sh -s -- "$@"
       exit $?
   fi
 
