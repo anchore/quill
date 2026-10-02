@@ -6,8 +6,8 @@ github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d h1:licZJFw2RwpH
 github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d/go.mod h1:asat636LX7Bqt5lYEZ27JNDcqxfjdBQuJ/MM4CN/Lzo=
 github.com/adrg/xdg v0.5.3 h1:xRnxJXne7+oWDatRhR1JLnvuccuIeCoBu2rtuLqQB78=
 github.com/adrg/xdg v0.5.3/go.mod h1:nlTsY+NNiCBGCK2tpm09vRqfVzrc2fLmXGpBLF0zlTQ=
-github.com/anchore/bubbly v0.2.1 h1:b3ZNBefY8ks5DI4SQ7BXSbBIsN6eoaTD6s1su7NuCBo=
-github.com/anchore/bubbly v0.2.1/go.mod h1:o6a9aH3/fCn+mb5g1T1tBbQZ4hGR0yO5/uD1d2Vtago=
+github.com/anchore/bubbly v0.2.2 h1:53JHRlpaNZjMcUYdz7n1U7+kOhy0zsJv9gpGEXvTcz8=
+github.com/anchore/bubbly v0.2.2/go.mod h1:M4twoFkczlfuNdU8QV7oQjVJwPbxdUWRMfKydcLba0U=
 github.com/anchore/clio v0.1.1 h1:9bkYnaFbpT0J3G0qSHyQqa/lpK5zV0C9Gtgh82H/jj0=
 github.com/anchore/clio v0.1.1/go.mod h1:CFPIopJlakJbBpKtAL/EPpj4W9hgBO7PfFc8N2FAtlE=
 github.com/anchore/fangs v0.1.1 h1:NBTHocmWM2/0gNhebpoE/wEB0Z0nxh2lESww2o/Uf5M=
@@ -121,8 +121,8 @@ github.com/github/smimesign v0.2.0 h1:Hho4YcX5N1I9XNqhq0fNx0Sts8MhLonHd+HRXVGNjv
 github.com/github/smimesign v0.2.0/go.mod h1:iZiiwNT4HbtGRVqCQu7uJPEZCuEE5sfSSttcnePkDl4=
 github.com/gkampitakis/ciinfo v0.3.4 h1:5eBSibVuSMbb/H6Elc0IIEFbkzCJi3lm94n0+U7Z0KY=
 github.com/gkampitakis/ciinfo v0.3.4/go.mod h1:1NIwaOcFChN4fa/B0hEBdAb6npDlFL8Bwx4dfRLRqAo=
-github.com/gkampitakis/go-snaps v0.5.22 h1:xg9omphRnbDnimMCl1KqznC4krlxOGpkB0vDSfX2P7M=
-github.com/gkampitakis/go-snaps v0.5.22/go.mod h1:uy3lVzCCRRsAwYqSocyw5fY8xRLCYEfqoOJNxr8HonM=
+github.com/gkampitakis/go-snaps v0.5.23 h1:okh5QR48zpUjpWtu65AtqxdCY8huJq+dEDuUzd1PuKg=
+github.com/gkampitakis/go-snaps v0.5.23/go.mod h1:uy3lVzCCRRsAwYqSocyw5fY8xRLCYEfqoOJNxr8HonM=
 github.com/go-openapi/errors v0.22.5 h1:Yfv4O/PRYpNF3BNmVkEizcHb3uLVVsrDt3LNdgAKRY4=
 github.com/go-openapi/errors v0.22.5/go.mod h1:z9S8ASTUqx7+CP1Q8dD8ewGH/1JWFFLX/2PmAYNQLgk=
 github.com/go-openapi/strfmt v0.25.0 h1:7R0RX7mbKLa9EYCTHRcCuIPcaqlyQiWNPTXwClK0saQ=

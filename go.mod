@@ -5,7 +5,7 @@ go 1.26.0
 require (
 	github.com/PuerkitoBio/goquery v1.13.0
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d
-	github.com/anchore/bubbly v0.2.1
+	github.com/anchore/bubbly v0.2.2
 	github.com/anchore/clio v0.1.1
 	github.com/anchore/fangs v0.1.1
 	github.com/anchore/go-logger v0.1.1
