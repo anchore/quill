@@ -91,9 +91,9 @@ func Sign(cfg SigningConfig) error {
 
 	if fi.IsDir() {
 		if bundle.IsBundle(cfg.Path) {
-			return signAppBundle(cfg)
+			return signBundle(cfg)
 		}
-		return fmt.Errorf("unable to sign %q: directory is not an application bundle (no Contents/Info.plist found)", cfg.Path)
+		return fmt.Errorf("unable to sign %q: directory is not an application bundle (no Contents/Info.plist and no framework layout found)", cfg.Path)
 	}
 
 	return signBinary(cfg)
