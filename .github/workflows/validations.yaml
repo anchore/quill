@@ -22,7 +22,7 @@ jobs:
           persist-credentials: false
 
       - name: Bootstrap environment
-        uses: anchore/go-make/.github/actions/setup@abf41688f36f2cbec13105747abbe8e60f5c56ca # v0.9.3
+        uses: anchore/go-make/.github/actions/setup@440c74841d2616b30c42a03a57c2f1b033253b5e # v0.9.4-0.20261016012650-440c74841d26
 
       - name: Run static analysis
         run: make static-analysis
@@ -45,7 +45,7 @@ jobs:
         run: git lfs pull
 
       - name: Bootstrap environment
-        uses: anchore/go-make/.github/actions/setup@abf41688f36f2cbec13105747abbe8e60f5c56ca # v0.9.3
+        uses: anchore/go-make/.github/actions/setup@440c74841d2616b30c42a03a57c2f1b033253b5e # v0.9.4-0.20261016012650-440c74841d26
 
       - name: Run unit tests
         run: make unit
@@ -67,7 +67,7 @@ jobs:
           persist-credentials: false
 
       - name: Bootstrap environment
-        uses: anchore/go-make/.github/actions/setup@abf41688f36f2cbec13105747abbe8e60f5c56ca # v0.9.3
+        uses: anchore/go-make/.github/actions/setup@440c74841d2616b30c42a03a57c2f1b033253b5e # v0.9.4-0.20261016012650-440c74841d26
         with:
           # why have another build cache key? We don't want unit/integration/etc test build caches to replace
           # the snapshot build cache, which includes builds for all OSs and architectures. As long as this key is
@@ -100,7 +100,7 @@ jobs:
           persist-credentials: false
 
       - name: Bootstrap environment
-        uses: anchore/go-make/.github/actions/setup@abf41688f36f2cbec13105747abbe8e60f5c56ca # v0.9.3
+        uses: anchore/go-make/.github/actions/setup@440c74841d2616b30c42a03a57c2f1b033253b5e # v0.9.4-0.20261016012650-440c74841d26
 
       - name: Download snapshot build
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 #v6.1.0
@@ -146,7 +146,7 @@ jobs:
         run: git lfs pull
 
       - name: Bootstrap environment
-        uses: anchore/go-make/.github/actions/setup@abf41688f36f2cbec13105747abbe8e60f5c56ca # v0.9.3
+        uses: anchore/go-make/.github/actions/setup@440c74841d2616b30c42a03a57c2f1b033253b5e # v0.9.4-0.20261016012650-440c74841d26
 
       - name: Download snapshot build
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 #v6.1.0
