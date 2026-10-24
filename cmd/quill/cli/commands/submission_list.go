@@ -30,6 +30,10 @@ func SubmissionList(app clio.Application) *cobra.Command {
 
 			log.Info("fetching previous submissions")
 
+			if err := opts.Validate(); err != nil {
+				return err
+			}
+
 			cfg := quill.NewNotarizeConfig(
 				opts.Issuer,
 				opts.PrivateKeyID,

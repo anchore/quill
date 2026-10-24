@@ -1,6 +1,8 @@
 package options
 
 import (
+	"fmt"
+
 	"github.com/anchore/fangs"
 )
 
@@ -20,6 +22,14 @@ type Notary struct {
 
 func (o *Notary) PostLoad() error {
 	redactNonFileOrEnvHint(o.PrivateKey)
+	return nil
+}
+
+// Validate returns an error if any of the App Store Connect API credentials are missing.
+func (o *Notary) Validate() error {
+	if o.Issuer == "" || o.PrivateKeyID == "" || o.PrivateKey == "" {
+		return fmt.Errorf("notarization credentials required: provide --notary-issuer, --notary-key-id, and --notary-key")
+	}
 	return nil
 }
 

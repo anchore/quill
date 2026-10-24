@@ -46,6 +46,10 @@ func SubmissionStatus(app clio.Application) *cobra.Command {
 
 			log.Infof("checking submission status for %q", opts.ID)
 
+			if err := opts.Validate(); err != nil {
+				return err
+			}
+
 			cfg := quill.NewNotarizeConfig(
 				opts.Notary.Issuer,
 				opts.Notary.PrivateKeyID,
