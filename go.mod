@@ -5,11 +5,11 @@ go 1.26.0
 require (
 	github.com/PuerkitoBio/goquery v1.13.0
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d
-	github.com/anchore/bubbly v0.2.2
-	github.com/anchore/clio v0.1.1
-	github.com/anchore/fangs v0.1.1
-	github.com/anchore/go-logger v0.2.0
-	github.com/anchore/go-macholibre v0.1.1
+	github.com/anchore/bubbly v0.2.3-0.20261024031134-ba1e4e31cbb2
+	github.com/anchore/clio v0.1.2-0.20261024031208-630c71541bc5
+	github.com/anchore/fangs v0.1.2-0.20261024031232-07e9a8a78b7f
+	github.com/anchore/go-logger v0.2.1-0.20261024031246-9c0420bbb8de
+	github.com/anchore/go-macholibre v0.1.2-0.20261024031319-45d0aca0a09b
 	github.com/aws/aws-sdk-go-v2 v1.47.3
 	github.com/aws/aws-sdk-go-v2/config v1.33.9
 	github.com/aws/aws-sdk-go-v2/credentials v1.20.9
@@ -39,7 +39,7 @@ require (
 require (
 	dario.cat/mergo v1.0.2 // indirect
 	github.com/adrg/xdg v0.5.3 // indirect
-	github.com/anchore/go-homedir v0.1.1 // indirect
+	github.com/anchore/go-homedir v0.1.2-0.20261023170623-9071f650d60f // indirect
 	github.com/andybalholm/cascadia v1.3.4 // indirect
 	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.7.22 // indirect
