@@ -7,7 +7,6 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -171,24 +170,13 @@ func getBinaryLocation(t testing.TB) string {
 		// QUILL_BINARY_LOCATION is the absolute path to the snapshot binary
 		return os.Getenv("QUILL_BINARY_LOCATION")
 	}
-	return getBinaryLocationByOS(t, runtime.GOOS)
-}
-
-func getBinaryLocationByOS(t testing.TB, goOS string) string {
-	// note: for amd64 we need to update the snapshot location with the v1 suffix
-	// see : https://goreleaser.com/customization/build/#why-is-there-a-_v1-suffix-on-amd64-builds
-	archPath := runtime.GOARCH
-	if runtime.GOARCH == "amd64" {
-		archPath = fmt.Sprintf("%s_v1", archPath)
+	// goreleaser suffixes the dist dir with the GOAMD64/GOARM64 variant (e.g. amd64_v1, arm64_v8.0), so glob for it
+	pattern := filepath.Join(repoRoot(t), "snapshot", fmt.Sprintf("%s-build_%s_%s*", runtime.GOOS, runtime.GOOS, runtime.GOARCH), "quill")
+	matches, err := filepath.Glob(pattern)
+	if err != nil || len(matches) == 0 {
+		t.Fatalf("no snapshot binary found matching %q (run `make snapshot` or set QUILL_BINARY_LOCATION)", pattern)
 	}
-	// note: there is a subtle - vs _ difference between these versions
-	switch goOS {
-	case "darwin", "linux":
-		return path.Join(repoRoot(t), fmt.Sprintf("snapshot/%s-build_%s_%s/quill", goOS, goOS, archPath))
-	default:
-		t.Fatalf("unsupported OS: %s", runtime.GOOS)
-	}
-	return ""
+	return matches[0]
 }
 
 func repoRoot(t testing.TB) string {
