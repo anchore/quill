@@ -5,8 +5,10 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 
 	. "github.com/anchore/go-make"
+	"github.com/anchore/go-make/config"
 	"github.com/anchore/go-make/lang"
 	"github.com/anchore/go-make/run"
 	"github.com/anchore/go-make/tasks/golint"
@@ -75,6 +77,20 @@ func main() {
 				Run("go test -count=1 -timeout=15m ./test/cli/...", run.Env("QUILL_BINARY_LOCATION", bin), run.Stdout(os.Stderr))
 			},
 		},
+		// the cli tests exec the snapshot binary, so -race there would only instrument the test harness. This runs
+		// quill itself under the race detector once, offline, against a checked-in fixture.
+		Task{
+			Name:        "cli:race-smoke",
+			Description: "exercise the cli with the race detector",
+			RunsOn:      lang.List("cli"),
+			Run: func() {
+				if !raceEnabled() {
+					Log("race detector disabled, skipping race smoke")
+					return
+				}
+				Run("go run -race ./cmd/quill describe ./test/cli/test-fixtures/assets/hello_signed", run.Stdout(os.Stderr))
+			},
+		},
 		Task{
 			Name:        "update-apple-certs",
 			Description: "update the apple certs checked into the repo",
@@ -98,4 +114,12 @@ func findSnapshotBinary() string {
 
 func snapshotBinaryGlob() string {
 	return filepath.Join(RootDir(), "snapshot", fmt.Sprintf("%s-build_%s_%s*", runtime.GOOS, runtime.GOOS, runtime.GOARCH), "quill")
+}
+
+// raceEnabled defaults to on in CI (off on windows) and can be forced either way with RACE=true|false.
+func raceEnabled() bool {
+	if enabled, err := strconv.ParseBool(config.Env("RACE", "")); err == nil {
+		return enabled
+	}
+	return config.CI && !config.Windows
 }
