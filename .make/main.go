@@ -2,10 +2,13 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 
 	. "github.com/anchore/go-make"
+	"github.com/anchore/go-make/config"
 	"github.com/anchore/go-make/lang"
 	"github.com/anchore/go-make/run"
 	"github.com/anchore/go-make/tasks/golint"
@@ -54,16 +57,38 @@ func main() {
 				Run("make load", run.InDir("test/install"))
 			},
 		},
+		// the snapshot is only built when missing: in CI it is downloaded from the snapshot job, and rebuilding
+		// would burn time and clobber it.
 		Task{
 			Name:        "cli",
 			Description: "run CLI tests",
+			RunsOn:      lang.List("test"),
 			Run: func() {
 				bin := findSnapshotBinary()
-				Run("chmod 755 " + bin)
-				Run(bin + " version")
-				// QUILL_BINARY_LOCATION lets test/cli skip its own GOOS/GOARCH path resolution, which
-				// doesn't handle goreleaser's GOARM64 variant suffix (e.g. arm64_v8.0) on the dist dir.
-				Run("go test -count=1 -timeout=15m -v ./test/cli", run.Env("QUILL_BINARY_LOCATION", bin))
+				if bin == "" {
+					Log("no snapshot binary found, building a single-target snapshot")
+					Run("make snapshot:single-target")
+					bin = findSnapshotBinary()
+					if bin == "" {
+						lang.Throw(fmt.Errorf("no snapshot binary found matching %q after building one", snapshotBinaryGlob()))
+					}
+				}
+				Log("testing binary: %s", bin)
+				Run("go test -count=1 -timeout=15m ./test/cli/...", run.Env("QUILL_BINARY_LOCATION", bin), run.Stdout(os.Stderr))
+			},
+		},
+		// the cli tests exec the snapshot binary, so -race there would only instrument the test harness. This runs
+		// quill itself under the race detector once, offline, against a checked-in fixture.
+		Task{
+			Name:        "cli:race-smoke",
+			Description: "exercise the cli with the race detector",
+			RunsOn:      lang.List("cli"),
+			Run: func() {
+				if !raceEnabled() {
+					Log("race detector disabled, skipping race smoke")
+					return
+				}
+				Run("go run -race ./cmd/quill describe ./test/cli/test-fixtures/assets/hello_signed", run.Stdout(os.Stderr))
 			},
 		},
 		Task{
@@ -76,15 +101,25 @@ func main() {
 	)
 }
 
-// findSnapshotBinary resolves the snapshot quill binary for the current host as an absolute
-// path (test/cli changes cwd, so relative paths break). Goreleaser emits GOAMD64/GOARM64
-// variant suffixes (e.g. amd64_v1, arm64_v8.0) on the dist dir name, and those defaults shift
-// across goreleaser versions, so glob rather than hardcode.
+// findSnapshotBinary returns the absolute path to the snapshot quill binary for the current host, or "" when
+// there isn't one. Goreleaser emits GOAMD64/GOARM64 variant suffixes (e.g. amd64_v1, arm64_v8.0) on the dist
+// dir name, and those defaults shift across goreleaser versions, so glob rather than hardcode.
 func findSnapshotBinary() string {
-	pattern := fmt.Sprintf("./snapshot/%s-build_%s_%s*/quill", runtime.GOOS, runtime.GOOS, runtime.GOARCH)
-	matches := lang.Return(filepath.Glob(pattern))
+	matches := lang.Return(filepath.Glob(snapshotBinaryGlob()))
 	if len(matches) == 0 {
-		lang.Throw(fmt.Errorf("no snapshot binary found matching %q — did you run `make snapshot`?", pattern))
+		return ""
 	}
-	return lang.Return(filepath.Abs(matches[0]))
+	return matches[0]
+}
+
+func snapshotBinaryGlob() string {
+	return filepath.Join(RootDir(), "snapshot", fmt.Sprintf("%s-build_%s_%s*", runtime.GOOS, runtime.GOOS, runtime.GOARCH), "quill")
+}
+
+// raceEnabled defaults to on in CI (off on windows) and can be forced either way with RACE=true|false.
+func raceEnabled() bool {
+	if enabled, err := strconv.ParseBool(config.Env("RACE", "")); err == nil {
+		return enabled
+	}
+	return config.CI && !config.Windows
 }
