@@ -55,8 +55,8 @@ end-to-end workflow.`,
 }
 
 func validateNotarizeCredentials(opts *testConfig) error {
-	if opts.Issuer == "" || opts.PrivateKeyID == "" || opts.PrivateKey == "" {
-		return fmt.Errorf("notarization credentials required: provide --notary-issuer, --notary-key-id, and --notary-key")
+	if err := opts.Validate(); err != nil {
+		return err
 	}
 
 	if opts.AdHoc {

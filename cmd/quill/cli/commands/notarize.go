@@ -56,6 +56,9 @@ func Notarize(app clio.Application) *cobra.Command {
 				log.Warn("[DRY RUN] skipping notarization...")
 				return nil
 			}
+			if err := opts.Validate(); err != nil {
+				return err
+			}
 			_, err := notarize(opts.Path, opts.Notary, opts.Status)
 			return err
 		},
