@@ -5,11 +5,11 @@ go 1.26.0
 require (
 	github.com/PuerkitoBio/goquery v1.13.0
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d
-	github.com/anchore/bubbly v0.2.2
-	github.com/anchore/clio v0.1.1
-	github.com/anchore/fangs v0.1.1
-	github.com/anchore/go-logger v0.2.0
-	github.com/anchore/go-macholibre v0.1.1
+	github.com/anchore/bubbly v0.2.3-0.20261106055526-3d84aa9bab47
+	github.com/anchore/clio v0.1.3-0.20261106204511-a4c473e9b8a3
+	github.com/anchore/fangs v0.1.2-0.20261106223455-6ae4f60fe299
+	github.com/anchore/go-logger v0.2.1-0.20261102150012-5958d6737944
+	github.com/anchore/go-macholibre v0.1.2-0.20261030232458-0dd5973e8bc6
 	github.com/aws/aws-sdk-go-v2 v1.47.5
 	github.com/aws/aws-sdk-go-v2/config v1.33.12
 	github.com/aws/aws-sdk-go-v2/credentials v1.20.12
@@ -39,7 +39,7 @@ require (
 require (
 	dario.cat/mergo v1.0.2 // indirect
 	github.com/adrg/xdg v0.5.3 // indirect
-	github.com/anchore/go-homedir v0.1.1 // indirect
+	github.com/anchore/go-homedir v0.1.2-0.20261106170621-6753f05e2253 // indirect
 	github.com/andybalholm/cascadia v1.3.4 // indirect
 	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.7.25 // indirect
@@ -96,15 +96,15 @@ require (
 	github.com/pkg/profile v1.7.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/sagikazarmark/locafero v0.12.0 // indirect
-	github.com/sirupsen/logrus v1.9.4 // indirect
+	github.com/sirupsen/logrus v1.10.2 // indirect
 	github.com/spf13/afero v1.15.0 // indirect
 	github.com/spf13/cast v1.10.0 // indirect
-	github.com/spf13/pflag v1.0.10 // indirect
+	github.com/spf13/pflag v1.1.0 // indirect
 	github.com/spf13/viper v1.21.0 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	go.mongodb.org/mongo-driver v1.17.7 // indirect
-	go.yaml.in/yaml/v3 v3.0.5 // indirect
+	go.yaml.in/yaml/v3 v3.0.6 // indirect
 	golang.org/x/crypto v0.55.0 // indirect
 	golang.org/x/exp v0.0.0-20251209150349-8475f28825e9 // indirect
 	golang.org/x/net v0.58.0 // indirect
