@@ -2,6 +2,7 @@ package commands
 
 import (
 	"encoding/pem"
+	"fmt"
 	"strings"
 
 	"github.com/scylladb/go-set/strset"
@@ -63,8 +64,14 @@ func extractCertificates(binPath string, leaf bool) (string, error) {
 	}
 
 	var decodedCerts []pem.Block
-	for _, f := range fs {
+	var signedCount int
+	for idx, f := range fs {
 		details := extract.ParseDetails(*f)
+		if details.SuperBlob == nil {
+			log.WithFields("binary", idx+1).Tracef("skipping binary without a signature")
+			continue
+		}
+		signedCount++
 
 		for i, s := range details.SuperBlob.Signatures {
 			for j, c := range s.Certificates {
@@ -80,6 +87,10 @@ func extractCertificates(binPath string, leaf bool) (string, error) {
 				})
 			}
 		}
+	}
+
+	if signedCount == 0 {
+		return "", fmt.Errorf("no signature found in %q", binPath)
 	}
 
 	buf := strings.Builder{}
