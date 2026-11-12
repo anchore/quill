@@ -197,6 +197,28 @@ func Test_buildRequirementStatements(t *testing.T) {
 							},
 						},
 					},
+					// leaf
+					{},
+				},
+			},
+			wantBytes:       "0000000e000000010000000a2a864886f76364060206000000000000",
+			wantDescription: `certificate 1[field.1.2.840.113635.100.6.2.6]  /* exists */`,
+		},
+		{
+			name: "encode intermediate certificate without root has appleCertificateExtension",
+			signingMaterial: pki.SigningMaterial{
+				Certs: []*x509.Certificate{
+					// intermediate
+					{
+						IsCA: true,
+						Extensions: []pkix.Extension{
+							{
+								Id: asn1.ObjectIdentifier{1, 2, 840, 113635, 100, 6, 2, 6},
+							},
+						},
+					},
+					// leaf
+					{},
 				},
 			},
 			wantBytes:       "0000000e000000010000000a2a864886f76364060206000000000000",
@@ -221,8 +243,8 @@ func Test_buildRequirementStatements(t *testing.T) {
 					},
 				},
 			},
-			wantBytes:       "0000000effffffff0000000a2a864886f76364060206000000000000",
-			wantDescription: `certificate root[field.1.2.840.113635.100.6.2.6]  /* exists */`,
+			wantBytes:       "0000000e000000010000000a2a864886f76364060206000000000000",
+			wantDescription: `certificate 1[field.1.2.840.113635.100.6.2.6]  /* exists */`,
 		},
 		{
 			name: "encode intermediate certificate has appleCertificateExtension ONLY if oid present",
