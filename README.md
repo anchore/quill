@@ -67,7 +67,24 @@ bundle resources into `Contents/_CodeSignature/CodeResources`, and signs the mai
 `Info.plist` and resource seal bound into its signature (using `CFBundleIdentifier` as the default signing identity).
 When notarizing, the bundle is automatically zipped for submission to Apple's notary service.
 
-**Note**: bundles that contain nested bundles (e.g. frameworks or nested `.app` bundles) are not supported yet.
+Nested bundles (e.g. app extensions in `Contents/PlugIns/*.appex`, XPC services, frameworks, or nested `.app`
+bundles) are supported, but must be signed before the bundle that contains them, since the outer bundle's seal
+records the inner bundle's signature:
+
+```bash
+$ quill sign My.app/Contents/PlugIns/MyExtension.appex --entitlements extension.entitlements
+$ quill sign My.app --entitlements app.entitlements
+```
+
+Each nested bundle is signed on its own because it usually needs its own signing options (an app extension, for
+instance, must carry its own sandbox entitlements to load). Its existing signature is then sealed as-is, so quill
+checks it against the outer bundle. Signing a bundle with a certificate fails if a nested bundle is still ad-hoc
+signed (e.g. left over from a development build) or was signed without the hardened runtime, since Apple's notary
+service rejects both, and warns if a nested bundle was signed with a different certificate.
+
+**Note**: quill cannot yet sign a `.framework` bundle itself (frameworks use a different, versioned layout). A
+framework that was already signed by other means is sealed correctly when signing the bundle that contains it.
+
 Nested binaries are signed without entitlements (entitlements only apply to the main executable), so a nested
 helper that needs its own entitlements (e.g. a privileged helper tool) is not yet supported.
 

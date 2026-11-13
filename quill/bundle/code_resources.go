@@ -19,7 +19,8 @@ import (
 )
 
 // ErrNestedBundleUnsupported indicates that a bundle contains a nested bundle (e.g. a
-// framework or a nested .app), which must be signed on its own before the outer bundle.
+// framework or a nested .app) but the signer given to WalkAndSeal cannot report the
+// signature of one (it does not implement NestedBundleSignatureReader).
 var ErrNestedBundleUnsupported = errors.New("signing nested bundles is not supported")
 
 // SignedBinaryInfo describes the code signature of a nested Mach-O binary, used to seal
@@ -28,13 +29,30 @@ type SignedBinaryInfo struct {
 	// CDHash is the code directory hash (truncated to 20 bytes)
 	CDHash []byte
 
-	// Requirement is the designated requirement in text form (empty for ad-hoc signatures)
+	// Requirement is the designated requirement in text form
 	Requirement string
 }
 
 // MachOSigner signs a nested Mach-O binary in place and reports the resulting signature info.
 type MachOSigner interface {
 	SignMachO(path string) (*SignedBinaryInfo, error)
+}
+
+// NestedBundleSignatureReader reports the code signature of a nested bundle (a .appex, a
+// .framework, a .xpc, or a nested .app) that has already been signed.
+//
+// Nested bundles are sealed by reference rather than by content: the parent records the
+// cdhash and designated requirement of the nested bundle's main executable, and nothing
+// inside the nested bundle appears in the parent's seal. That is what Apple's codesign
+// produces, and it is why nested code must be signed before its container: the parent's seal
+// records the child's signature, and nested code usually needs signing options of its own
+// (an app extension, for instance, must carry its own sandbox entitlements).
+//
+// A signer that does not implement this interface keeps the previous behavior: sealing a
+// bundle that contains nested bundles is refused (with ErrNestedBundleUnsupported) rather
+// than silently producing a seal that omits them.
+type NestedBundleSignatureReader interface {
+	NestedBundleSignature(bundlePath string) (*SignedBinaryInfo, error)
 }
 
 // ResourcesBuilder walks a bundle directory and seals its contents into a CodeResources
@@ -107,7 +125,7 @@ func (b *ResourcesBuilder) WalkAndSeal(root string, excludePaths []string, signe
 		normalized := normalizePath(filepath.ToSlash(rel))
 
 		if d.IsDir() {
-			return b.processDir(normalized, d)
+			return b.processDir(fullPath, normalized, d, signer)
 		}
 
 		isSymlink := d.Type()&fs.ModeSymlink != 0
@@ -124,7 +142,7 @@ func (b *ResourcesBuilder) WalkAndSeal(root string, excludePaths []string, signe
 	})
 }
 
-func (b *ResourcesBuilder) processDir(normalized string, d fs.DirEntry) error {
+func (b *ResourcesBuilder) processDir(fullPath, normalized string, d fs.DirEntry, signer MachOSigner) error {
 	r := findRule(b.rulesV2, normalized)
 	if r == nil {
 		return nil
@@ -135,15 +153,49 @@ func (b *ResourcesBuilder) processDir(normalized string, d fs.DirEntry) error {
 	}
 	if r.nested && strings.Contains(d.Name(), ".") {
 		// directories with an extension matched by a nested rule are bundles in their own
-		// right (e.g. frameworks, plugins, or nested apps) and must be signed and sealed
-		// by their own signature.
+		// right (e.g. frameworks, plugins, or nested apps) and carry their own signature.
 		// ponytail: "has a dot in its name" approximates Apple's extension-based bundle
 		// detection (.framework, .app, .xpc, ...); a non-bundle directory with a dot in its
 		// name in a nested-code location (e.g. Frameworks/v1.2/) would be misclassified here.
 		// Revisit with a real extension allowlist if that turns out to matter in practice.
-		return fmt.Errorf("%w (found %q): sign it separately before signing this bundle", ErrNestedBundleUnsupported, normalized)
+		return b.sealNestedBundle(fullPath, normalized, signer)
 	}
 	return nil
+}
+
+// sealNestedBundle records an already-signed nested bundle in the parent's seal and skips
+// its contents.
+//
+// The entry holds the nested bundle's cdhash and designated requirement and nothing else;
+// the files within it are covered by its own signature, so repeating them here would both
+// duplicate work and diverge from what codesign emits.
+func (b *ResourcesBuilder) sealNestedBundle(fullPath, normalized string, signer MachOSigner) error {
+	reader, ok := signer.(NestedBundleSignatureReader)
+	if !ok {
+		return fmt.Errorf("%w (found %q): sign it separately before signing this bundle", ErrNestedBundleUnsupported, normalized)
+	}
+
+	log.WithFields("path", normalized).Trace("sealing nested bundle")
+
+	info, err := reader.NestedBundleSignature(fullPath)
+	if err != nil {
+		return fmt.Errorf("unable to seal nested bundle %q: %w", normalized, err)
+	}
+	if info == nil {
+		return fmt.Errorf("no signature reported for nested bundle %q", normalized)
+	}
+
+	entry := map[string]any{
+		"cdhash": info.CDHash,
+	}
+	if info.Requirement != "" {
+		entry["requirement"] = info.Requirement
+	}
+	// Nested bundles are sealed only in files2. Apple's codesign does not record them in
+	// the version 1 "files" section, which predates nested code.
+	b.files2[normalized] = entry
+
+	return fs.SkipDir
 }
 
 func (b *ResourcesBuilder) processSymlink(fullPath, normalized string) error {
