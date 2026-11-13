@@ -6,7 +6,7 @@ require (
 	github.com/PuerkitoBio/goquery v1.13.0
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d
 	github.com/anchore/bubbly v0.2.2
-	github.com/anchore/clio v0.1.1
+	github.com/anchore/clio v0.1.2
 	github.com/anchore/fangs v0.1.1
 	github.com/anchore/go-logger v0.2.0
 	github.com/anchore/go-macholibre v0.1.1
@@ -96,7 +96,7 @@ require (
 	github.com/pkg/profile v1.7.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/sagikazarmark/locafero v0.12.0 // indirect
-	github.com/sirupsen/logrus v1.9.4 // indirect
+	github.com/sirupsen/logrus v1.10.2 // indirect
 	github.com/spf13/afero v1.15.0 // indirect
 	github.com/spf13/cast v1.10.0 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
