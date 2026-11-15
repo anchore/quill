@@ -50,6 +50,13 @@ func SignAndNotarize(app clio.Application) *cobra.Command {
 		RunE: func(_ *cobra.Command, _ []string) error {
 			defer bus.Exit()
 
+			if !opts.DryRun {
+				// fail before signing the binary in place if notarization cannot succeed
+				if err := opts.Validate(); err != nil {
+					return err
+				}
+			}
+
 			err := sign(opts.Path, opts.Signing)
 			if err != nil {
 				return fmt.Errorf("signing failed: %w", err)

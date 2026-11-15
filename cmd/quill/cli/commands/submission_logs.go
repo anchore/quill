@@ -39,6 +39,10 @@ func SubmissionLogs(app clio.Application) *cobra.Command {
 
 			log.Infof("fetching submission logs for %q", opts.ID)
 
+			if err := opts.Validate(); err != nil {
+				return err
+			}
+
 			cfg := quill.NewNotarizeConfig(
 				opts.Issuer,
 				opts.PrivateKeyID,
