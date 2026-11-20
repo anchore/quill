@@ -57,8 +57,7 @@ const (
 
 const (
 	// certificate positions (within a standard certificate chain)
-	leafCertIndex   uint32 = 0          // index for leaf (first in chain)
-	anchorCertIndex        = ^uint32(0) // index for anchor (last in chain), equiv to -1
+	leafCertIndex uint32 = 0 // index for leaf (first in chain)
 )
 
 func generateRequirements(id string, h hash.Hash, signingMaterial pki.SigningMaterial) (*SpecialSlot, error) {
@@ -143,10 +142,8 @@ func buildRequirementStatements(id string, signingMaterial pki.SigningMaterial) 
 	appleCertificateExtensionsOID := asn1.ObjectIdentifier{1, 2, 840, 113635, 100, 6, 2, 6}
 	index, certWithAppleCertificateExtensionsOID := signingMaterial.CertWithExtension(appleCertificateExtensionsOID)
 	if index != -1 && certWithAppleCertificateExtensionsOID != nil && certWithAppleCertificateExtensionsOID.IsCA {
-		slotIndex := uint32(index)
-		if index == 0 {
-			slotIndex = anchorCertIndex
-		}
+		// Signing material is root-first, but requirement indices count from the leaf.
+		slotIndex := uint32(len(signingMaterial.Certs) - 1 - index)
 		var ops []uint32
 		ops = append(ops, opCertGeneric)
 		ops = append(ops, slotIndex)
